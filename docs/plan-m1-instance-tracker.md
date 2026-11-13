@@ -294,6 +294,8 @@ Pendiente, en este orden:
    y el selector); revisar «Primary del tema Craft» (dejar solo la elegida: oro con texto navy); borrar el
    artboard de comparación «Fila de totales: A / B / C» (ya decidido B); repasar que todos los artboards
    usan la paleta B (hecho en v31) y que las notas del lienzo no mencionan cosas quitadas. Diseño solo.
+   ✅ Hecho (lienzo v36): Paleta solo B (sin selector ni etiqueta de instancias), Primary solo «Oro Forever»
+   (artboard 560×640), «Totales» borrado, nota n1 corregida (totales a la derecha, 20 px).
    **Después, cotejo diseño ↔ código** (pedido del owner): cada artboard del widget (En curso, Completada,
    Primera vez, Compacto, Pausa, Detalle) contra `Style.lua` (HEX, SIZE, FONT) y `UI.lua`/`View.lua`:
    colores, tamaños de fuente, márgenes, orden y alineación de filas, textos/Locale. Lista de diferencias →
@@ -301,6 +303,9 @@ Pendiente, en este orden:
    geometría ×1000/932 a propósito (no es diferencia). Delegable a un subagente que escriba la tabla en docs/.
 2. Recortes con «…» de nombres de jefe/raro y de la mazmorra en la cabecera (ui-critic, docs/14 §2 y §5) y
    tokens para los márgenes de 2 px sueltos de UI.lua (§4). Código, sin cambio visual.
+   ✅ Hecho: `fitText` en UI.lua (corta solo el nombre, nunca tiempo/delta/tag) + `S.xpTop`/`S.totalsTop`.
+   Los gaps 8 (filas de jefe) y 10 (fila del reloj) siguen literales: tokenizarlos los escalaría ×1000/932
+   (8→9, 10→11) = cambio visual; decidir en el cotejo. Pendiente prueba in-game con nombre largo.
 3. F5 (abajo).
 
 ## Puntos abiertos

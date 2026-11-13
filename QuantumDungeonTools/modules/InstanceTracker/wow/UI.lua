@@ -189,6 +189,20 @@ local function repText(rep)
   return Style.code("text") .. sign .. rep.amount .. "|r " .. rep.name
 end
 
+-- Cuts `fs` with "..." so it fits in what the row leaves after the other shown pieces (and a
+-- gap per piece). Width 0 = natural; only an overflowing text gets a fixed width. The cut
+-- always falls on the name, never on a time, delta or tag (docs/14 §2 and §6).
+local function fitText(fs, others, gap)
+  local room = S.width
+  for _, r in ipairs(others) do
+    if r:IsShown() then
+      room = room - math.ceil(r.GetStringWidth and r:GetStringWidth() or r:GetWidth()) - gap
+    end
+  end
+  fs:SetWidth(0)
+  if math.ceil(fs:GetStringWidth()) > room then fs:SetWidth(math.max(1, room)) end
+end
+
 local function newRow(parent)
   local row = CreateFrame("Frame", nil, parent)
   row:SetWidth(S.width)
@@ -518,6 +532,7 @@ local function renderFull(v)
     W.diff:Hide()
   end
   local head = { W.diff, W.name }
+  fitText(W.name, { W.diff }, S.rowGap)
   chain(W.head, head, "", S.rowGap)
   place(W.head, heightOf(head))
 
@@ -571,7 +586,7 @@ local function renderFull(v)
   -- XP
   if v.xp then
     paintXP(v.xp)
-    place(W.xp, W.xp:GetHeight(), 2)
+    place(W.xp, W.xp:GetHeight(), S.xpTop)
   else
     W.xp:Hide()
   end
@@ -597,7 +612,7 @@ local function renderFull(v)
       end
     end
     chain(W.extras, { W.rep, W.money }, "", S.extrasGap)
-    place(W.extras, heightOf({ W.rep, W.money }), 2)
+    place(W.extras, heightOf({ W.rep, W.money }), S.totalsTop)
   else
     W.extras:Hide()
   end
@@ -619,6 +634,7 @@ local function renderFull(v)
       r.time:SetShown(b.time ~= "")
       setTag(r.tag, L.IT_RARE, C.muted, C.mutedHalf)
       pieces = { r.name, r.time, r.tag }
+      fitText(r.name, { r.time, r.tag }, 8)
       chain(r, pieces, "", 8)
       r.h = nil
     else
@@ -630,6 +646,7 @@ local function renderFull(v)
       r.delta:SetShown(b.delta ~= nil)
       if b.delta then setText(r.delta, b.delta, Style.tone(b.deltaTone)) end
       pieces = { r.name, r.time, r.delta }
+      fitText(r.name, { r.time, r.delta }, 8)
       r.h = chainBaseline(r, pieces, 8)
     end
     r:ClearAllPoints()
