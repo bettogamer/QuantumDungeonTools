@@ -69,3 +69,17 @@ rompe nada visible. Hay UN punto a vigilar (RARE a 9 px) y dos preguntas cerrada
 
 ## Idea de producto (fuera de encuadre)
 Ninguna.
+
+
+## A/B padding vertical (2026-11-13)
+
+Encuadre: elegir entre padY 1 (A: tags 19 px, RARE 15 px) y padY 2 (B: 21 px / 17 px) en los Craft.Badge outline del widget live y first-time.
+
+**Veredicto: B (tagPadY = 2, rareTagPadY = 1).** Sin mezcla.
+
+- Aire vertical: en A el texto de «Instances 8/10 · free in 12:40» casi toca el borde superior e inferior mientras que a los lados hay ~6 px. En B el aire arriba/abajo se acerca al lateral y la caja se lee como pastilla, no como texto subrayado en un marco. Es lo que compensa las mayúsculas más altas de BettoGeo frente a Inter.
+- Peso del tag dorado: crece 2 px de alto; sigue siendo secundario frente al reloj de 42 px y a «Bosses 3/6», y no compite con los nombres de jefe. No llega a ser el elemento dominante.
+- Proporción con el vecino: «Ruins of Lordaeron» y «Normal» (tag 11 px) quedan alineados y con mejor relación altura-caja/texto 12 px en B; en A el tag parece más bajo que su texto vecino.
+- Coherencia RARE vs 11 px: la diferencia es 4 px en ambos casos (19/15 y 21/17), así que la relación se mantiene; en B el RARE gana aire sin parecer un chip distinto.
+- FIRST TIME junto al reloj (captura 8 vs 2): en B la caja es más alta pero sigue centrada respecto a la línea base del reloj; no se ve desplazamiento apreciable. Pedir captura del tag FIRST TIME en live si se quiere verificar a 1:1 (la 2 es de otra versión de RARE).
+- Coste: +2 px por tag, ~4-6 px de alto total del HUD; densidad aceptable. Severidad: ⚪ pulido.
