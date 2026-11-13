@@ -164,6 +164,11 @@ function View.build(run, opts)
     xp = xpView(run, opts.xp),
     instances = instancesView(opts.instances),
   }
+  -- Totals row (F4): money looted and the faction with the biggest gain; the rest go to the
+  -- hover detail.
+  if num(run.copper) and run.copper > 0 then v.copper = run.copper end
+  local rep = run.repList and run:repList() or {}
+  if #rep > 0 then v.rep, v.repAll = rep[1], rep end
 
   if pb then
     v.ref = { kind = "pb", text = Format.clock(pb.total), struck = finished and elapsed < pb.total }

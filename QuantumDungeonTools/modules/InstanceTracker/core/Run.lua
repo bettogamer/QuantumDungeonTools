@@ -25,7 +25,7 @@ local function never() return false end
 local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
-  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord",
+  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper",
 }
 
 -- info = { instanceID = number, name = string, difficulty = string }
@@ -53,6 +53,8 @@ function Run.new(info, deps)
   self.pausedTotal = 0    -- seconds spent paused; they never count for the clock
   self.deaths = 0         -- player deaths inside the instance during the run
   self.pb = nil           -- the record this run races against (core/Records.lua copy), set at start
+  self.copper = 0         -- money the player looted during the run (F4)
+  self.rep = {}           -- reputation gained during the run: { [factionName] = amount } (F4)
   return self
 end
 
@@ -270,6 +272,7 @@ end
 -- when it was paused: the time outside never counts).
 function Run:close()
   if not self.finishedAt and not self.endedAt then self.endedAt = self.pausedAt or self._now() end
+  self.closed = true   -- a finished run has no endedAt: this stops the money/rep counting too
 end
 
 -- addDeath(): the player died inside. Not counted once the run is finished, closed or paused.
@@ -277,6 +280,37 @@ function Run:addDeath()
   if self.finishedAt or self.endedAt or self.pausedAt then return false end
   self.deaths = (self.deaths or 0) + 1
   return true
+end
+
+-- Money and reputation keep counting after the last boss (its loot and its rep arrive a moment
+-- later), but not while paused or once the run is closed.
+local function collecting(self) return not self.endedAt and not self.pausedAt and not self.closed end
+
+function Run:addMoney(copper)
+  if not collecting(self) or type(copper) ~= "number" or copper ~= copper or copper <= 0 then return false end
+  self.copper = (self.copper or 0) + copper
+  return true
+end
+
+function Run:addRep(faction, amount)
+  if not collecting(self) or type(faction) ~= "string" or faction == "" then return false end
+  if type(amount) ~= "number" or amount ~= amount or amount == 0 then return false end
+  self.rep = self.rep or {}
+  self.rep[faction] = (self.rep[faction] or 0) + amount
+  return true
+end
+
+-- Reputation as a list sorted by amount (largest gain first): { { name, amount } }.
+function Run:repList()
+  local list = {}
+  for name, n in pairs(self.rep or {}) do
+    if n ~= 0 then list[#list + 1] = { name = name, amount = n } end
+  end
+  table.sort(list, function(a, b)
+    if a.amount ~= b.amount then return a.amount > b.amount end
+    return a.name < b.name
+  end)
+  return list
 end
 
 function Run:isPaused() return self.pausedAt ~= nil end
@@ -358,6 +392,13 @@ function Run.resetName(fmt, text, isSecret)
   return text:match("^" .. pattern .. "$")
 end
 
+local function copyRep(rep)
+  if type(rep) ~= "table" then return nil end
+  local out = {}
+  for k, v in pairs(rep) do out[k] = v end
+  return out
+end
+
 local function copyPB(pb)
   if type(pb) ~= "table" then return nil end
   local splits = {}
@@ -370,6 +411,7 @@ function Run:toTable()
   for _, k in ipairs(FIELDS) do t[k] = self[k] end
   t.bosses = copyBosses(self.bosses)
   t.pb = copyPB(self.pb)
+  t.rep = copyRep(self.rep)
   return t
 end
 
@@ -381,6 +423,7 @@ function Run.fromTable(t, deps)
   end
   self.bosses = copyBosses(t.bosses)
   self.pb = copyPB(t.pb)
+  self.rep = copyRep(t.rep) or {}
   self._seq = #self.bosses
   for _, b in ipairs(self.bosses) do
     if b.seq > self._seq then self._seq = b.seq end

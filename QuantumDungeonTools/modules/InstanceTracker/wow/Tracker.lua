@@ -16,6 +16,7 @@
 local _, ns = ...
 local Run = ns.InstanceRun
 local Records = ns.InstanceRecords
+local ChatParse = ns.InstanceChatParse
 local Guid = ns.InstanceGuid
 local issecretvalue = ns.issecretvalue
 
@@ -319,6 +320,27 @@ function T:CHAT_MSG_SYSTEM(text)
   end
 end
 
+-- Money and reputation lines (F4). Only inside, with a live run. A secret line is dropped and
+-- counted as degraded (chat can be locked down in 12.x clients).
+local function chatLine(self, text, apply)
+  local run = self.run
+  if not run or not self.inInstance then return end
+  if issecretvalue(text) then
+    run.degraded = (run.degraded or 0) + 1
+    return
+  end
+  if type(text) ~= "string" then return end
+  if apply(run, text) then self:_notify("data") end
+end
+
+function T:CHAT_MSG_MONEY(text)
+  chatLine(self, text, function(run, t) return run:addMoney(ChatParse.money(t, _G)) end)
+end
+
+function T:CHAT_MSG_COMBAT_FACTION_CHANGE(text)
+  chatLine(self, text, function(run, t) return run:addRep(ChatParse.rep(t, _G)) end)
+end
+
 -- UNIT_SPELLCAST_SENT: unit, target, castGUID, spellID (only fires for the player)
 function T:UNIT_SPELLCAST_SENT(unit, _, castGUID)
   if issecretvalue(unit) or unit ~= "player" then return end
@@ -352,6 +374,7 @@ local EVENTS = {
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
   "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
   "CHAT_MSG_SYSTEM", "PLAYER_LOGOUT", "PLAYER_DEAD",
+  "CHAT_MSG_MONEY", "CHAT_MSG_COMBAT_FACTION_CHANGE",
 }
 
 local frame

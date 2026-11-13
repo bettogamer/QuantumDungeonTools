@@ -167,6 +167,21 @@ local function chainBaseline(row, pieces, gap)
   return math.ceil(h)
 end
 
+-- "+4 [gold] 12 [silver]" with the game's coin icons at a fixed, measurable size. Pattern from
+-- Coffer MoneyDisplay.Format: auto-sized icons (":0:0:") measure ~0 px and the last token of the
+-- string is dropped from the measurement, hence the pinned size and the closing space.
+local function moneyText(copper)
+  local s = GetMoneyString and GetMoneyString(copper, true) or GetCoinTextureString(copper)
+  s = s:gsub("|T([^|:]+):[^|]*|t", " |T%1:" .. S.coinSize .. "|t")
+  return "+" .. s .. " "
+end
+
+-- "+350 Undercity": the amount in cream, the faction in the row's muted color.
+local function repText(rep)
+  local sign = rep.amount > 0 and "+" or ""
+  return Style.code("text") .. sign .. rep.amount .. "|r " .. rep.name
+end
+
 local function newRow(parent)
   local row = CreateFrame("Frame", nil, parent)
   row:SetWidth(S.width)
@@ -275,9 +290,11 @@ local function buildFull()
   W.xpRight = newText(W.xp, FONT.small)
   W.xpRight:SetPoint("TOPRIGHT", W.xpBar, "BOTTOMRIGHT", 0, -3)
 
-  -- Extras: "Instances 8/10 · free in 12:40" (gold and reputation arrive in F4)
+  -- Extras: "+4g 12s   +350 Undercity   [Instances 8/10 · free in 12:40]"
   W.extras = newRow(full)
   W.instances = newTag(W.extras, FONT.small)
+  W.money = newText(W.extras, FONT.small)
+  W.rep = newText(W.extras, FONT.small)
 
   W.bosses = {}
   W.rares = {}
@@ -482,15 +499,21 @@ local function renderFull(v)
     W.xp:Hide()
   end
 
-  -- Extras (level 2, contextual)
+  -- Extras (level 2, contextual): money, top reputation, instances per hour
   if v.instances then
     local i = v.instances
     local text = L.IT_INSTANCES:format(i.count, i.limit) .. (i.freeIn and L.IT_INSTANCES_FREE:format(i.freeIn) or "")
     local color = i.full and C.red or C.gold
     setTag(W.instances, text, color, i.full and C.red or C.goldHalf)
-    W.instances:Show()
-    chain(W.extras, { W.instances }, "", 0)
-    place(W.extras, W.instances:GetHeight(), 2)
+  end
+  W.instances:SetShown(v.instances ~= nil)
+  if v.copper then setText(W.money, moneyText(v.copper), C.cream) end
+  W.money:SetShown(v.copper ~= nil)
+  if v.rep then setText(W.rep, repText(v.rep), C.muted) end
+  W.rep:SetShown(v.rep ~= nil)
+  if v.instances or v.copper or v.rep then
+    chain(W.extras, { W.instances, W.rep, W.money }, "", S.extrasGap)
+    place(W.extras, heightOf({ W.instances, W.rep, W.money }), 2)
   else
     W.extras:Hide()
   end

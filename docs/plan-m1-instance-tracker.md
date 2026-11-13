@@ -24,7 +24,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 | **F1** | Sondas de Forever (`/qdt check f1`) | 🔨 EN CURSO (código hecho, falta la prueba in-game) | solo medir lo que el diseño asume; el v0.1 nativo NO se prueba (owner, 2026-11-12) |
 | **F2** | Vendoreo de Craft + widget nuevo | 🔨 EN CURSO (código hecho, falta `/qdt check f2` + prueba in-game + `ui-critic`) | niveles 1-2 del diseño: En curso, Completada, Compacto, Primera vez; aquí se pasa por fin el checklist de doc 00 §6 |
 | **F3** | Modelo v2: récord, pausa/retomada, muertes | 🔨 EN CURSO (código hecho 2026-11-13, falta la prueba in-game) | `core/Records.lua` + `Run.deaths`/`Run.pb`; DB aditiva (`records`), sin migración |
-| **F4** | Oro, reputación, ritmo + tooltip Detalle | ⬜ PENDIENTE | nivel 3 (hover) |
+| **F4** | Oro, reputación, ritmo + tooltip Detalle | 🔨 EN CURSO (F4a hecha 2026-11-13: oro + reputación en la fila de totales; falta F4b: tooltip Detalle) | nivel 3 (hover) |
 | **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ⬜ PENDIENTE | nivel 4 (avisos) |
 | **F6** | Ventana Historial + ajustes por línea | ⬜ PENDIENTE | nivel 4 (Historial), líneas desactivables |
 
@@ -217,6 +217,16 @@ por encima (artboard Detalle). Los números entran al snapshot saneados con `scr
 
 **Entregado (v0.4).**
 
+**F4a hecha (2026-11-13):** `core/ChatParse.lua` convierte las globales del cliente en patrones
+(`%s`, `%d`, `%.1f`, posicionales `%1$s`): `money` (YOU_LOOT_MONEY / LOOT_MONEY_SPLIT y sus
+variantes `_GUILD`, monedas en texto o con icono) y `rep` (FACTION_STANDING_INCREASED/_DECREASED,
+con `_BONUS`/`_ACCOUNT_WIDE`; las `_GENERIC` sin cantidad se ignoran). `Run.copper`/`Run.rep`
+suman con la run viva, también tras el último jefe (su botín llega después), no en pausa ni con la
+run cerrada. Línea secreta → `degraded`. Widget: fila de totales «+oro  +350 Facción  [Instancias]»
+(la facción que más sube; el resto, al tooltip). Specs: `ChatParse_spec.lua`.
+**F4b pendiente:** tooltip Detalle (artboard Detalle): ritmo XP/h y oro/h, runs para subir,
+reputación por facción, récord con este grupo, huecos de instancia.
+
 ## F5 — Contador 10/hora, aviso 10/10, toast de fin de run
 
 **Alcance:** contador de instancias por hora a nivel de cuenta (todos los personajes, ventana
@@ -254,6 +264,9 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 - [ ] **Récord (F3)**: terminar una run limpia (entrando con la mazmorra sin tocar) → la siguiente
   run de esa mazmorra y dificultad muestra «/ tiempo», marcas de split en la barra y delta por jefe.
   Una run con jefes ya muertos al entrar NO se guarda como récord.
+- [ ] **Oro y reputación (F4a)**: lootear dinero (solo y en grupo, reparto) y ganar reputación
+  dentro → fila de totales con iconos de moneda y «+N Facción». Comprobar que la línea real de
+  `CHAT_MSG_MONEY` casa con `YOU_LOOT_MONEY`/`LOOT_MONEY_SPLIT` de Forever (el registro de F1 la captura).
 - [ ] **Muertes (F3)**: morir dentro → «1 muerte» en rojo junto al reloj; morir fuera no suma.
 - [ ] Run completada: salir y volver a entrar (o `/reload` dentro) → sigue mostrándose Completada
   con su tiempo, no una run vacía.

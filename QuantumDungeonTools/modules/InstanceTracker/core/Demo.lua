@@ -42,6 +42,12 @@ local function makeRun(kills, elapsed, finished, xp)
   return Run.fromTable(t, { now = function() return START + elapsed end, resolve = resolve })
 end
 
+-- Totals row of the artboards: "+4g 12s" and "+350 Undercity".
+local function withLoot(run, copper, rep)
+  run.copper, run.rep = copper, rep
+  return run
+end
+
 local LIVE_KILLS = { Witherfang = KILLS.Witherfang, ["The Butcher"] = KILLS["The Butcher"],
   ["Viktor the Vile"] = KILLS["Viktor the Vile"] }
 -- PrimeraVez: the same 3 bosses plus the rare killed at 6:10.
@@ -52,14 +58,14 @@ local XP_MAX = 88000
 local SCENARIOS = {
   -- Main: 16:22 with 3/6, record 31:40, ahead by 0:17.
   live = function()
-    return makeRun(LIVE_KILLS, 982, false, 18450), {
+    return withLoot(makeRun(LIVE_KILLS, 982, false, 18450), 41200, { Undercity = 350 }), {
       pb = PB, deaths = 2, instances = { count = 8, limit = 10, freeIn = 760 },
       xp = { level = 54, xp = 54560, max = XP_MAX, rested = 15840 },
     }
   end,
   -- Completada: 29:51, new record by 1:49, crossed a level.
   done = function()
-    return makeRun(KILLS, 1791, true, 41220), {
+    return withLoot(makeRun(KILLS, 1791, true, 41220), 87512, { Undercity = 725, ["The Forsaken"] = 150 }), {
       pb = PB, deaths = 3, instances = { count = 9, limit = 10, freeIn = 665 },
       xp = { level = 55, xp = 29920, max = XP_MAX, rested = 0 },
     }

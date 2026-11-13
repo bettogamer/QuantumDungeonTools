@@ -86,6 +86,8 @@ Style.SIZE = {
   rareTagPadX = 4,
   rareTagPadY = 1,
   rowGap    = 8,    -- between the pieces of a right-aligned row
+  extrasGap = 12,   -- between money, reputation and the instances tag (design: 12)
+  coinSize  = 11,   -- inline coin icons in the totals row (= FONT.small size)
   compactPadX = 10,
   compactPadY = 6,
   compactSep  = 14, -- height of the compact separators
