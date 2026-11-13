@@ -260,9 +260,11 @@ DELANTE del tiempo, así «[tiempo] nombre» se lee como en los jefes), 13 px, a
 muerta** (no crema: crema = jefe pendiente). Tooltip del compacto: «Nombre  RARO». Lienzo
 actualizado a esta fila (v23: Main, Completada, Primera vez).
 Probado in-game con las demos live/done/first/compact (2026-11-13): cuadra con el lienzo; falta ver el tooltip del compacto y una run real.
-**Pendiente de Craft:** FR-140 (`craft/docs/requests/`, colores propios y tamaño compacto en
-`Craft.Badge`). Cuando salga: re-vendorear y cambiar `newTag`/`setTag` de `UI.lua` por `Craft.Badge`
-(RARO a 10 px, a confirmar en la prueba). Nombres en inglés en la tabla:
+**Tags sobre `Craft.Badge`** (FR-140, Craft 2.48.0, 2026-11-13): `newTag`/`setTag` de `UI.lua` crean
+un Badge `outline` con fuente/padding/colores propios; la línea base sale de `GetBaselineOffset`.
+**Falta prueba in-game:** alto de los tags (el Badge usa la línea CSS, puede salir +1 px), tags sin
+la sombra 1,-1 del resto del HUD, y RARE a 9 px. Componentes de Craft para el resto: doc 12.
+Nombres en inglés en la tabla:
 aprobado por el owner (doc 11).
 (2) próxima run del owner en una mazmorra que da XP (más larga):
 el registro pasivo de check f1 sigue armado (600 líneas) → leer con un reductor y verificar el

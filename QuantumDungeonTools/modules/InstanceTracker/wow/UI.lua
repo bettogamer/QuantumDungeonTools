@@ -77,25 +77,27 @@ local function colorBorder(b, c)
   for i = 1, 4 do setColor(b[i], c) end
 end
 
--- Tag = text with a 1px border and no fill (design: "tags = only border").
-local function newTag(parent, font)
-  local tag = CreateFrame("Frame", nil, parent)
-  tag.text = newText(tag, font)
-  tag.border = newBorder(tag)
-  return tag
+-- Tag = text with a 1px border and no fill (design: "tags = only border"): a Craft.Badge
+-- `outline` with per-instance font, padding and colors (FR-140, Craft 2.48.0). It sizes itself
+-- (whole pixels, CSS-centered caps, re-measured next frame) and inherits our theme context.
+-- Returns the Badge's frame (what the row chains/shows); the Badge object rides in `.badge`.
+-- S.tagPad* count the 1px border; Badge's padding sits inside it, hence the -1.
+local function newTag(parent, font, padX, padY)
+  local badge = Craft.Badge:Create(parent, {
+    variant    = "outline",
+    fontSize   = font.size,
+    fontWeight = font.weight,
+    paddingX   = (padX or S.tagPadX) - 1,
+    paddingY   = padY or S.tagPadY,
+  })
+  local frame = badge:GetFrame()
+  frame.badge = badge
+  return frame
 end
 
-local function setTag(tag, text, textColor, borderColor, padX, padY)
-  setText(tag.text, text, textColor)
-  colorBorder(tag.border, borderColor)
-  padX = padX or S.tagPadX
-  local th = tag.text:GetStringHeight()
-  tag:SetSize(math.ceil(tag.text:GetStringWidth()) + 2 * padX,
-    math.ceil(th) + 2 * (padY or S.tagPadY) + 2)
-  -- Whole-pixel left anchor (CENTER on an odd width rounded the text 1-2 px off), and down by
-  -- half the empty descender gap so the letters, not the line box, look centered.
-  tag.text:ClearAllPoints()
-  tag.text:SetPoint("LEFT", tag, "LEFT", padX, -math.floor(th * DESCENT / 2 + 0.5))
+local function setTag(tag, text, textColor, borderColor)
+  tag.badge:SetColors({ text = textColor, border = borderColor })
+  tag.badge:SetText(text)
 end
 
 -- Chains the shown regions right-to-left inside `row` (pieces[1] is the rightmost).
@@ -131,10 +133,7 @@ end
 -- DESCENT (top of file) gives the baseline inside a FontString.
 local function descentOf(r)
   if r.GetStringHeight then return r:GetStringHeight() * DESCENT end
-  if r.text then   -- tag: its text is centered inside the border, nudged down (setTag)
-    local th = r.text:GetStringHeight()
-    return (r:GetHeight() - th) / 2 - math.floor(th * DESCENT / 2 + 0.5) + th * DESCENT
-  end
+  if r.badge then return r.badge:GetBaselineOffset() end   -- tag (Craft.Badge)
   return 0
 end
 
@@ -303,7 +302,7 @@ local function rareRow(i)
   r = newRow(W.frame)
   r.name = newText(r, FONT.rareName)
   r.time = newText(r, FONT.rareTime)
-  r.tag = newTag(r, FONT.rareTag)
+  r.tag = newTag(r, FONT.rareTag, S.rareTagPadX, S.rareTagPadY)
   W.rares[i] = r
   return r
 end
@@ -509,7 +508,7 @@ local function renderFull(v)
       setText(r.name, b.name, tone)
       setText(r.time, b.time, tone)
       r.time:SetShown(b.time ~= "")
-      setTag(r.tag, L.IT_RARE, C.muted, C.mutedHalf, S.rareTagPadX, S.rareTagPadY)
+      setTag(r.tag, L.IT_RARE, C.muted, C.mutedHalf)
       pieces = { r.name, r.time, r.tag }
       chain(r, pieces, "", 8)
       r.h = nil
