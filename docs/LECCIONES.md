@@ -1,4 +1,4 @@
-# Lecciones — <NombreAddon>
+# Lecciones — QuantumDungeonTools
 
 > Bugs reales ya pagados y su patrón correcto. **Esta es la casa de las lecciones**: AGENTS.md
 > solo lleva un puntero y las ≤10 reglas que muerden en cada sesión (doc 04 §AGENTS.md, «Techo y
@@ -14,17 +14,19 @@
 
 | Ancla | Una línea | Fecha |
 |-------|-----------|-------|
-| [<slug>](#slug) | <síntoma en pocas palabras> | <yyyy-mm-dd> |
+| [craft-tooltip-lines-posicionales](#craft-tooltip-lines-posicionales) | tooltip de Craft vacío (cuadro diminuto) | 2026-11-13 |
 
 ---
 
-## <slug>
+## craft-tooltip-lines-posicionales
 
-- **Síntoma:** <lo que se ve, con el mensaje de error literal si lo hay.>
-- **Causa:** <la causa raíz, no el síntoma; `archivo:línea` donde se descubrió.>
-- **Patrón correcto:** <qué se hace ahora; código mínimo si ayuda.>
-- **Cómo se comprueba:** <test, autoprueba `/<addon> check …` o grep que lo detecta.>
-- **Origen:** <hito/fase, versión, commit.>
+- **Síntoma:** al pasar el ratón sale un cuadro diminuto vacío (solo el borde y el padding).
+- **Causa:** `Craft.Tooltip` lee el texto de cada línea por POSICIÓN (`spec[1]`, `spec[2]`,
+  `libs/Craft/components/Tooltip.lua` `_layoutLines`); `{ left = ..., right = ... }` no pinta nada
+  y no da error. Los colores sí van por clave (`leftColor`, `rightColor`, `separator`).
+- **Patrón correcto:** `{ "Izquierda", "Derecha", leftColor = c1, rightColor = c2 }`.
+- **Cómo se comprueba:** `grep -n "{ left =" QuantumDungeonTools/` no debe encontrar nada.
+- **Origen:** M1 F4b (tooltip Detalle); el tooltip del modo compacto tenía el mismo fallo desde F2.
 
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)
      también viven aquí, con motivo y con lo que se hace en su lugar. -->

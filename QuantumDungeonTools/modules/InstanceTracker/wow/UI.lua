@@ -258,17 +258,17 @@ local function detailRow(r)
     left = r.id == "nextSlot" and L.IT_D_NEXT_SLOT or L.IT_D_THEN_SLOT
     right = L.IT_D_IN:format(r.text)
   end
-  return { left = left, right = right, leftColor = C.cream, rightColor = Style.tone(r.tone) }
+  return { left, right, leftColor = C.cream, rightColor = Style.tone(r.tone) }
 end
 
 local function detailLines()
   local run, opts = detailSource()
   local sections = Detail.build(run, opts)
-  if #sections == 0 then return { { left = L.IT_D_EMPTY, leftColor = C.muted } } end
+  if #sections == 0 then return { { L.IT_D_EMPTY, leftColor = C.muted } } end
   local lines = {}
   for i, sec in ipairs(sections) do
     local title = sec.id == "instances" and L.IT_D_INSTANCES:format(sec.count, sec.limit) or L[SECTION_TITLE[sec.id]]
-    lines[#lines + 1] = { left = title, leftColor = C.muted, separator = i > 1 or nil }
+    lines[#lines + 1] = { title, leftColor = C.muted, separator = i > 1 or nil }
     for _, r in ipairs(sec.rows) do lines[#lines + 1] = detailRow(r) end
   end
   return lines
@@ -634,17 +634,17 @@ local function compactLines()
   if not v then return {} end
   local title = v.name .. (v.difficulty and (" · " .. v.difficulty) or "")
   local deaths = v.deaths and (v.deaths == 1 and L.IT_DEATH or L.IT_DEATHS):format(v.deaths) or nil
-  local lines = { { left = title, right = deaths, leftColor = C.muted, rightColor = C.red } }
+  local lines = { { title, deaths, leftColor = C.muted, rightColor = C.red } }
   lines[#lines + 1] = { separator = true }
   for _, b in ipairs(v.bosses) do
     local tone = Style.tone(b.tone)
     local time = b.time ~= "" and (b.time:gsub("[%[%]]", "")) or "--"
     local left = b.rare and (b.name .. "  " .. Style.code("muted") .. L.IT_RARE .. "|r") or b.name
-    lines[#lines + 1] = { left = left, right = time, leftColor = tone, rightColor = tone }
+    lines[#lines + 1] = { left, time, leftColor = tone, rightColor = tone }
   end
   if v.ref.kind == "pb" then
     lines[#lines + 1] = { separator = true }
-    lines[#lines + 1] = { left = L.IT_RECORD, right = v.ref.text, leftColor = C.muted, rightColor = C.muted }
+    lines[#lines + 1] = { L.IT_RECORD, v.ref.text, leftColor = C.muted, rightColor = C.muted }
   end
   return lines
 end
