@@ -364,8 +364,6 @@ local function buildFull()
   W.extras = newRow(full)
   W.money = newText(W.extras, FONT.small)
   W.rep = newText(W.extras, FONT.small)
-  W.money:SetJustifyH("LEFT")
-  W.rep:SetJustifyH("LEFT")
 
   W.bosses = {}
   W.rares = {}
@@ -578,15 +576,15 @@ local function renderFull(v)
     W.xp:Hide()
   end
 
-  -- Totals row: money + top reputation, from the bars' left edge. The instances per hour live
-  -- only in the detail tooltip (owner, 2026-11-13: the tag ate the row and pushed the bosses).
+  -- Totals row (design option B, owner 2026-11-13): money + top reputation right-aligned like
+  -- the rest of the widget, 20 px apart. The instances per hour live only in the detail tooltip.
   if v.copper then setText(W.money, moneyText(v.copper), C.cream) end
   W.money:SetShown(v.copper ~= nil)
   if v.rep then setText(W.rep, repText(v.rep), C.muted) end
   W.rep:SetShown(v.rep ~= nil)
   if v.copper or v.rep then
-    -- The reputation gets what money leaves: a long faction name is cut with "..."
-    -- by the FontString, and hidden when the gap is too small (the detail tooltip has it all).
+    -- The reputation gets the width money leaves: a long faction name is cut with "..." by the
+    -- FontString, and hidden when the room is too small (the detail tooltip has it all).
     if W.rep:IsShown() then
       local room = S.width
       if W.money:IsShown() then room = room - math.ceil(W.money:GetStringWidth()) - S.extrasGap end
@@ -598,18 +596,7 @@ local function renderFull(v)
         W.rep:SetWidth(math.min(natural, room))
       end
     end
-    local left = W.extras
-    for _, r in ipairs({ W.money, W.rep }) do
-      if r:IsShown() then
-        r:ClearAllPoints()
-        if left == W.extras then
-          r:SetPoint("LEFT", W.extras, "LEFT", 0, 0)
-        else
-          r:SetPoint("LEFT", left, "RIGHT", S.extrasGap, 0)
-        end
-        left = r
-      end
-    end
+    chain(W.extras, { W.rep, W.money }, "", S.extrasGap)
     place(W.extras, heightOf({ W.rep, W.money }), 2)
   else
     W.extras:Hide()
