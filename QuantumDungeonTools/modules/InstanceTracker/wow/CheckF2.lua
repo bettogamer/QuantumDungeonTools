@@ -50,7 +50,7 @@ function C:Run()
   if ctx then
     local t = ctx:get()
     check("context font = BettoGeo", type(t.font) == "string" and t.font:find("BettoGeo", 1, true) ~= nil, t.font)
-    check("context outline", t.fontFlags == "OUTLINE", t.fontFlags)
+    check("context outline", t.fontFlags == "OUTLINE, SLUG", t.fontFlags)
   end
 
   -- Font files: SetFont returns false when the file does not load.

@@ -91,12 +91,15 @@ Style.SIZE = {
   compactSep  = 14, -- height of the compact separators
 }
 
+-- `flags` overrides the theme outline ("OUTLINE, SLUG") for one element: the Slug outline is
+-- vector and grows with the font size, so the big clock blurs with it; there the classic ~1 px
+-- OUTLINE reads better (owner, 2026-11-13).
 Style.FONT = {
   head      = { size = 12, weight = "medium" },
   tag       = { size = 11, weight = "medium" },
   tagStrong = { size = 11, weight = "bold" },
   deaths    = { size = 12, weight = "medium" },
-  clock     = { size = 42, weight = "bold" },
+  clock     = { size = 42, weight = "bold", flags = "OUTLINE" },
   ref       = { size = 16, weight = "medium" },
   info      = { size = 12, weight = "medium" },
   small     = { size = 11, weight = "medium" },

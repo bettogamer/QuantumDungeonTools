@@ -46,7 +46,7 @@ local function setColor(tex, c) tex:SetColorTexture(c.r, c.g, c.b, c.a or 1) end
 local function applyFont(fs)
   local f = fontOf[fs]
   local weight = f.weight ~= "regular" and f.weight or nil
-  ctx:applyFont(fs, ctx:getFont(weight), f.size)
+  ctx:applyFont(fs, ctx:getFont(weight), f.size, f.flags)   -- nil flags: the theme's
 end
 
 local function newText(parent, font)
@@ -740,7 +740,7 @@ function UI:Init()
   ctx = Craft.Theme.context(THEME_NAME, {
     font = "bettogeo", headingFont = "bettogeo",
     overrides = {
-      fontFlags = "OUTLINE",
+      fontFlags = "OUTLINE, SLUG",   -- vector (Slug) outline: thinner and crisper than bitmap OUTLINE
       primary = C.gold, primaryForeground = C.panel,
       foreground = C.cream, mutedForeground = C.muted,
       popover = C.panel, popoverForeground = C.cream,
