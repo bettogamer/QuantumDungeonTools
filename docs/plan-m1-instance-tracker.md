@@ -237,6 +237,10 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
   run de solo adds no va al historial; la kill del primer jefe se queda.
 - [ ] Misma copia: salir y volver a entrar sin cambiar de grupo → al primer hechizo la run sigue.
 - [ ] Invitado estando dentro y llevado a la copia del líder sin salir de la mazmorra.
+- [ ] **Reset (`CHAT_MSG_SYSTEM` «X has been reset.»)**: matar algo → salir → «Reset all
+  instances» → el widget cierra la run al momento (sin esperar a entrar). Volver a entrar → run
+  nueva con el reloj a 0. Probarlo también como miembro no líder (¿le llega el mensaje?; si no,
+  lo cubre el castGUID al primer hechizo).
 
 ## Puntos abiertos
 

@@ -298,6 +298,17 @@ local function copyBosses(src)
   return out
 end
 
+-- Run.resetName(fmt, text): the instance name in a reset system message, or nil.
+-- fmt = INSTANCE_RESET_SUCCESS ("%s has been reset." in enUS, localized in other clients).
+function Run.resetName(fmt, text, isSecret)
+  isSecret = isSecret or never
+  if isSecret(fmt) or isSecret(text) then return nil end
+  if type(fmt) ~= "string" or type(text) ~= "string" or not fmt:find("%s", 1, true) then return nil end
+  local pattern = fmt:gsub("[%^%$%(%)%.%[%]%*%+%-%?]", "%%%0")
+  pattern = pattern:gsub("%%s", "(.+)", 1)
+  return text:match("^" .. pattern .. "$")
+end
+
 function Run:toTable()
   local t = {}
   for _, k in ipairs(FIELDS) do t[k] = self[k] end

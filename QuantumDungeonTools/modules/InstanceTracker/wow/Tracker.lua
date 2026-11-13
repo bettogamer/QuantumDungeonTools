@@ -278,6 +278,20 @@ end
 -- BOSS_KILL: encounterID, encounterName (may not exist in every client: registered with pcall)
 function T:BOSS_KILL(_, encounterName) bossDied(encounterName) end
 
+-- CHAT_MSG_SYSTEM "<instance> has been reset." (INSTANCE_RESET_SUCCESS, measured in Forever):
+-- the next entry is a new copy, so the run of that dungeon ends here. It also covers runs saved
+-- without a copy (castGUID) and members who reset without casting afterwards.
+function T:CHAT_MSG_SYSTEM(text)
+  local run = self.run
+  if not run then return end
+  local name = Run.resetName(INSTANCE_RESET_SUCCESS, text, issecretvalue)
+  if name and name == run.name then
+    self:_close()
+    self.copyPending = false
+    self:_notify("data")
+  end
+end
+
 -- UNIT_SPELLCAST_SENT: unit, target, castGUID, spellID (only fires for the player)
 function T:UNIT_SPELLCAST_SENT(unit, _, castGUID)
   if issecretvalue(unit) or unit ~= "player" then return end
@@ -310,6 +324,7 @@ local EVENTS = {
   "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "UPDATE_INSTANCE_INFO",
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
   "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
+  "CHAT_MSG_SYSTEM",
 }
 
 local frame
