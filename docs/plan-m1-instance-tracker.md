@@ -227,6 +227,17 @@ Compacto. El historial sube de 20 a **100 runs** (owner, 2026-11-12); los récor
 
 **Entregado (v1.0)** → release del hito.
 
+## Pruebas in-game pendientes (se hacen TODAS juntas en una run)
+
+Las mazmorras de Forever son largas: no se prueba cambio a cambio (owner, 2026-11-13). Cada
+cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
+
+- [ ] **Copia de la mazmorra (`3461ce9`)**: entrar solo y matar adds → salir → unirse a un grupo
+  → entrar en la copia del líder. Al primer hechizo el widget empieza run nueva (reloj a 0); la
+  run de solo adds no va al historial; la kill del primer jefe se queda.
+- [ ] Misma copia: salir y volver a entrar sin cambiar de grupo → al primer hechizo la run sigue.
+- [ ] Invitado estando dentro y llevado a la copia del líder sin salir de la mazmorra.
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
