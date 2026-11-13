@@ -24,7 +24,7 @@ local function never() return false end
 -- Fields persisted by toTable()/fromTable() (bosses are copied apart).
 local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
-  "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled",
+  "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
 }
 
 -- info = { instanceID = number, name = string, difficulty = string }
@@ -47,6 +47,7 @@ function Run.new(info, deps)
   self.degraded = 0       -- values dropped because they were secret
   self.archived = false   -- already copied to the history
   self.lockKilled = 0     -- most kills the LOCKOUT itself has reported (not the events)
+  self.copy = nil         -- zoneUID of the instance COPY (from the player's castGUIDs)
   return self
 end
 
@@ -238,6 +239,23 @@ function Run:lockoutWasReset(list)
     if entry.killed == true then killed = killed + 1 end
   end
   return killed < (self.lockKilled or 0)
+end
+
+-- observeCopy(zoneUID): the copy the player is in, read from one of their own castGUIDs.
+-- Returns "first" (the run adopts it), "same", "other" (another copy of the same dungeon:
+-- joined a group and entered the leader's copy, or a reset) or nil (unusable value).
+function Run:observeCopy(zoneUID)
+  if self._isSecret(zoneUID) then
+    self.degraded = self.degraded + 1
+    return nil
+  end
+  if type(zoneUID) ~= "string" or zoneUID == "" then return nil end
+  if self.copy == nil then
+    self.copy = zoneUID
+    return "first"
+  end
+  if self.copy == zoneUID then return "same" end
+  return "other"
 end
 
 -- close(): the run is abandoned (new run, instance reset). Freezes its clock without

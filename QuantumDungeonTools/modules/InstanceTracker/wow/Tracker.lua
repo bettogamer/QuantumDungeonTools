@@ -7,13 +7,21 @@
 --   * GetInstanceLockTimeRemaining() -> _, _, total, killed   (works in Normal too)
 --   * GetInstanceLockTimeRemainingEncounter(i) -> name, texture, isKilled
 --   * There is NO player position inside instances: this module never asks for it.
+--   * The castGUID of the player's own spells (UNIT_SPELLCAST_SENT) is public inside
+--     instances and carries the zoneUID of the COPY ("Cast-3-server-instanceID-zoneUID-...");
+--     the GUIDs of target/mouseover/nameplates are secret there. It tells the leader's copy
+--     from ours after joining a group, and a reset from a re-entry.
 -- WoW Forever runs the 12.1.5 engine (secret values): every game value goes through
 -- issecretvalue FIRST, and API calls go through pcall.
 local _, ns = ...
 local Run = ns.InstanceRun
+local Guid = ns.InstanceGuid
 local issecretvalue = ns.issecretvalue
 
-local T = { listeners = {}, inInstance = false }
+-- copyPending: we re-entered the instance of an existing run and do not know yet whether it
+-- is the same copy; the lockout is not merged until the first cast tells us (it may belong
+-- to the leader's copy, not to this run).
+local T = { listeners = {}, inInstance = false, copyPending = false }
 ns.InstanceTracker = T
 
 local HISTORY_MAX = 100
@@ -155,16 +163,18 @@ function T:_close()
   self.run = nil
 end
 
-function T:StartRun(inst)
+function T:StartRun(inst, copy)
   self:_close()
   self.run = Run.new(inst, deps)
+  self.copyPending = false
+  if copy then self.run:observeCopy(copy) end
   self:Refresh()
 end
 
 -- Re-reads the lockout of the current instance and merges it into the run.
 function T:Refresh()
   local run = self.run
-  if run and self.inInstance then
+  if run and self.inInstance and not self.copyPending then
     local list = readBosses()
     if list then
       if run:lockoutWasReset(list) then
@@ -186,6 +196,8 @@ function T:CheckZone()
     if not self.run or self.run.instanceID ~= inst.instanceID then
       self:StartRun(inst)
     else
+      -- Same dungeon again: same copy or not is decided by the first cast (_onCast).
+      self.copyPending = self.run.copy ~= nil
       self:Refresh()
     end
     requestLockout()   -- the answer (UPDATE_INSTANCE_INFO) refreshes again
@@ -206,6 +218,27 @@ function T:NewRun()
 end
 
 function T:History() return db().history end
+
+-- A castGUID of the player inside the instance: which copy is this?
+function T:_onCast(castGUID)
+  if issecretvalue(castGUID) or type(castGUID) ~= "string" then return end
+  local run = self.run
+  if not run or not self.inInstance then return end
+  local g = Guid.parse(castGUID)
+  if not g or g.type ~= "Cast" or g.instanceID ~= run.instanceID then return end
+  local seen = run:observeCopy(g.zoneUID)
+  if seen == "other" then
+    -- Another copy of this dungeon (the group leader's, or a reset): new run. The old one
+    -- goes to the history only if it had kills (_close).
+    self:StartRun({ instanceID = run.instanceID, name = run.name, difficulty = run.difficulty }, g.zoneUID)
+    requestLockout()
+  elseif seen ~= nil and self.copyPending then
+    self.copyPending = false
+    self:Refresh()
+  elseif seen == "first" then
+    self:_notify("data")
+  end
+end
 
 ------------------------------------------------------------------------------
 -- Events
@@ -245,6 +278,12 @@ end
 -- BOSS_KILL: encounterID, encounterName (may not exist in every client: registered with pcall)
 function T:BOSS_KILL(_, encounterName) bossDied(encounterName) end
 
+-- UNIT_SPELLCAST_SENT: unit, target, castGUID, spellID (only fires for the player)
+function T:UNIT_SPELLCAST_SENT(unit, _, castGUID)
+  if issecretvalue(unit) or unit ~= "player" then return end
+  self:_onCast(castGUID)
+end
+
 -- XP is sampled, not trusted to one event: in WoW Forever PLAYER_XP_UPDATE never fired during
 -- a whole dungeon at level 26 (Ruins of Lordaeron, 2026-11-13). Every sample adds the delta
 -- since the previous one, so extra samples are harmless.
@@ -270,7 +309,7 @@ function T:QUEST_TURNED_IN() C_Timer.After(1, function() T:SampleXP() end) end
 local EVENTS = {
   "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "UPDATE_INSTANCE_INFO",
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
-  "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN",
+  "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
 }
 
 local frame

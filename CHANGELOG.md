@@ -6,6 +6,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Añadido
 
+- **Instance Tracker distingue la COPIA de la mazmorra** por el zoneUID del castGUID de tus
+  propios hechizos: si sales y entras en otra copia (te unes a un grupo y vas a la del líder, o
+  hubo un reset), se cierra la run anterior y empieza una nueva; si es la misma, la run sigue. Al
+  volver a entrar, el lockout no se mezcla en la run hasta que el primer hechizo confirma la copia.
 - **Widget nuevo del Instance Tracker sobre Craft** (hito M1 F2): HUD transparente con contorno,
   paleta Forever y fuente BettoGeo; nombre y dificultad, reloj grande, línea de jefes, barra de
   tiempo de 14 px (o segmentos por jefe si no hay récord), barra de XP con lo ganado en la run y
