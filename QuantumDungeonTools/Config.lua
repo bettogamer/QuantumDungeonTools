@@ -9,7 +9,7 @@ local function say(text) ns.say(text) end
 
 -- `/qdt info`: version of the addon and of EVERY vendored lib actually loaded (if any).
 local function info()
-  say(("%s v%s"):format(ns.Brand.TITLE, ns.version or "dev"))
+  say(("%s v%s"):format(ns.Brand.title(), ns.version or "dev"))
   if not LibStub then return end
   local names = {}
   for name in LibStub:IterateLibraries() do names[#names + 1] = name end

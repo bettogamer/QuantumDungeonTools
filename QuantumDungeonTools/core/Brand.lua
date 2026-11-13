@@ -12,6 +12,7 @@ local Brand = {
     accent  = "36C9E8",   -- Forever sea cyan (background hue, saturated)
     text    = "F7EDDC",   -- cream (FOREVER letters)
     danger  = "FF6B4F",   -- coral (complement of the sea)
+    sea     = "0A8FB0",   -- Forever sea (logo background): the dark brand color, "Quantum" in the title
   },
 }
 ns.Brand = Brand
@@ -20,6 +21,12 @@ ns.Brand = Brand
 function Brand.paint(color, text)
   local hex = Brand.COLORS[color] or color
   return "|cff" .. hex .. tostring(text) .. "|r"
+end
+
+-- The title as chat shows it: "Quantum" in sea, "Dungeon Tools" in primary (owner, 2026-11-13).
+function Brand.title()
+  local first, rest = Brand.TITLE:match("^(%S+) (.+)$")
+  return Brand.paint("sea", first) .. " " .. Brand.paint("primary", rest)
 end
 
 -- Chat prefix used by every message the addon prints.

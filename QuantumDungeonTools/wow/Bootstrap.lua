@@ -70,6 +70,6 @@ f:SetScript("OnEvent", function(_, event, arg1)
     if ns.InstanceTrackerUI then ns.InstanceTrackerUI:Init() end
     if ns.CheckF1 then ns.CheckF1:Init() end   -- re-arms the F1 passive log if it is on
     ns.version = ns.resolveVersion(C_AddOns.GetAddOnMetadata(ADDON, "Version"))
-    print(L.MSG_LOADED:format(ns.Brand.paint("primary", ns.Brand.TITLE), ns.version))
+    print(L.MSG_LOADED:format(ns.Brand.title(), ns.version))
   end
 end)

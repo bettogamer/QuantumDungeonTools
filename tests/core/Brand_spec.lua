@@ -18,6 +18,10 @@ describe("Brand", function()
     assert_eq(Brand.paint("FFFFFF", "x"), "|cffFFFFFFx|r")
   end)
 
+  it("el título del chat: Quantum en mar, Dungeon Tools en oro", function()
+    assert_eq(Brand.title(), "|cff0A8FB0Quantum|r |cffF5BF57Dungeon Tools|r")
+  end)
+
   it("el prefijo del chat es QDT en oro", function()
     assert_eq(Brand.prefix(), "|cffF5BF57QDT|r: ")
   end)
