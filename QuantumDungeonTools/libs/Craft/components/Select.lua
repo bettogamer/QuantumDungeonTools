@@ -102,7 +102,8 @@ function Select:Create(parent, config)
     local sz = SIZES[self._cfg.size] or SIZES["default"]
     self.frame = CreateFrame("Frame", nil, parent)
     self._theme = Craft.Theme.resolve(parent, config, self.frame)  -- FR-104: before any child
-    self.frame:SetHeight(sz.h)
+    self._h = sz.h
+    self.frame:SetHeight(Craft.Theme.snapPx(sz.h, self.frame))  -- whole px (FR-149)
     if self._cfg.width then
         self.frame:SetWidth(self._cfg.width)
     end
@@ -135,8 +136,7 @@ function Select:Create(parent, config)
 
     -- _chevron: "chevron-down" icon 16px on the right
     self._chevron = self._trigger:CreateTexture(nil, "ARTWORK")
-    self._chevron:SetSize(CHEVRON_SIZE, CHEVRON_SIZE)
-    self._chevron:SetPoint("RIGHT", self._trigger, "RIGHT", -TRIGGER_PR, 0)
+    self._chevron:SetSize(CHEVRON_SIZE, CHEVRON_SIZE)  -- anchored in _placeTriggerText
     Craft.Icons.Apply(self._chevron, "chevron-down", 16)
 
     -- ── _panel: Frame strata TOOLTIP, parent UIParent, NAMED (UISpecialFrames/Esc) ─
@@ -520,12 +520,8 @@ function Select:_applyTheme(t)
     self._triggerBg:SetPoint("BOTTOMRIGHT", self._trigger, "BOTTOMRIGHT", -px1,  px1)
     self._triggerBg:SetColorTexture(t.input.r, t.input.g, t.input.b, self._bgAlpha)
 
-    -- _selectedText position: pl=10px, pr leaves room for chevron (16px + gap)
-    self._selectedText:ClearAllPoints()
-    self._selectedText:SetPoint("LEFT",  self._trigger, "LEFT",  TRIGGER_PL, 0)
-    self._selectedText:SetPoint("RIGHT", self._trigger, "RIGHT", -(TRIGGER_PR + CHEVRON_SIZE + GAP), 0)
-    self._selectedText:SetPoint("TOP",    self._trigger, "TOP",    0, 0)
-    self._selectedText:SetPoint("BOTTOM", self._trigger, "BOTTOM", 0, 0)
+    self:_placeTriggerText()
+    self:_remeasureNextFrame()
 
     -- Panel ring: foreground/10
     local ringA = (t.foreground.a or 1) * 0.10
@@ -548,6 +544,34 @@ function Select:_applyTheme(t)
 
     -- Adjust visible panel size (max 6 items)
     self:_updatePanelSize()
+end
+
+-- ─── _placeTriggerText ───────────────────────────────────────────────────────
+-- pl=10px, pr leaves room for the chevron (16px + gap). FR-149: the text top is
+-- on whole physical pixels with the cap nudge (Theme.placeText) instead of a
+-- TOP+BOTTOM box with JustifyV MIDDLE. Measured before at pixel-perfect scale:
+-- every h-8 row 11/12 and sm 9/10 — 1px higher than Button for the same text.
+-- The TOPRIGHT anchor stays: the width comes from the frame, which the caller
+-- sizes after Create (CLAUDE.md bug #2b).
+function Select:_placeTriggerText()
+    local T  = Craft.Theme
+    local tr = self._trigger
+    local h  = T.snapPx(self._h, tr)
+    local top = T.placeText(self._selectedText, tr, TRIGGER_PL, h, FONT_SIZE)
+    self._selectedText:SetPoint("TOPRIGHT", tr, "TOPRIGHT",
+        -T.snapPx(TRIGGER_PR + CHEVRON_SIZE + GAP, tr), -top)
+
+    self._chevron:ClearAllPoints()
+    self._chevron:SetPoint("TOPRIGHT", tr, "TOPRIGHT",
+        -T.snapPx(TRIGGER_PR, tr), -T.snapPx((h - CHEVRON_SIZE) / 2, tr))
+end
+
+-- First rasterization of a weight/size measures off on that frame (FR-149
+-- lesson 4): one coalesced re-place on the next frame.
+function Select:_remeasureNextFrame()
+    Craft.Theme.remeasureNextFrame(self, function()
+        if self.frame and self._selectedText then self:_placeTriggerText() end
+    end)
 end
 
 -- ─── _updateTriggerText ───────────────────────────────────────────────────────
@@ -590,7 +614,7 @@ function Select:_makeScrollArrow(dir, onWheel)
     frame:SetHeight(ARROW_H)
     -- Above the ScrollFrame: the bands own their strip of the panel, so a click
     -- landing on the seam can never reach the row scrolled underneath.
-    frame:SetFrameLevel(self._panel:GetFrameLevel() + 10)
+    frame:SetFrameLevel(Craft.Strata.above(self._panel, 10))
     frame:EnableMouse(true)
     frame:EnableMouseWheel(true)
     frame:SetScript("OnMouseWheel", onWheel)
@@ -632,7 +656,7 @@ end
 function Select:_scrollBy(dy)
     local maxS = self:_maxScroll()
     local cur  = self._scroll:GetVerticalScroll() or 0
-    self._scroll:SetVerticalScroll(math.min(math.max(cur + (dy or 0), 0), maxS))
+    Craft.Theme.setScroll(self._scroll, cur + (dy or 0), maxS)
     self:_layoutViewport()
 end
 
@@ -680,7 +704,7 @@ function Select:_scrollToSelected()
             end
         end
     end
-    self._scroll:SetVerticalScroll(math.min(math.max(target, 0), maxS))
+    Craft.Theme.setScroll(self._scroll, target, maxS)
     self:_layoutViewport()
 end
 

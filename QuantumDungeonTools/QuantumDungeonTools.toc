@@ -21,6 +21,7 @@ libs\Craft\Reactive.lua
 libs\Craft\theme\Presets.lua
 libs\Craft\theme\Theme.lua
 libs\Craft\theme\Shapes.lua
+libs\Craft\theme\RoundedSurface.lua
 libs\Craft\icons\Atlas.lua
 libs\Craft\icons\Icons.lua
 libs\Craft\layout\Flex.lua

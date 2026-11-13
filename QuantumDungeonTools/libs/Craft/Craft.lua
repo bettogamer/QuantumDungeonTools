@@ -4,7 +4,7 @@
 
 local ADDON_NAME, _addonTable = ...  -- "Craft" standalone, or the embedding addon's name + its per-addon table
 local CRAFT_NAME  = "Craft-2.0"  -- API name. Bumped from Craft-1.0 on the v2.0.0 break (ADR-0010 §3.2).
-local CRAFT_BUILD = 49            -- Integer. Reset to 1 with the MAJOR (new LibStub name); +1 per release.
+local CRAFT_BUILD = 50            -- Integer. Reset to 1 with the MAJOR (new LibStub name); +1 per release.
 
 -- Propagate THIS copy's build to its sibling files via the per-addon table (2nd vararg).
 -- Done BEFORE the early return below so that even when this Craft.lua bails (a newer
@@ -16,7 +16,7 @@ if _addonTable then _addonTable.CRAFT_BUILD = CRAFT_BUILD end
 local Craft = LibStub:NewLibrary(CRAFT_NAME, CRAFT_BUILD)
 if not Craft then return end  -- a newer build is already loaded; nothing to do
 
-Craft.VERSION = "2.47.0"
+Craft.VERSION = "2.48.0"
 Craft.BUILD   = CRAFT_BUILD
 _G.Craft      = Craft  -- global convenience accessor for consumer addons (e.g. Craft_Browser pages)
 
@@ -69,6 +69,24 @@ Craft.Strata = {
     popover      = "TOOLTIP",            -- Select/Combobox/Menu/Popover/Tooltip panels (topmost)
     toast        = "TOOLTIP",            -- Craft.Toast; sits over popovers by frame level (sonner z-index max)
 }
+
+-- ─── Frame-level ceiling (FR-146) ────────────────────────────────────────────
+-- The client caps frame levels at 10000 and silently clips anything above, which
+-- would reorder layers (the Badge ✕ or a button over a drag zone ending up BELOW
+-- its parent) once Craft frames stack on an already-high parent: other addons'
+-- windows, Dialog over Window over Popover (FR-033). Every Craft call that raises
+-- a frame goes through these, so none can pass the ceiling.
+Craft.MAX_FRAME_LEVEL = 10000
+
+-- level(n) → n clamped to [0, MAX_FRAME_LEVEL].
+function Craft.Strata.level(n)
+    return math.max(0, math.min(n or 0, Craft.MAX_FRAME_LEVEL))
+end
+
+-- above(frame, n) → frame's level + n (default 1), clamped to the ceiling.
+function Craft.Strata.above(frame, n)
+    return Craft.Strata.level(((frame and frame:GetFrameLevel()) or 0) + (n or 1))
+end
 
 -- mediaPath: absolute WoW path to Craft/media/. Changes when Craft is embedded in another addon.
 -- Standalone:  Interface\AddOns\Craft\media\

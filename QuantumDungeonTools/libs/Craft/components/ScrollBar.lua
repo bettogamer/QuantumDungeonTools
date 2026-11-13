@@ -120,6 +120,14 @@ function ScrollBar:Create(parent, config)
         self._dragStartScroll = self:_getScroll()
         self.thumb:SetScript("OnUpdate", function()
             if not self._dragging then return end
+            -- FR-144: the OnMouseUp can be lost (released outside the client
+            -- after an Alt-Tab, a game menu took the mouse…). Without this the
+            -- thumb kept following the cursor with no button held until the
+            -- next click. Same guard as Craft.Slider (FR-110).
+            if IsMouseButtonDown and not IsMouseButtonDown("LeftButton") then
+                self:_endDrag()
+                return
+            end
             -- positive = travelled forward (down for a vertical rail, right for a
             -- horizontal one; WoW's Y grows upwards, X rightwards)
             local cur     = self:_cursorAlong()
@@ -135,14 +143,10 @@ function ScrollBar:Create(parent, config)
         end)
     end)
 
-    self.thumb:SetScript("OnMouseUp", function()
-        self._dragging = false
-        self.thumb:SetScript("OnUpdate", nil)
-        -- Restore the resting colour
-        if self._t then
-            self.thumbTex:SetColorTexture(self._t.secondary.r, self._t.secondary.g, self._t.secondary.b, 1)
-        end
-    end)
+    self.thumb:SetScript("OnMouseUp", function() self:_endDrag() end)
+    -- A rail hidden mid-drag (its Scroll/Select/Menu closed) ends the drag too:
+    -- the OnUpdate would otherwise come back armed on the next Show.
+    self.frame:SetScript("OnHide", function() self:_endDrag() end)
 
     -- Re-check visibility when the rail gets its real size (post-layout)
     self.frame:SetScript("OnSizeChanged", function() self:Update() end)
@@ -160,8 +164,11 @@ function ScrollBar:_getScroll()
 end
 
 function ScrollBar:_setScroll(v)
-    if self._horiz then self._scrollFrame:SetHorizontalScroll(v)
-    else                self._scrollFrame:SetVerticalScroll(v) end
+    -- Whole physical px (FR-149) on the CHILD's grid: the client applies the
+    -- offset in the scroll child's units, which differ from the ScrollFrame's
+    -- when the child has its own scale (measured: Browser pixel-perfect mode,
+    -- 591.83 u of child = 591.83 px while the frame's grid said 516 px).
+    Craft.Theme.setScroll(self._scrollFrame, v, self:GetMaxScroll(), self._horiz)
 end
 
 function ScrollBar:_cursorAlong()
@@ -315,6 +322,17 @@ function ScrollBar:_onThumbEnter()
     self.thumbTex:SetColorTexture(self._t.accent.r, self._t.accent.g, self._t.accent.b, 1)
 end
 
+-- The ONE way a drag ends (mouse up, button no longer held, rail hidden).
+function ScrollBar:_endDrag()
+    if not self._dragging then return end
+    self._dragging = false
+    self.thumb:SetScript("OnUpdate", nil)
+    -- Restore the resting colour
+    if self._t then
+        self.thumbTex:SetColorTexture(self._t.secondary.r, self._t.secondary.g, self._t.secondary.b, 1)
+    end
+end
+
 function ScrollBar:_onThumbLeave()
     if self._dragging or not self._t then return end
     self.thumbTex:SetColorTexture(self._t.secondary.r, self._t.secondary.g, self._t.secondary.b, 1)
@@ -323,6 +341,7 @@ end
 -- ─── Destructor ────────────────────────────────────────────────────────────
 function ScrollBar:Destroy()
     if not self.frame then return end
+    self:_endDrag()
     self.thumb:SetScript("OnUpdate", nil)
     self._theme:unregister(self._themeHandle)
     self.frame:Hide()

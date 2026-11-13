@@ -59,6 +59,22 @@ local AVATAR_SIZE  = 24                        -- Craft.Avatar size "sm"
 local AVATAR_PAD   = 6                         -- breathing room above/below
 local AVATAR_ROW_H = AVATAR_SIZE + AVATAR_PAD * 2   -- 36, ONLY on rows with an avatar
 local FONT_SIZE   = 12   -- text-xs
+
+-- FR-149: a row's text on whole physical pixels, dropped by the cap nudge
+-- (Theme.placeText). Measured before at pixel-perfect scale: "Rank 18 · Haste"
+-- in a 28px row sat 9/10 — 1px higher than Button. `right` anchors by the right
+-- edge (x = negative inset from the row's right side).
+local function placeRowText(fs, row, x, rowH, right)
+    local T = Craft.Theme
+    local h = T.snapPx(rowH, row)
+    if not right then
+        T.placeText(fs, row, x, h, FONT_SIZE)
+        return
+    end
+    local top = T.placeText(fs, row, 0, h, FONT_SIZE)
+    fs:ClearAllPoints()
+    fs:SetPoint("TOPRIGHT", row, "TOPRIGHT", T.snapPx(x, row), -top)
+end
 local MIN_W       = 128  -- min-w-32 (dropdown floor; context uses 144 but 128 is a safe floor)
 -- Scrolling past maxHeight (FR-086). The panel already CLIPPED the overflow; these
 -- are what MOVES it. Rail geometry = Craft.Scroll's (Craft's ScrollArea mapping);
@@ -72,6 +88,42 @@ local THUMB_MIN_H = 32   -- thumb floor: a 40-row branch keeps a grabbable thumb
 -- diameter matches (same trick as RadioGroup GUTTER_COMP).
 local GUTTER_COMP = 64 / 56
 local DOT_TEX     = RADIO_DOT * GUTTER_COMP   -- visible 8px
+
+-- ─── Open-menu registry (FR-148) ────────────────────────────────────────────
+-- Radix's DropdownMenu is modal by default: while it is open, pointer events
+-- outside its content are blocked, so no outside tooltip ever opens. Craft keeps
+-- the set of open menus (root and submenus) on the SHARED Craft table — every
+-- embedded copy's Menu and Tooltip see the same set — and Tooltip.Attach asks it
+-- before showing. Weak keys: a menu dropped without Destroy can't pin the set.
+Craft._openMenus = Craft._openMenus or setmetatable({}, { __mode = "k" })
+
+-- A menu counts only while logically open AND its panel is on screen: one
+-- clipped away with its anchor (referenceHidden, FR-086) must not keep the rest
+-- of the UI silent.
+local function _live(m)
+    return m._panel and m._open and m._open:peek() and m._panel:IsShown()
+end
+
+-- IsAnyOpen() → true while any Craft.Menu panel (any copy) is open.
+function Menu.IsAnyOpen()
+    for m in pairs(Craft._openMenus) do
+        if _live(m) then return true end
+    end
+    return false
+end
+
+-- Contains(frame) → true if `frame` sits inside an open menu's panel (its rows,
+-- their tooltips' anchors): those keep their tooltips (FR-085).
+function Menu.Contains(frame)
+    for m in pairs(Craft._openMenus) do
+        local panel, p = m._panel, frame
+        while p do
+            if p == panel then return true end
+            p = p.GetParent and p:GetParent() or nil
+        end
+    end
+    return false
+end
 
 -- ─── Create ─────────────────────────────────────────────────────────────────
 -- NOTE: no `parent` — the panel lives in UIParent (strata TOOLTIP) and is anchored
@@ -132,7 +184,7 @@ function Menu:Create(config)
     -- for it (see _updatePanelSize). Above the rows, like Select's scroll bands, so
     -- a click on the seam can never reach the row scrolled beneath it.
     self._bar = CreateFrame("Frame", nil, self._panel)
-    self._bar:SetFrameLevel((self._panel:GetFrameLevel() or 0) + 10)
+    self._bar:SetFrameLevel(Craft.Strata.above(self._panel, 10))
     self._bar:SetWidth(BAR_W)
     self._bar:EnableMouseWheel(true)
     self._bar:SetScript("OnMouseWheel", onWheel)
@@ -309,7 +361,7 @@ function Menu:_makeRow()
 
     local del = CreateFrame("Button", nil, row)         -- ✕ delete (own hit-area)
     del:SetSize(DELETE_SIZE + GAP, ROW_H)
-    del:SetFrameLevel(row:GetFrameLevel() + 1)
+    del:SetFrameLevel(Craft.Strata.above(row, 1))
     local delTex = del:CreateTexture(nil, "ARTWORK")
     delTex:SetSize(DELETE_SIZE, DELETE_SIZE)
     delTex:SetPoint("CENTER", del, "CENTER")
@@ -451,8 +503,7 @@ function Menu:_renderRow(item, cfg)
         item._interactive = false
         item._disabled = false
         row:EnableMouse(false)
-        item.label:ClearAllPoints()
-        item.label:SetPoint("LEFT", row, "LEFT", ITEM_PL, 0)
+        placeRowText(item.label, row, ITEM_PL, rowH)
         item.label:SetTextColor(t.mutedForeground.r, t.mutedForeground.g, t.mutedForeground.b)
         item._baseColor = t.mutedForeground
         return rowH, ITEM_PL + item.label:GetStringWidth() + ITEM_PR
@@ -503,8 +554,7 @@ function Menu:_renderRow(item, cfg)
         item.icon:Show()
         x = leftPad + ICON_SIZE + GAP
     end
-    item.label:ClearAllPoints()
-    item.label:SetPoint("LEFT", row, "LEFT", x, 0)
+    placeRowText(item.label, row, x, rowH)
 
     local contentW
     if isCR then
@@ -533,8 +583,7 @@ function Menu:_renderRow(item, cfg)
         if cfg.rightText and cfg.rightText ~= "" then
             self._theme:applyFont(item.rightText, t.font, FONT_SIZE, self._cfg.fontFlags)
             item.rightText:SetText(cfg.rightText)
-            item.rightText:ClearAllPoints()
-            item.rightText:SetPoint("RIGHT", row, "RIGHT", -rightPad, 0)
+            placeRowText(item.rightText, row, -rightPad, rowH, true)
             item.rightText:SetTextColor(t.mutedForeground.r, t.mutedForeground.g, t.mutedForeground.b)
             item.rightText:Show()
             contentW = contentW + GAP + item.rightText:GetStringWidth()
@@ -556,8 +605,7 @@ function Menu:_renderRow(item, cfg)
         if cfg.rightText and cfg.rightText ~= "" then
             self._theme:applyFont(item.rightText, t.font, FONT_SIZE, self._cfg.fontFlags)
             item.rightText:SetText(cfg.rightText)
-            item.rightText:ClearAllPoints()
-            item.rightText:SetPoint("RIGHT", row, "RIGHT", -rightPad, 0)
+            placeRowText(item.rightText, row, -rightPad, rowH, true)
             item.rightText:SetTextColor(t.mutedForeground.r, t.mutedForeground.g, t.mutedForeground.b)
             item.rightText:Show()
             contentW = contentW + GAP + item.rightText:GetStringWidth()
@@ -873,7 +921,7 @@ function Menu:_openSubmenu(item)
     self._subRow = item
     self:_escSuspend()                       -- Esc now belongs to the child
     -- Both panels sit in TOOLTIP strata, so the child must win on frame level.
-    sub._panel:SetFrameLevel((self._panel:GetFrameLevel() or 0) + 10)
+    sub._panel:SetFrameLevel(Craft.Strata.above(self._panel, 10))
     sub:_doOpen(self._panel)                 -- child adopts the parent panel's scale
     self:_syncSubmenuVisibility()            -- a branch opened while scrolled: settle it now
 
@@ -971,7 +1019,7 @@ function Menu:_scrollBy(dy)
 end
 
 function Menu:_setScroll(v)
-    self._scroll:SetVerticalScroll(math.min(math.max(v or 0, 0), self:_maxScroll()))
+    Craft.Theme.setScroll(self._scroll, v, self:_maxScroll())
     self:_updateScrollbar()
     self:_syncSubmenuVisibility()
 end
@@ -1193,11 +1241,13 @@ function Menu:_doOpen(scaleRef)
     self._hidden:set(false)
     self._refHidden:set(false)
     self._open:set(true)
+    Craft._openMenus[self] = true   -- FR-148
 end
 
 function Menu:Close()
     if not self._open:peek() then return end
     self._open:set(false)
+    Craft._openMenus[self] = nil    -- FR-148
 
     self:_closeSubmenu()
     self:_disposeItemEffects()
@@ -1244,6 +1294,7 @@ function Menu:Destroy()
         if av then av:Destroy(); self._items[i].avatar = nil end
     end
     if self._catcher then self._catcher:Hide(); self._catcher = nil end
+    Craft._openMenus[self] = nil
     self._panel:Hide()
     self._panel = nil
 end
