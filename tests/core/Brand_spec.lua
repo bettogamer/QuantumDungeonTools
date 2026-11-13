@@ -11,7 +11,7 @@ describe("Brand", function()
   end)
 
   it("pinta con el color primario (oro de Forever)", function()
-    assert_eq(Brand.paint("primary", "QDT"), "|cffF2B84BQDT|r")
+    assert_eq(Brand.paint("primary", "QDT"), "|cffF5BF57QDT|r")
   end)
 
   it("acepta un hex directo si no es un nombre de la paleta", function()
@@ -19,6 +19,6 @@ describe("Brand", function()
   end)
 
   it("el prefijo del chat es QDT en oro", function()
-    assert_eq(Brand.prefix(), "|cffF2B84BQDT|r: ")
+    assert_eq(Brand.prefix(), "|cffF5BF57QDT|r: ")
   end)
 end)

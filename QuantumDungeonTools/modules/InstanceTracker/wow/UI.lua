@@ -741,7 +741,8 @@ function UI:Init()
     font = "bettogeo", headingFont = "bettogeo",
     overrides = {
       fontFlags = "OUTLINE, SLUG",   -- vector (Slug) outline: thinner and crisper than bitmap OUTLINE
-      primary = C.gold, primaryForeground = C.panel,
+      primary = C.gold, primaryForeground = C.panel,             -- Forever gold on navy (9.7:1)
+      sidebarPrimary = C.gold, sidebarPrimaryForeground = C.panel,
       foreground = C.cream, mutedForeground = C.muted,
       popover = C.panel, popoverForeground = C.cream,
       border = C.hairline, destructive = C.red,

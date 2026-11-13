@@ -2,7 +2,7 @@
 -- Instance Tracker widget (plan M1 F2). No hex anywhere else in the UI: it asks for a TONE
 -- (semantic) or a token here.
 --
--- Palette anchored on the WoW Forever logo (doc 00 section 7, artboards of the design canvas):
+-- Palette sampled from the WoW Forever key art (canvas artboard "Paleta", proposal B, 2026-11-13):
 -- gold = progress, turquoise = ahead / record / XP, red = behind / deaths, cream = text.
 local _, ns = ...
 local Brand = ns.Brand
@@ -10,7 +10,7 @@ local Brand = ns.Brand
 local Style = {}
 ns.InstanceTrackerStyle = Style
 
--- "F2B84B" (+ alpha) -> { r, g, b, a } in 0..1 (what SetColorTexture / SetTextColor take).
+-- "F5BF57" (+ alpha) -> { r, g, b, a } in 0..1 (what SetColorTexture / SetTextColor take).
 function Style.rgba(hex, a)
   local r, g, b = hex:match("^#?(%x%x)(%x%x)(%x%x)$")
   assert(r, "Style.rgba: bad hex " .. tostring(hex))
@@ -18,17 +18,17 @@ function Style.rgba(hex, a)
 end
 
 local HEX = {
-  gold      = Brand.COLORS.primary,   -- F2B84B
-  turquoise = Brand.COLORS.accent,    -- 3FD0D4
-  cream     = Brand.COLORS.text,      -- F8EEDB
-  red       = Brand.COLORS.danger,    -- FF5A4E
-  muted     = "93B4B2",               -- secondary text
-  sand      = "E6D8B8",               -- difficulty tag text
-  xpLight   = "7FE3E6",               -- XP numbers, FIRST TIME tag
-  xpBase    = "1F8A8F",               -- XP owned before the run
-  track     = "0F2A2C",               -- bar track
-  panel     = "081A1B",               -- tooltip / compact panel, cut ticks of a finished run
-  tickIdle  = "5F7F7E",               -- PB split not reached yet
+  gold      = Brand.COLORS.primary,   -- F5BF57
+  turquoise = Brand.COLORS.accent,    -- 36C9E8
+  cream     = Brand.COLORS.text,      -- F7EDDC
+  red       = Brand.COLORS.danger,    -- FF6B4F
+  muted     = "93B6C2",               -- secondary text (foam toward sea)
+  sand      = "E6D2A9",               -- difficulty tag text (parchment)
+  xpLight   = "8FE3F5",               -- XP numbers, FIRST TIME tag
+  xpBase    = "0A8FB0",               -- XP owned before the run
+  track     = "06364A",               -- bar track (abyss)
+  panel     = "042239",               -- tooltip / compact panel, cut ticks of a finished run
+  tickIdle  = "5A808E",               -- PB split not reached yet
   white     = "FFFFFF",
 }
 Style.HEX = HEX

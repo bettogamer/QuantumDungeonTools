@@ -4,7 +4,7 @@
 local helper = dofile("tests/helper.lua")
 
 local ns = helper.newNS()
-ns.Brand = { COLORS = { primary = "F2B84B", accent = "3FD0D4", text = "F8EEDB", danger = "FF5A4E" } }
+ns.Brand = { COLORS = { primary = "F5BF57", accent = "36C9E8", text = "F7EDDC", danger = "FF6B4F" } }
 for _, f in ipairs({ "core/Format.lua", "modules/InstanceTracker/core/Run.lua",
   "modules/InstanceTracker/core/DungeonData.lua", "modules/InstanceTracker/core/Dungeons.lua",
   "modules/InstanceTracker/core/Style.lua", "modules/InstanceTracker/core/View.lua",
@@ -194,10 +194,10 @@ end)
 
 describe("InstanceTrackerStyle", function()
   it("convierte hex a rgba y da códigos de color por tono", function()
-    local c = Style.rgba("F2B84B")
-    assert_true(near(c.r, 242 / 255))
-    assert_eq(Style.code("progress"), "|cfff2b84b")
-    assert_eq(Style.code("ahead"), "|cff3fd0d4")
+    local c = Style.rgba("F5BF57")
+    assert_true(near(c.r, 245 / 255))
+    assert_eq(Style.code("progress"), "|cfff5bf57")
+    assert_eq(Style.code("ahead"), "|cff36c9e8")
   end)
 
   it("todos los tonos que usa la vista existen", function()
