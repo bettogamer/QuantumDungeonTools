@@ -15,6 +15,9 @@ Lordaeron Captain).
 - **No usa** ninguna API de Encounter Journal (0 coincidencias de `EJ_*`/`C_EncounterJournal`).
 - Licencia: `NaowhForever\LICENSE.md:6-7` «all rights reserved» → **no copiar sus tablas**. Los
   IDs y nombres de encuentros son datos del juego y se pueden medir por nuestra cuenta.
+- **Nombres en inglés en la tabla generada (`core/DungeonData.lua`): aprobado por el owner
+  (2026-11-13).** Hacen falta porque el lockout solo da nombres; otros idiomas los cubre `learned`
+  (`name → encounterID` aprendido de `ENCOUNTER_END`).
 
 Ruins of Lordaeron según NF (orden de su tabla, no un campo de secuencia):
 

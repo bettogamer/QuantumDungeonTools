@@ -257,10 +257,10 @@ al final, `order`/`rare` persistidos; una run guardada antes se clasifica al car
 `total()`/`killedCount()`/fin de run sin rares; la vista quita los rares de segmentos y marcas.
 Fila rare en `UI.lua` (owner, 2026-11-13, revisando el lienzo): **«RARO [6:10] Nombre»** (etiqueta
 DELANTE del tiempo, así «[tiempo] nombre» se lee como en los jefes), 13 px, atenuada viva y **dorada
-muerta** (no crema: crema = jefe pendiente). Tooltip del compacto: «Nombre  RARO». El lienzo v21 aún
-pinta «[6:10] RARO …» y el muerto en crema en Primera vez: actualizarlo si se vuelve a tocar.
-Falta probarlo in-game (`/qdt it demo live|done|first|compact`). **Nombres en inglés en la tabla**:
-desviación de doc 11 → confirmar con el owner.
+muerta** (no crema: crema = jefe pendiente). Tooltip del compacto: «Nombre  RARO». Lienzo
+actualizado a esta fila (v23: Main, Completada, Primera vez).
+Falta probarlo in-game (`/qdt it demo live|done|first|compact`). Nombres en inglés en la tabla:
+aprobado por el owner (doc 11).
 (2) próxima run del owner en una mazmorra que da XP (más larga):
 el registro pasivo de check f1 sigue armado (600 líneas) → leer con un reductor y verificar el
 muestreo de XP (`SampleXP`); (3) reset de instancia por el mensaje «X has been reset.»; (4) punto 7
