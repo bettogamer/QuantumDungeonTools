@@ -34,6 +34,10 @@ local lastView         -- what was painted last (the tick repaints only when the
 
 local function db() return ns.db.instanceTracker end
 
+-- BettoGeo: descender 192 of a 932 line box (hhea; the Win metrics give the same ~20 %), so
+-- the baseline sits that fraction of the measured line height above the FontString's bottom.
+local DESCENT = 192 / 932
+
 ------------------------------------------------------------------------------
 -- Building blocks
 ------------------------------------------------------------------------------
@@ -77,7 +81,6 @@ end
 local function newTag(parent, font)
   local tag = CreateFrame("Frame", nil, parent)
   tag.text = newText(tag, font)
-  tag.text:SetPoint("CENTER", tag, "CENTER", 0, 0)
   tag.border = newBorder(tag)
   return tag
 end
@@ -85,8 +88,14 @@ end
 local function setTag(tag, text, textColor, borderColor, padX, padY)
   setText(tag.text, text, textColor)
   colorBorder(tag.border, borderColor)
-  tag:SetSize(math.ceil(tag.text:GetStringWidth()) + 2 * (padX or S.tagPadX),
-    math.ceil(tag.text:GetStringHeight()) + 2 * (padY or S.tagPadY) + 2)
+  padX = padX or S.tagPadX
+  local th = tag.text:GetStringHeight()
+  tag:SetSize(math.ceil(tag.text:GetStringWidth()) + 2 * padX,
+    math.ceil(th) + 2 * (padY or S.tagPadY) + 2)
+  -- Whole-pixel left anchor (CENTER on an odd width rounded the text 1-2 px off), and down by
+  -- half the empty descender gap so the letters, not the line box, look centered.
+  tag.text:ClearAllPoints()
+  tag.text:SetPoint("LEFT", tag, "LEFT", padX, -math.floor(th * DESCENT / 2 + 0.5))
 end
 
 -- Chains the shown regions right-to-left inside `row` (pieces[1] is the rightmost).
@@ -119,15 +128,12 @@ end
 
 -- Baseline alignment (design: align-items: baseline). Anchoring by BOTTOM is not enough: the
 -- descender gap grows with the font size, so 12 px text beside the 42 px clock sat ~6 px low.
--- BettoGeo: descender 192 of a 932 line box (hhea; the Win metrics give the same ~20 %), so the
--- baseline is that fraction of the measured line height above the bottom of the FontString.
-local DESCENT = 192 / 932
-
+-- DESCENT (top of file) gives the baseline inside a FontString.
 local function descentOf(r)
   if r.GetStringHeight then return r:GetStringHeight() * DESCENT end
-  if r.text then   -- tag: its text is centered inside the border
+  if r.text then   -- tag: its text is centered inside the border, nudged down (setTag)
     local th = r.text:GetStringHeight()
-    return (r:GetHeight() - th) / 2 + th * DESCENT
+    return (r:GetHeight() - th) / 2 - math.floor(th * DESCENT / 2 + 0.5) + th * DESCENT
   end
   return 0
 end
