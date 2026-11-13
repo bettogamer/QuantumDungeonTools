@@ -81,10 +81,8 @@ describe("InstanceTrackerView: en curso con récord (Main)", function()
     assert_true(near(v.xp.rested, 0.80))
   end)
 
-  it("instancias 8/10 con tiempo para liberar", function()
-    assert_eq(v.instances.count, 8)
-    assert_eq(v.instances.freeIn, "12:40")
-    assert_false(v.instances.full)
+  it("las instancias por hora no van en el widget (solo en el tooltip Detalle)", function()
+    assert_eq(v.instances, nil)
   end)
 end)
 
@@ -146,9 +144,6 @@ describe("InstanceTrackerView: primera vez (PrimeraVez)", function()
     assert_eq(rare.tone, "progress")
   end)
 
-  it("instancias por debajo de 7 no se muestran", function()
-    assert_eq(v.instances, nil)
-  end)
 
   it("con un jefe ya muerto al entrar no promete récord y lo pinta apagado", function()
     local run = Run.fromTable({ name = "X", listKnown = true, startedAt = 0, xp = 0,

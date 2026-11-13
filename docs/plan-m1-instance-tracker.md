@@ -237,7 +237,7 @@ también lo muestra. Historial y grupo se leen solo al pasar el ratón. Specs: `
 ## F5 — Contador 10/hora, aviso 10/10, toast de fin de run
 
 **Alcance:** contador de instancias por hora a nivel de cuenta (todos los personajes, ventana
-deslizante de 3600 s, sin contar dos veces la misma copia), línea contextual del widget, aviso al
+deslizante de 3600 s, sin contar dos veces la misma copia), sección INSTANCIAS del tooltip Detalle (la etiqueta del widget se quitó: owner 2026-11-13, robaba la fila de totales), aviso al
 entrar en una instancia nueva estando a 10/10 (artboard Avisos) y toast al terminar la run con
 botón para compartirla en el grupo (troceado a 255 caracteres y enviado con `pcall`, como `SendLine` de NF).
 

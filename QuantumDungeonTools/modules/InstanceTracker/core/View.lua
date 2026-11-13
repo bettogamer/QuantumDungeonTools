@@ -1,14 +1,13 @@
 -- modules/InstanceTracker/core/View.lua -- PURE LOGIC (Lua 5.1, ZERO WoW API).
 --
--- Turns a Run (core/Run.lua) plus what surrounds it (personal record, XP snapshot, instances
--- per hour, deaths) into WHAT the widget paints: texts already formatted and semantic TONES
+-- Turns a Run (core/Run.lua) plus what surrounds it (personal record, XP snapshot, deaths)
+-- into WHAT the widget paints: texts already formatted and semantic TONES
 -- (core/Style.lua maps them to colors). wow/UI.lua only lays it out, so every state of the
 -- design (live with record, completed, first time, compact) is testable headless.
 --
 -- View.build(run, opts) -> view | nil
 --   opts.pb        = nil | { total = sec, splits = { [bossName] = sec since start } }   (F3)
 --   opts.xp        = nil | { level, xp, max, rested, atMax }   plain numbers (wow/ scrubs them)
---   opts.instances = nil | { count, limit, freeIn = sec | nil }                          (F5)
 --   opts.deaths    = nil | number                                                        (F3)
 -- Every opts field may be missing: the widget simply hides what it does not get.
 local _, ns = ...
@@ -16,8 +15,6 @@ local Format = ns.Format
 
 local View = {}
 ns.InstanceTrackerView = View
-
-View.INSTANCES_FROM = 7   -- "Instances X/10" only shows from this count on (design, level 2)
 
 local function num(v) return type(v) == "number" and v == v end
 
@@ -130,16 +127,6 @@ local function xpView(run, xp)
   }
 end
 
-local function instancesView(inst)
-  if type(inst) ~= "table" or not (num(inst.count) and num(inst.limit)) then return nil end
-  if inst.count < View.INSTANCES_FROM then return nil end
-  return {
-    count = inst.count, limit = inst.limit,
-    freeIn = num(inst.freeIn) and inst.freeIn > 0 and Format.clock(inst.freeIn) or nil,
-    full = inst.count >= inst.limit,
-  }
-end
-
 function View.build(run, opts)
   if not run then return nil end
   opts = opts or {}
@@ -162,7 +149,6 @@ function View.build(run, opts)
     deaths = num(opts.deaths) and opts.deaths > 0 and opts.deaths or nil,
     bosses = bossRows(run, pb),
     xp = xpView(run, opts.xp),
-    instances = instancesView(opts.instances),
   }
   -- Totals row (F4): money looted and the faction with the biggest gain; the rest go to the
   -- hover detail.

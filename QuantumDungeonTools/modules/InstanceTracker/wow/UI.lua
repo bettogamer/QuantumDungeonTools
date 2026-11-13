@@ -362,7 +362,6 @@ local function buildFull()
 
   -- Extras: "+4g 12s   +350 Undercity   [Instances 8/10 · free in 12:40]"
   W.extras = newRow(full)
-  W.instances = newTag(W.extras, FONT.small)
   W.money = newText(W.extras, FONT.small)
   W.rep = newText(W.extras, FONT.small)
   W.money:SetJustifyH("LEFT")
@@ -579,29 +578,18 @@ local function renderFull(v)
     W.xp:Hide()
   end
 
-  -- Extras (level 2, contextual): money, top reputation, instances per hour
-  if v.instances then
-    local i = v.instances
-    local text = L.IT_INSTANCES:format(i.count, i.limit) .. (i.freeIn and L.IT_INSTANCES_FREE:format(i.freeIn) or "")
-    local color = i.full and C.red or C.gold
-    setTag(W.instances, text, color, i.full and C.red or C.goldHalf)
-  end
-  W.instances:SetShown(v.instances ~= nil)
+  -- Totals row: money + top reputation, from the bars' left edge. The instances per hour live
+  -- only in the detail tooltip (owner, 2026-11-13: the tag ate the row and pushed the bosses).
   if v.copper then setText(W.money, moneyText(v.copper), C.cream) end
   W.money:SetShown(v.copper ~= nil)
   if v.rep then setText(W.rep, repText(v.rep), C.muted) end
   W.rep:SetShown(v.rep ~= nil)
-  if v.instances or v.copper or v.rep then
-    -- Design: space-between. Money + reputation start at the bars' left edge, the instances
-    -- tag sits at the right one (a right-to-left chain left the coins hanging past the bar).
-    W.instances:ClearAllPoints()
-    W.instances:SetPoint("RIGHT", W.extras, "RIGHT", 0, 0)
-    -- The reputation gets what money and the tag leave: a long faction name is cut with "..."
+  if v.copper or v.rep then
+    -- The reputation gets what money leaves: a long faction name is cut with "..."
     -- by the FontString, and hidden when the gap is too small (the detail tooltip has it all).
     if W.rep:IsShown() then
       local room = S.width
       if W.money:IsShown() then room = room - math.ceil(W.money:GetStringWidth()) - S.extrasGap end
-      if W.instances:IsShown() then room = room - math.ceil(W.instances:GetWidth()) - S.extrasGap end
       W.rep:SetWidth(0)
       local natural = math.ceil(W.rep:GetStringWidth())
       if room < S.repMinW then
@@ -622,7 +610,7 @@ local function renderFull(v)
         left = r
       end
     end
-    place(W.extras, heightOf({ W.instances, W.rep, W.money }), 2)
+    place(W.extras, heightOf({ W.rep, W.money }), 2)
   else
     W.extras:Hide()
   end
