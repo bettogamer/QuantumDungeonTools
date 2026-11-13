@@ -282,6 +282,22 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 - [ ] Run completada: salir y volver a entrar (o `/reload` dentro) → sigue mostrándose Completada
   con su tiempo, no una run vacía.
 
+## Siguiente (handoff 2026-11-13, sesión F4b)
+
+Estado: F4 hecha en código y alineada con el lienzo (v35). Decisiones de diseño de hoy: sin etiqueta de
+instancias en el widget (solo tooltip + aviso 10/10), fila de totales a la DERECHA con 20 px entre oro y
+reputación (opción B), lista de jefes con `bossTop` 4, monedas 2/5 px, tooltip en BettoGeo Medium, fuente al
+tamaño del diseño y geometría ×1000/932. Regla: diseño antes que código; colores solo de la paleta B.
+
+Pendiente, en este orden:
+1. **Limpieza del lienzo** (pedido del owner): en «Paleta» dejar SOLO la propuesta B elegida (quitar A y C
+   y el selector); revisar «Primary del tema Craft» (dejar solo la elegida: oro con texto navy); borrar el
+   artboard de comparación «Fila de totales: A / B / C» (ya decidido B); repasar que todos los artboards
+   usan la paleta B (hecho en v31) y que las notas del lienzo no mencionan cosas quitadas. Diseño solo.
+2. Recortes con «…» de nombres de jefe/raro y de la mazmorra en la cabecera (ui-critic, docs/14 §2 y §5) y
+   tokens para los márgenes de 2 px sueltos de UI.lua (§4). Código, sin cambio visual.
+3. F5 (abajo).
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
