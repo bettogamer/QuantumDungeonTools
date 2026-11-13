@@ -26,9 +26,11 @@
 - **Causa (confirmada in-game 2026-11-13: con ×0.932 reloj/barra = 0.32, igual que el artboard):** CSS dimensiona por el
   em (upem = 1000) y WoW ajusta la caja de línea (hhea ascender + |descender| = 740 + 192 = 932 en
   BettoGeo) a la altura pedida → glifos ×1000/932.
-- **Patrón correcto:** un factor único `Style.EM = 932/1000` aplicado en `applyFont`; los
-  tamaños de `Style.FONT` se quedan como en el diseño. Otra fuente = recalcular el factor con
-  sus métricas (`head.unitsPerEm`, `hhea`).
+- **Patrón correcto:** los tamaños de fuente se quedan como en el diseño (owner: bajarlos «se
+  sale del diseño») y la GEOMETRÍA crece en la misma proporción: `Style.GEO = 1000/932` multiplica
+  todo `Style.SIZE` (ancho, alturas de barra, huecos). Encoger la fuente ×0.932 también cuadraba
+  las proporciones, pero el owner lo rechazó. Otra fuente = recalcular con sus métricas
+  (`head.unitsPerEm`, `hhea`).
 - **Cómo se comprueba:** captura in-game junto al artboard: el reloj y las barras guardan la
   misma proporción.
 - **Origen:** M1 F4b, revisión visual del owner contra el artboard Main.
