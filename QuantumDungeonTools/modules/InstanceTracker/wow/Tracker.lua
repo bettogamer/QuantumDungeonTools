@@ -125,6 +125,31 @@ function T:XPSnapshot()
   return cur
 end
 
+-- Party members as "Name" or "Name-Realm" (party units are never identity-restricted, but the
+-- 12.1.5 engine still gets the secret guard first). Returns the Detail.groupKey signature.
+function T:GroupKey()
+  local names = {}
+  for i = 1, 4 do
+    local unit = "party" .. i
+    local okE, exists = pcall(UnitExists, unit)
+    if okE and not issecretvalue(exists) and exists then
+      local ok, name, realm = pcall(UnitName, unit)
+      name = ok and safeStr(name) or nil
+      realm = ok and safeStr(realm) or nil
+      if name then names[#names + 1] = realm and (name .. "-" .. realm) or name end
+    end
+  end
+  return ns.InstanceTrackerDetail.groupKey(names)
+end
+
+-- The group a run keeps is the last one seen while it was live (it finished with that one).
+function T:SampleGroup()
+  local run = self.run
+  if run and not run:isFinished() and not run.closed and not run.pausedAt then
+    run.group = self:GroupKey()
+  end
+end
+
 local function requestLockout()
   if RequestRaidInfo then pcall(RequestRaidInfo) end
 end
@@ -179,6 +204,7 @@ function T:StartRun(inst, copy)
   self.run = newRun(inst)
   self.copyPending = false
   if copy then self.run:observeCopy(copy) end
+  self:SampleGroup()
   self:Refresh()
 end
 
@@ -193,6 +219,7 @@ function T:Refresh()
         self:_close()
         self.run = newRun(inst)
         run = self.run
+        self:SampleGroup()
       end
       run:setBosses(list)
     end
@@ -262,6 +289,7 @@ end
 function T:PLAYER_ENTERING_WORLD() self:CheckZone() end
 
 -- Deaths only count inside the instance, while the run is live (Run:addDeath guards the rest).
+function T:GROUP_ROSTER_UPDATE() self:SampleGroup() end
 function T:PLAYER_DEAD()
   if self.run and self.inInstance and self.run:addDeath() then self:_notify("data") end
 end
@@ -374,7 +402,7 @@ local EVENTS = {
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
   "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
   "CHAT_MSG_SYSTEM", "PLAYER_LOGOUT", "PLAYER_DEAD",
-  "CHAT_MSG_MONEY", "CHAT_MSG_COMBAT_FACTION_CHANGE",
+  "CHAT_MSG_MONEY", "CHAT_MSG_COMBAT_FACTION_CHANGE", "GROUP_ROSTER_UPDATE",
 }
 
 local frame

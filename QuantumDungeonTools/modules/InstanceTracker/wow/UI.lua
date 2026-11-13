@@ -14,6 +14,7 @@
 local _, ns = ...
 local L, T = ns.L, ns.InstanceTracker
 local View, Style, Demo = ns.InstanceTrackerView, ns.InstanceTrackerStyle, ns.InstanceTrackerDemo
+local Detail, Records = ns.InstanceTrackerDetail, ns.InstanceRecords
 local S, C, FONT = Style.SIZE, Style.C, Style.FONT
 
 local UI = {}
@@ -224,6 +225,69 @@ local function makeHandle(frame)
 end
 
 ------------------------------------------------------------------------------
+-- Hover detail (F4b, artboard «Detalle»)
+------------------------------------------------------------------------------
+-- The detail needs the history and the group: read only on hover, never on the clock tick.
+local function detailSource()
+  if demo then return Demo.get(demo) end
+  local run = T.run
+  if not run then return nil end
+  return run, {
+    xp = T:XPSnapshot(), history = T:History(), record = Records.get(db().records, run),
+    group = T:GroupKey(),
+  }
+end
+
+local SECTION_TITLE = { pace = "IT_D_PACE", rep = "IT_D_REP", records = "IT_D_RECORDS" }
+
+local function detailRow(r)
+  local left, right
+  if r.id == "xpHour" then
+    left, right = L.IT_D_XP_HOUR, r.text
+  elseif r.id == "goldHour" then
+    left, right = L.IT_D_GOLD_HOUR, moneyText(r.copper):sub(2)   -- a rate: no "+"
+  elseif r.id == "toLevel" then
+    left, right = L.IT_D_TO_LEVEL:format(r.level), (r.runs == 1 and L.IT_D_RUN or L.IT_D_RUNS):format(r.runs)
+  elseif r.id == "faction" then
+    left, right = r.name, (r.amount > 0 and "+" or "") .. r.amount
+  elseif r.id == "personal" then
+    left, right = L.IT_D_PERSONAL, r.text
+  elseif r.id == "group" then
+    left, right = L.IT_D_GROUP:format(r.runs), r.text
+  elseif r.id == "nextSlot" or r.id == "thenSlot" then
+    left = r.id == "nextSlot" and L.IT_D_NEXT_SLOT or L.IT_D_THEN_SLOT
+    right = L.IT_D_IN:format(r.text)
+  end
+  return { left = left, right = right, leftColor = C.cream, rightColor = Style.tone(r.tone) }
+end
+
+local function detailLines()
+  local run, opts = detailSource()
+  local sections = Detail.build(run, opts)
+  if #sections == 0 then return { { left = L.IT_D_EMPTY, leftColor = C.muted } } end
+  local lines = {}
+  for i, sec in ipairs(sections) do
+    local title = sec.id == "instances" and L.IT_D_INSTANCES:format(sec.count, sec.limit) or L[SECTION_TITLE[sec.id]]
+    lines[#lines + 1] = { left = title, leftColor = C.muted, separator = i > 1 or nil }
+    for _, r in ipairs(sec.rows) do lines[#lines + 1] = detailRow(r) end
+  end
+  return lines
+end
+
+-- Hover without eating clicks: the HUD is transparent and must not block the world under it.
+local function attachDetail(frame, catchHover)
+  if catchHover then
+    if frame.SetMouseMotionEnabled then
+      frame:SetMouseMotionEnabled(true)
+      if frame.SetMouseClickEnabled then frame:SetMouseClickEnabled(false) end
+    else
+      frame:EnableMouse(true)
+    end
+  end
+  Craft.Tooltip.Attach(frame, { lines = detailLines, fontFlags = "", side = "left", delay = 150 })
+end
+
+------------------------------------------------------------------------------
 -- Full layout
 ------------------------------------------------------------------------------
 local function buildFull()
@@ -298,6 +362,9 @@ local function buildFull()
 
   W.bosses = {}
   W.rares = {}
+
+  attachDetail(full, true)
+  attachDetail(W.head, false)   -- the header grabs the mouse (drag): it shows the detail too
 end
 
 local function bossRow(i)

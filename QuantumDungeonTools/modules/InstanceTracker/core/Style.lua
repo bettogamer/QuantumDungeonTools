@@ -56,6 +56,7 @@ Style.TONE = {
   cut      = C.panel,
   pre      = C.muted,
   idle     = C.track,
+  xp       = C.xpLight,
 }
 
 function Style.tone(name) return Style.TONE[name] or C.cream end

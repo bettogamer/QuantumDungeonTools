@@ -25,7 +25,7 @@ local function never() return false end
 local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
-  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper",
+  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper", "group",
 }
 
 -- info = { instanceID = number, name = string, difficulty = string }
@@ -55,6 +55,7 @@ function Run.new(info, deps)
   self.pb = nil           -- the record this run races against (core/Records.lua copy), set at start
   self.copper = 0         -- money the player looted during the run (F4)
   self.rep = {}           -- reputation gained during the run: { [factionName] = amount } (F4)
+  self.group = nil        -- signature of the party (Detail.groupKey), last seen while live (F4b)
   return self
 end
 

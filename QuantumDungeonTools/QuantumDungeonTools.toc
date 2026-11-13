@@ -75,6 +75,7 @@ modules\InstanceTracker\core\DungeonData.lua
 modules\InstanceTracker\core\Dungeons.lua
 modules\InstanceTracker\core\Style.lua
 modules\InstanceTracker\core\View.lua
+modules\InstanceTracker\core\Detail.lua
 modules\InstanceTracker\core\Demo.lua
 modules\InstanceTracker\wow\Tracker.lua
 modules\InstanceTracker\wow\UI.lua

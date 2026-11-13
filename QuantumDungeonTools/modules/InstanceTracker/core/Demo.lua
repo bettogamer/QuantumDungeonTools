@@ -55,12 +55,21 @@ local FIRST_KILLS = { Witherfang = 238, ["The Butcher"] = 521, ["Viktor the Vile
   ["Lordaeron Captain"] = 370 }
 local XP_MAX = 88000
 
+-- Detalle: two earlier clean runs with this group (best 28:05) and one with another group.
+local GROUP = "Ann,Bob,Cid,Dee"
+local function past(elapsed, group)
+  local r = makeRun(KILLS, elapsed, true, 39800)
+  r.group = group
+  return r:toTable()
+end
+
 local SCENARIOS = {
   -- Main: 16:22 with 3/6, record 31:40, ahead by 0:17.
   live = function()
     return withLoot(makeRun(LIVE_KILLS, 982, false, 18450), 41200, { Undercity = 350 }), {
-      pb = PB, deaths = 2, instances = { count = 8, limit = 10, freeIn = 760 },
+      pb = PB, deaths = 2, instances = { count = 8, limit = 10, freeIn = 760, slots = { 760, 1275 } },
       xp = { level = 54, xp = 54560, max = XP_MAX, rested = 15840 },
+      group = GROUP, history = { past(1685, GROUP), past(1902, GROUP), past(1750, "Zed") },
     }
   end,
   -- Completada: 29:51, new record by 1:49, crossed a level.
