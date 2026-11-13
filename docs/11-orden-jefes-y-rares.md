@@ -36,6 +36,18 @@ El orden coincide con el orden real de muertes de la run del owner (2026-11-13).
   `C_EncounterJournal` sí (14 funciones, p. ej. `IsEncounterComplete`). Sin medir en Forever:
   sonda in-game con `type()` + `pcall` antes de contar con ella.
 
+## Decisión del owner (2026-11-13)
+
+Los datos (instanceID, encounterIDs, orden, rare) son **datos de Blizzard** — NF los generó con un
+script desde los datos del juego — así que QDT puede generar su propia tabla con un script en
+`scripts/` que solo extraiga esos campos (sin código, textos, loot ni modelos de NF), anotando la
+fuente en la cabecera del archivo generado.
+**Rares (owner):** se QUEDAN en la lista, solo como información (marcados como rare, con su tiempo si
+mueren), pero **no cuentan** en el X/Y de jefes ni para el fin de run: la run termina cuando mueren
+todos los jefes no-rare. Fuente preferida si está disponible: las tablas DB2 de
+Blizzard (Journal*/DungeonEncounter) del build de Forever; si no, los archivos de NF. Pendiente: hacerlo
+en sesión nueva.
+
 ## Opciones para QDT
 
 1. **Tabla propia en `core/`** por instanceID: orden + rares (por encounterID), medida por nosotros.
