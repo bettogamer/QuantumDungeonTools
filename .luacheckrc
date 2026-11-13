@@ -61,6 +61,7 @@ files = {
     ["QuantumDungeonTools/modules/InstanceTracker/wow/"] = {
         globals = {
             "CreateFrame", "UIParent", "C_Timer", "time", "geterrorhandler",
+            "GetMoneyString", "GetCoinTextureString",
             "GetInstanceInfo", "INSTANCE_RESET_SUCCESS", "GetInstanceLockTimeRemaining", "GetInstanceLockTimeRemainingEncounter",
             "RequestRaidInfo", "UnitXP", "UnitXPMax", "UnitLevel",
             -- F1 probes (CheckF1.lua, v0.1.1)
