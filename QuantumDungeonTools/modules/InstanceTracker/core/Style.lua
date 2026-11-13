@@ -38,6 +38,7 @@ for k, v in pairs(HEX) do C[k] = Style.rgba(v) end
 C.goldSoft    = Style.rgba(HEX.gold, 0.22)      -- difficulty tag border, compact separators
 C.goldHalf    = Style.rgba(HEX.gold, 0.5)       -- "Instances" tag border
 C.xpLightHalf = Style.rgba(HEX.xpLight, 0.5)    -- FIRST TIME tag border
+C.mutedHalf   = Style.rgba(HEX.muted, 0.5)      -- RARE tag border
 C.rested      = Style.rgba(HEX.turquoise, 0.22) -- rested XP extent
 C.hairline    = Style.rgba(HEX.white, 0.1)      -- 1px bar borders
 C.panelBg     = Style.rgba(HEX.panel, 0.82)     -- compact panel
@@ -81,6 +82,9 @@ Style.SIZE = {
   xpBarH    = 8,
   bossGap   = 3,
   bossTop   = 10,   -- extra space before the boss list
+  rareTop   = 4,    -- extra space before the first rare
+  rareTagPadX = 4,
+  rareTagPadY = 0,
   rowGap    = 8,    -- between the pieces of a right-aligned row
   compactPadX = 10,
   compactPadY = 6,
@@ -99,6 +103,9 @@ Style.FONT = {
   bossName  = { size = 15, weight = "medium" },
   bossTime  = { size = 13, weight = "medium" },
   bossDelta = { size = 11, weight = "medium" },
+  rareName  = { size = 13, weight = "medium" },
+  rareTime  = { size = 12, weight = "medium" },
+  rareTag   = { size = 9,  weight = "medium" },
   compact   = { size = 13, weight = "medium" },
   compactSm = { size = 11, weight = "medium" },
 }

@@ -22,6 +22,12 @@ local REFRESH_DELAY = 2   -- seconds after a kill before re-reading the lockout
 local deps = {
   now = function() return time() end,
   isSecret = issecretvalue,
+  -- Route order and rare flag from the dungeon table; `learned` (name -> encounterID, from
+  -- ENCOUNTER_END) covers other locales and names the table gets wrong.
+  resolve = function(instanceID, name)
+    local learned = ns.db and ns.db.instanceTracker and ns.db.instanceTracker.learned
+    return ns.InstanceDungeons.find(instanceID, name, learned)
+  end,
 }
 
 ------------------------------------------------------------------------------
@@ -217,9 +223,22 @@ local function bossDied(name)
   end)
 end
 
+-- Remembers name -> encounterID when the table knows that ID (persisted, locale-proof).
+local function learn(encounterID, encounterName)
+  local id, name = scrubNum(encounterID), safeStr(encounterName)
+  if not id or not name or not ns.InstanceDungeons.forEncounter(id) then return end
+  local d = db()
+  d.learned = d.learned or {}
+  if d.learned[name] ~= id then
+    d.learned[name] = id
+    if T.run then T.run:reclassify() end
+  end
+end
+
 -- ENCOUNTER_END: encounterID, encounterName, difficultyID, groupSize, success
-function T:ENCOUNTER_END(_, encounterName, _, _, success)
+function T:ENCOUNTER_END(encounterID, encounterName, _, _, success)
   if issecretvalue(success) or success ~= 1 then return end
+  learn(encounterID, encounterName)
   bossDied(encounterName)
 end
 

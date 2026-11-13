@@ -250,18 +250,18 @@ Compacto. El historial sube de 20 a **100 runs** (owner, 2026-11-12); los récor
 - [ ] `Siguiente:` escrito aquí antes de proponer cortar sesión.
 - [ ] Release v1.0 con el ritual de doc 04.
 
-**Siguiente (2026-11-13, tarde):** (1) **integrar la tabla de mazmorras en el modelo** (la tabla ya
-existe: `scripts/gen-dungeons.lua` → `core/DungeonData.lua`, 33 mazmorras / 226 jefes / 8 rares,
-indexada por encounterID porque SM y LBRS/UBRS comparten instanceID; lookup puro `core/Dungeons.lua`
-`find(instanceID, name, learned)` + `forEncounter(id)`, spec `Dungeons_spec.lua`). Falta: `Run` recibe un
-resolver en `deps` → cada jefe con `order`/`rare`, lista ordenada por ruta (desconocidos detrás, rares al
-final); `total()`/`killedCount()`/`_checkFinished` sin rares; `View.segmentBar` sin rares y fila rare con
-tono propio; `UI.lua` fila rare (13 px, Medium, atenuada vivo / crema muerto, etiqueta RARO, sin delta)
-+ el tooltip del compacto; `Tracker` aprende `name → encounterID` de `ENCOUNTER_END` (persistido, sirve
-para otros idiomas); Locale `IT_RARE` (enUS «RARE», esMX «RARO»). El lienzo ya muestra los rares en los
-8 artboards (v21) y Primera vez lleva la barra de XP. **Nombres en inglés en la tabla**: desviación de
-doc 11 (que listaba solo IDs/orden/rare), necesaria porque el lockout solo da nombres → confirmar con
-el owner. (2) próxima run del owner en una mazmorra que da XP (más larga):
+**Siguiente (2026-11-13, noche):** (1) **hecho: tabla de mazmorras integrada.** `Run` recibe
+`deps.resolve(instanceID, name)` (Tracker → `Dungeons.find` + `db.instanceTracker.learned`, que
+`ENCOUNTER_END` rellena con `name → encounterID`); la lista va por la ruta (desconocidos detrás, rares
+al final, `order`/`rare` persistidos; una run guardada antes se clasifica al cargar);
+`total()`/`killedCount()`/fin de run sin rares; la vista quita los rares de segmentos y marcas.
+Fila rare en `UI.lua` (owner, 2026-11-13, revisando el lienzo): **«RARO [6:10] Nombre»** (etiqueta
+DELANTE del tiempo, así «[tiempo] nombre» se lee como en los jefes), 13 px, atenuada viva y **dorada
+muerta** (no crema: crema = jefe pendiente). Tooltip del compacto: «Nombre  RARO». El lienzo v21 aún
+pinta «[6:10] RARO …» y el muerto en crema en Primera vez: actualizarlo si se vuelve a tocar.
+Falta probarlo in-game (`/qdt it demo live|done|first|compact`). **Nombres en inglés en la tabla**:
+desviación de doc 11 → confirmar con el owner.
+(2) próxima run del owner en una mazmorra que da XP (más larga):
 el registro pasivo de check f1 sigue armado (600 líneas) → leer con un reductor y verificar el
 muestreo de XP (`SampleXP`); (3) reset de instancia por el mensaje «X has been reset.»; (4) punto 7
 (ping). Después: `ui-critic` con capturas → cerrar F2 → F3.

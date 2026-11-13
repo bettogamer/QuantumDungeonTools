@@ -173,3 +173,76 @@ describe("InstanceRun", function()
     assert_false(r.bosses[1].killed, "la copia no comparte tablas")
   end)
 end)
+
+describe("InstanceRun con la tabla de mazmorras (resolver)", function()
+  -- Fake table: route Witherfang(1) > The Butcher(2) > The Abandoned(3); Captain is a rare.
+  local DATA = { Witherfang = { order = 1 }, ["The Butcher"] = { order = 2 }, ["The Abandoned"] = { order = 3 },
+    ["Lordaeron Captain"] = { order = 4, rare = true } }
+  local function resolve(instanceID, name)
+    if instanceID ~= 2999 then return nil end
+    return DATA[name]
+  end
+  local function names(r)
+    local out = {}
+    for i, b in ipairs(r.bosses) do out[i] = b.name end
+    return table.concat(out, ",")
+  end
+  local LIST = { { name = "Lordaeron Captain", killed = false }, { name = "Witherfang", killed = false },
+    { name = "Mystery Boss", killed = false }, { name = "The Abandoned", killed = false },
+    { name = "The Butcher", killed = false } }
+
+  it("ordena por la ruta: conocidos, luego desconocidos, rares al final", function()
+    local r = Run.new(INFO, { now = clock().now, resolve = resolve })
+    r:setBosses(LIST)
+    assert_eq(names(r), "Witherfang,The Butcher,The Abandoned,Mystery Boss,Lordaeron Captain")
+  end)
+
+  it("el rare no cuenta para el total ni para el fin de la run", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now, resolve = resolve })
+    r:setBosses(LIST)
+    assert_eq(r:total(), 4)
+    for _, n in ipairs({ "Witherfang", "The Butcher", "The Abandoned", "Mystery Boss" }) do
+      c.t = c.t + 60
+      r:markKilled(n)
+    end
+    assert_true(r:isFinished(), "termina con el rare vivo")
+    assert_eq(r:killedCount(), 4)
+  end)
+
+  it("matar el rare no suma jefes", function()
+    local r = Run.new(INFO, { now = clock().now, resolve = resolve })
+    r:setBosses(LIST)
+    r:markKilled("Lordaeron Captain")
+    assert_eq(r:killedCount(), 0)
+    assert_true(r.bosses[5].killed)
+  end)
+
+  it("reclassify recoloca un nombre que el resolver aprende después", function()
+    local learned = {}
+    local r = Run.new(INFO, { now = clock().now, resolve = function(id, n) return learned[n] or resolve(id, n) end })
+    r:setBosses(LIST)
+    learned["Mystery Boss"] = { order = 0 }
+    assert_true(r:reclassify())
+    assert_eq(names(r), "Mystery Boss,Witherfang,The Butcher,The Abandoned,Lordaeron Captain")
+  end)
+
+  it("un resolver que lanza no rompe la run", function()
+    local r = Run.new(INFO, { now = clock().now, resolve = function() error("boom") end })
+    r:setBosses(LIST)
+    assert_eq(r:total(), 5)
+  end)
+
+  it("una run guardada sin tabla se clasifica al cargarla (y no se da por terminada)", function()
+    local old = Run.new(INFO, { now = clock().now })
+    old:setBosses(LIST)
+    for _, n in ipairs({ "Witherfang", "The Butcher", "The Abandoned", "Mystery Boss" }) do old:markKilled(n) end
+    assert_false(old:isFinished(), "sin tabla el rare bloquea el fin")
+    local loaded = Run.fromTable(old:toTable(), { now = clock().now, resolve = resolve })
+    assert_eq(loaded:total(), 4)
+    assert_eq(loaded.bosses[5].name, "Lordaeron Captain")
+    assert_false(loaded:isFinished())
+    local again = Run.fromTable(loaded:toTable(), { now = clock().now })
+    assert_true(again.bosses[5].rare, "order/rare se persisten")
+  end)
+end)

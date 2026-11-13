@@ -82,11 +82,11 @@ local function newTag(parent, font)
   return tag
 end
 
-local function setTag(tag, text, textColor, borderColor)
+local function setTag(tag, text, textColor, borderColor, padX, padY)
   setText(tag.text, text, textColor)
   colorBorder(tag.border, borderColor)
-  tag:SetSize(math.ceil(tag.text:GetStringWidth()) + 2 * S.tagPadX,
-    math.ceil(tag.text:GetStringHeight()) + 2 * S.tagPadY + 2)
+  tag:SetSize(math.ceil(tag.text:GetStringWidth()) + 2 * (padX or S.tagPadX),
+    math.ceil(tag.text:GetStringHeight()) + 2 * (padY or S.tagPadY) + 2)
 end
 
 -- Chains the shown regions right-to-left inside `row` (pieces[1] is the rightmost).
@@ -230,6 +230,7 @@ local function buildFull()
   W.instances = newTag(W.extras, FONT.small)
 
   W.bosses = {}
+  W.rares = {}
 end
 
 local function bossRow(i)
@@ -240,6 +241,19 @@ local function bossRow(i)
   r.time = newText(r, FONT.bossTime)
   r.delta = newText(r, FONT.bossDelta)
   W.bosses[i] = r
+  return r
+end
+
+-- Rare row (owner, 2026-11-13): "RARE [6:10] Name", smaller, the tag before the time so the
+-- "[time] name" pair reads like a boss row.
+local function rareRow(i)
+  local r = W.rares[i]
+  if r then return r end
+  r = newRow(W.frame)
+  r.name = newText(r, FONT.rareName)
+  r.time = newText(r, FONT.rareTime)
+  r.tag = newTag(r, FONT.rareTag)
+  W.rares[i] = r
   return r
 end
 
@@ -434,23 +448,39 @@ local function renderFull(v)
 
   -- Bosses
   y = y + S.bossTop - S.gap
-  for i, b in ipairs(v.bosses) do
-    local r = bossRow(i)
+  local nb, nr = 0, 0
+  for _, b in ipairs(v.bosses) do
+    local r, pieces
     local tone = Style.tone(b.tone)
-    setText(r.name, b.name, tone)
-    setText(r.time, b.time, tone)
-    r.time:SetShown(b.time ~= "")
-    r.delta:SetShown(b.delta ~= nil)
-    if b.delta then setText(r.delta, b.delta, Style.tone(b.deltaTone)) end
-    local pieces = { r.name, r.time, r.delta }
-    chain(r, pieces, "BOTTOM", 8)
+    if b.rare then
+      nr = nr + 1
+      if nr == 1 then y = y + S.rareTop end
+      r = rareRow(nr)
+      setText(r.name, b.name, tone)
+      setText(r.time, b.time, tone)
+      r.time:SetShown(b.time ~= "")
+      setTag(r.tag, L.IT_RARE, C.muted, C.mutedHalf, S.rareTagPadX, S.rareTagPadY)
+      pieces = { r.name, r.time, r.tag }
+      chain(r, pieces, "", 8)
+    else
+      nb = nb + 1
+      r = bossRow(nb)
+      setText(r.name, b.name, tone)
+      setText(r.time, b.time, tone)
+      r.time:SetShown(b.time ~= "")
+      r.delta:SetShown(b.delta ~= nil)
+      if b.delta then setText(r.delta, b.delta, Style.tone(b.deltaTone)) end
+      pieces = { r.name, r.time, r.delta }
+      chain(r, pieces, "BOTTOM", 8)
+    end
     r:ClearAllPoints()
     r:SetPoint("TOPRIGHT", W.frame, "TOPRIGHT", 0, -y)
     r:SetHeight(heightOf(pieces))
     r:Show()
     y = y + r:GetHeight() + S.bossGap
   end
-  for i = #v.bosses + 1, #W.bosses do W.bosses[i]:Hide() end
+  for i = nb + 1, #W.bosses do W.bosses[i]:Hide() end
+  for i = nr + 1, #W.rares do W.rares[i]:Hide() end
 
   W.frame:SetHeight(math.max(1, y))
   return S.width, y
@@ -469,7 +499,8 @@ local function compactLines()
   for _, b in ipairs(v.bosses) do
     local tone = Style.tone(b.tone)
     local time = b.time ~= "" and (b.time:gsub("[%[%]]", "")) or "--"
-    lines[#lines + 1] = { left = b.name, right = time, leftColor = tone, rightColor = tone }
+    local left = b.rare and (b.name .. "  " .. Style.code("muted") .. L.IT_RARE .. "|r") or b.name
+    lines[#lines + 1] = { left = left, right = time, leftColor = tone, rightColor = tone }
   end
   if v.ref.kind == "pb" then
     lines[#lines + 1] = { separator = true }

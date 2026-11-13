@@ -6,6 +6,7 @@ local helper = dofile("tests/helper.lua")
 local ns = helper.newNS()
 ns.Brand = { COLORS = { primary = "F2B84B", accent = "3FD0D4", text = "F8EEDB", danger = "FF5A4E" } }
 for _, f in ipairs({ "core/Format.lua", "modules/InstanceTracker/core/Run.lua",
+  "modules/InstanceTracker/core/DungeonData.lua", "modules/InstanceTracker/core/Dungeons.lua",
   "modules/InstanceTracker/core/Style.lua", "modules/InstanceTracker/core/View.lua",
   "modules/InstanceTracker/core/Demo.lua" }) do
   helper.loadModule("QuantumDungeonTools/" .. f, "QuantumDungeonTools", ns)
@@ -23,7 +24,7 @@ describe("InstanceTrackerView: en curso con récord (Main)", function()
     assert_eq(v.ref.text, "31:40")
     assert_false(v.ref.struck)
     assert_eq(v.killed, 3)
-    assert_eq(v.total, 7)
+    assert_eq(v.total, 6)   -- the rare is listed but never counts
     assert_true(v.totalKnown)
     assert_eq(v.deaths, 2)
   end)
@@ -48,10 +49,23 @@ describe("InstanceTrackerView: en curso con récord (Main)", function()
     assert_eq(v.bosses[4].delta, nil)
   end)
 
-  it("barra de tiempo: relleno 51.7 % y 7 marcas, las 3 pasadas en oro", function()
+  it("orden de la ruta (tabla de mazmorras) y el rare al final, atenuado y sin delta", function()
+    local names = {}
+    for i, b in ipairs(v.bosses) do names[i] = b.name end
+    assert_eq(table.concat(names, ","),
+      "Witherfang,The Butcher,Viktor the Vile,The Abandoned,Bjork,Rath'mael,Lordaeron Captain")
+    local rare = v.bosses[7]
+    assert_true(rare.rare)
+    assert_eq(rare.tone, "muted")
+    assert_eq(rare.time, "")
+    assert_eq(rare.delta, nil)
+    assert_eq(v.bosses[1].rare, nil)
+  end)
+
+  it("barra de tiempo: relleno 51.7 % y 6 marcas (el split del rare no), las 3 pasadas en oro", function()
     assert_eq(v.bar.mode, "time")
     assert_true(near(v.bar.fill, 982 / 1900))
-    assert_eq(#v.bar.ticks, 7)
+    assert_eq(#v.bar.ticks, 6)
     assert_eq(v.bar.ticks[3].tone, "progress")
     assert_eq(v.bar.ticks[4].tone, "pending")
     assert_true(near(v.bar.ticks[1].pos, 250 / 1900))
@@ -88,7 +102,7 @@ describe("InstanceTrackerView: completada (Completada)", function()
   end)
 
   it("la barra pierde la marca del 100 % y las demás salen cortadas", function()
-    assert_eq(#v.bar.ticks, 6)
+    assert_eq(#v.bar.ticks, 5)
     assert_eq(v.bar.ticks[1].tone, "cut")
     assert_true(near(v.bar.fill, 1791 / 1900))
   end)
@@ -118,10 +132,18 @@ describe("InstanceTrackerView: primera vez (PrimeraVez)", function()
     assert_eq(v.note.kind, "firstHint")
     assert_eq(v.clockTone, "text")
     assert_eq(v.bar.mode, "segments")
-    assert_eq(#v.bar.segs, 7)
+    assert_eq(#v.bar.segs, 6)
     assert_eq(v.bar.segs[3], "progress")
     assert_eq(v.bar.segs[4], "idle")
     assert_eq(v.bosses[1].delta, nil)
+  end)
+
+  it("rare muerto: conserva su tiempo en oro pero no cuenta ni tiene segmento", function()
+    assert_eq(v.killed, 3)
+    local rare = v.bosses[7]
+    assert_true(rare.rare)
+    assert_eq(rare.time, "[6:10]")
+    assert_eq(rare.tone, "progress")
   end)
 
   it("instancias por debajo de 7 no se muestran", function()

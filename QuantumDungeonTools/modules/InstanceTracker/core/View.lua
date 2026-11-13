@@ -43,15 +43,16 @@ end
 local function bossRows(run, pb)
   local rows = {}
   for i, b in ipairs(run.bosses) do
-    local row = { name = b.name, tone = "text", time = "" }
+    -- Rares: listed (owner, doc 11) but muted while alive, gold when killed, never a delta.
+    local row = { name = b.name, tone = b.rare and "muted" or "text", time = "", rare = b.rare or nil }
     if b.killed then
       if b.preKilled or not num(b.killedAt) then
         row.tone, row.time = "pre", "--"
       else
         row.tone = "progress"
         row.time = "[" .. Format.clock(b.killedAt) .. "]"
-        row.at = b.killedAt
-        local ref = pb and pb.splits and pb.splits[b.name]
+        row.at = not b.rare and b.killedAt or nil
+        local ref = not b.rare and pb and pb.splits and pb.splits[b.name]
         if num(ref) then
           row.deltaSec = b.killedAt - ref
           row.delta = Format.delta(row.deltaSec)
@@ -73,8 +74,9 @@ end
 
 local function timeBar(run, pb, finished, elapsed)
   local splits = sortedSplits(pb)
-  local killed = {}
+  local killed, rare = {}, {}
   for _, b in ipairs(run.bosses) do
+    if b.rare then rare[b.name] = true end
     if b.killed and not b.preKilled then killed[b.name] = true end
   end
   local ticks = {}
@@ -82,7 +84,8 @@ local function timeBar(run, pb, finished, elapsed)
     local pos = s.at / pb.total
     if pos > 1 then pos = 1 end
     -- A finished run drops the 100 % tick (it is the bar's end) and cuts the rest dark.
-    if not (finished and pos >= 1) then
+    -- Rares never get a tick (a record may still carry their split).
+    if not (finished and pos >= 1) and not rare[s.name] then
       local tone = finished and "cut" or (killed[s.name] and "progress" or "pending")
       ticks[#ticks + 1] = { pos = pos, tone = tone }
     end
@@ -95,11 +98,13 @@ end
 
 local function segmentBar(run)
   local segs = {}
-  for i, b in ipairs(run.bosses) do
-    if b.killed then
-      segs[i] = b.preKilled and "pre" or "progress"
-    else
-      segs[i] = "idle"
+  for _, b in ipairs(run.bosses) do
+    if not b.rare then
+      if b.killed then
+        segs[#segs + 1] = b.preKilled and "pre" or "progress"
+      else
+        segs[#segs + 1] = "idle"
+      end
     end
   end
   return { mode = "segments", segs = segs }

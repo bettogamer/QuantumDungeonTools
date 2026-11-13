@@ -7,6 +7,10 @@
 -- Injected deps (never called from WoW directly):
 --   now()        -> seconds (the wow/ layer passes `time()`: survives /reload and relog)
 --   isSecret(v)  -> boolean (issecretvalue)
+--   resolve(instanceID, name) -> { order, rare } | nil   (core/Dungeons.find + learned IDs)
+--
+-- With a resolver the list follows the ROUTE (data order; unknown names after, in arrival
+-- order; rares last) and rares never count for total()/killedCount()/the end of the run.
 -- Every value that comes from the game is checked with isSecret BEFORE any other test.
 local _, ns = ...
 
@@ -29,12 +33,15 @@ function Run.new(info, deps)
   local self = setmetatable({}, Run)
   self._now = deps.now or defaultNow
   self._isSecret = deps.isSecret or never
+  self._resolve = deps.resolve
+  self._seq = 0
   self.instanceID = info.instanceID
   self.name = info.name or "?"
   self.difficulty = info.difficulty or ""
   self.startedAt = self._now()
   self.finishedAt = nil
-  self.bosses = {}        -- ordered: { name, killed, killedAt (split, seconds) | nil, preKilled }
+  self.bosses = {}        -- ordered: { name, killed, killedAt (split, seconds) | nil, preKilled,
+                          --            order | nil, rare | nil, seq }
   self.listKnown = false  -- true once the full boss list came from the lockout
   self.xp = 0
   self.degraded = 0       -- values dropped because they were secret
@@ -46,12 +53,19 @@ end
 ------------------------------------------------------------------------------
 -- Queries
 ------------------------------------------------------------------------------
-function Run:total() return #self.bosses end
+-- Bosses that count (rares are listed but never count).
+function Run:total()
+  local n = 0
+  for _, b in ipairs(self.bosses) do
+    if not b.rare then n = n + 1 end
+  end
+  return n
+end
 
 function Run:killedCount()
   local n = 0
   for _, b in ipairs(self.bosses) do
-    if b.killed then n = n + 1 end
+    if b.killed and not b.rare then n = n + 1 end
   end
   return n
 end
@@ -72,6 +86,52 @@ function Run:_find(name)
   for _, b in ipairs(self.bosses) do
     if b.name == name then return b end
   end
+end
+
+function Run:_add(name)
+  self._seq = self._seq + 1
+  local b = { name = name, killed = false, seq = self._seq }
+  self:_classify(b)
+  self.bosses[#self.bosses + 1] = b
+  return b
+end
+
+-- Fills order/rare from the resolver once (a name it does not know stays unknown until a
+-- later call, e.g. after the wow/ layer learned its encounterID).
+function Run:_classify(b)
+  if b.order or not self._resolve then return false end
+  local ok, info = pcall(self._resolve, self.instanceID, b.name)
+  if not ok or type(info) ~= "table" or type(info.order) ~= "number" then return false end
+  b.order = info.order
+  b.rare = info.rare == true or nil
+  return true
+end
+
+-- Route order: known bosses by data order, then unknown ones by arrival, then rares.
+local function sortKey(b)
+  if b.rare then return 3, b.order or 0 end
+  if b.order then return 1, b.order end
+  return 2, 0
+end
+
+function Run:_sort()
+  table.sort(self.bosses, function(a, b)
+    local ga, oa = sortKey(a)
+    local gb, ob = sortKey(b)
+    if ga ~= gb then return ga < gb end
+    if oa ~= ob then return oa < ob end
+    return (a.seq or 0) < (b.seq or 0)
+  end)
+end
+
+-- reclassify(): resolve the bosses still unknown and re-sort. Returns true if any changed.
+function Run:reclassify()
+  local changed = false
+  for _, b in ipairs(self.bosses) do
+    if self:_classify(b) then changed = true end
+  end
+  if changed then self:_sort() end
+  return changed
 end
 
 -- Guard order: isSecret FIRST, then any truth test (see CLAUDE.md global).
@@ -120,8 +180,7 @@ function Run:setBosses(list)
     if self:_validName(name) then
       local b = self:_find(name)
       if not b then
-        b = { name = name, killed = false }
-        self.bosses[#self.bosses + 1] = b
+        b = self:_add(name)
         changed = true
         if entry.killed == true then
           b.killed = true
@@ -141,6 +200,7 @@ function Run:setBosses(list)
   end
   if reported > (self.lockKilled or 0) then self.lockKilled = reported end
   self.listKnown = true
+  self:_sort()
   if self:_checkFinished() then changed = true end
   return changed
 end
@@ -153,11 +213,12 @@ function Run:markKilled(name)
   local b = self:_find(name)
   if not b then
     if self.listKnown then return false end
-    b = { name = name, killed = false }
-    self.bosses[#self.bosses + 1] = b
+    b = self:_add(name)
   elseif b.killed then
     return false
   end
+  self:_classify(b)
+  self:_sort()
   b.killed = true
   b.killedAt = self:elapsed()
   self:_checkFinished()
@@ -213,7 +274,8 @@ end
 local function copyBosses(src)
   local out = {}
   for i, b in ipairs(src or {}) do
-    out[i] = { name = b.name, killed = b.killed, killedAt = b.killedAt, preKilled = b.preKilled }
+    out[i] = { name = b.name, killed = b.killed, killedAt = b.killedAt, preKilled = b.preKilled,
+               order = b.order, rare = b.rare, seq = b.seq or i }
   end
   return out
 end
@@ -232,6 +294,13 @@ function Run.fromTable(t, deps)
     if t[k] ~= nil then self[k] = t[k] end
   end
   self.bosses = copyBosses(t.bosses)
+  self._seq = #self.bosses
+  for _, b in ipairs(self.bosses) do
+    if b.seq > self._seq then self._seq = b.seq end
+  end
+  -- Saved before the dungeon table existed: classify now. The end of the run is NOT
+  -- re-checked here (its time would be the load time, not the kill).
+  self:reclassify()
   return self
 end
 

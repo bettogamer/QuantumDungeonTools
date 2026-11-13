@@ -10,21 +10,28 @@ local Demo = {}
 ns.InstanceTrackerDemo = Demo
 
 local START = 1000
+-- Lockout order (not the route): makeRun sorts it with the dungeon table, like a real run.
 local BOSSES = { "Witherfang", "The Abandoned", "The Butcher", "Lordaeron Captain", "Viktor the Vile",
   "Bjork", "Rath'mael" }
--- Kill times of the completed artboard (seconds since the start).
-local KILLS = { 238, 521, 773, 1022, 1300, 1531, 1791 }
--- Personal record: total 31:40 and the splits that give the artboard deltas.
+-- Kill times of the completed artboard (seconds since the start); the rare stays alive.
+local KILLS = { Witherfang = 238, ["The Butcher"] = 521, ["Viktor the Vile"] = 773,
+  ["The Abandoned"] = 1090, Bjork = 1442, ["Rath'mael"] = 1791 }
+-- Personal record: total 31:40 and the splits that give the artboard deltas. It carries the
+-- rare's split on purpose: the view must ignore it (no tick, no delta).
 local PB = {
   total = 1900,
-  splits = { Witherfang = 250, ["The Abandoned"] = 501, ["The Butcher"] = 790, ["Lordaeron Captain"] = 1065,
-    ["Viktor the Vile"] = 1350, Bjork = 1625, ["Rath'mael"] = 1900 },
+  splits = { Witherfang = 250, ["The Butcher"] = 501, ["Viktor the Vile"] = 790, ["Lordaeron Captain"] = 1065,
+    ["The Abandoned"] = 1133, Bjork = 1536, ["Rath'mael"] = 1900 },
 }
+
+local function resolve(instanceID, name)
+  return ns.InstanceDungeons.find(instanceID, name)
+end
 
 local function makeRun(kills, elapsed, finished, xp)
   local bosses = {}
   for i, name in ipairs(BOSSES) do
-    local at = kills[i]
+    local at = kills[name]
     bosses[i] = { name = name, killed = at ~= nil, killedAt = at }
   end
   local t = {
@@ -32,14 +39,18 @@ local function makeRun(kills, elapsed, finished, xp)
     startedAt = START, finishedAt = finished and (START + elapsed) or nil,
     listKnown = true, xp = xp, bosses = bosses,
   }
-  return Run.fromTable(t, { now = function() return START + elapsed end })
+  return Run.fromTable(t, { now = function() return START + elapsed end, resolve = resolve })
 end
 
-local LIVE_KILLS = { KILLS[1], KILLS[2], KILLS[3] }
+local LIVE_KILLS = { Witherfang = KILLS.Witherfang, ["The Butcher"] = KILLS["The Butcher"],
+  ["Viktor the Vile"] = KILLS["Viktor the Vile"] }
+-- PrimeraVez: the same 3 bosses plus the rare killed at 6:10.
+local FIRST_KILLS = { Witherfang = 238, ["The Butcher"] = 521, ["Viktor the Vile"] = 773,
+  ["Lordaeron Captain"] = 370 }
 local XP_MAX = 88000
 
 local SCENARIOS = {
-  -- Main: 16:22 with 3/7, record 31:40, ahead by 0:17.
+  -- Main: 16:22 with 3/6, record 31:40, ahead by 0:17.
   live = function()
     return makeRun(LIVE_KILLS, 982, false, 18450), {
       pb = PB, deaths = 2, instances = { count = 8, limit = 10, freeIn = 760 },
@@ -55,7 +66,7 @@ local SCENARIOS = {
   end,
   -- PrimeraVez: same run, no record yet.
   first = function()
-    return makeRun(LIVE_KILLS, 982, false, 18450), {
+    return makeRun(FIRST_KILLS, 982, false, 18450), {
       deaths = 1, instances = { count = 3, limit = 10 },
       xp = { level = 54, xp = 54560, max = XP_MAX, rested = 15840 },
     }
