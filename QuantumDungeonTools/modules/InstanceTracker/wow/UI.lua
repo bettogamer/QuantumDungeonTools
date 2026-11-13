@@ -832,6 +832,9 @@ function UI:Init()
     font = "bettogeo", headingFont = "bettogeo",
     overrides = {
       fontFlags = "OUTLINE, SLUG",   -- vector (Slug) outline: thinner and crisper than bitmap OUTLINE
+      -- No regular weight anywhere (Style.lua): Craft overlays (tooltip) read `font`, so the
+      -- body token is BettoGeo Medium too (owner, 2026-11-13).
+      font = Craft.mediaPath .. "BettoGeo-Medium.ttf",
       primary = C.gold, primaryForeground = C.panel,             -- Forever gold on navy (9.7:1)
       sidebarPrimary = C.gold, sidebarPrimaryForeground = C.panel,
       foreground = C.cream, mutedForeground = C.muted,
