@@ -1,0 +1,36 @@
+# .github/workflows/release.yml — Ruta A: zip casero + GitHub Release (niveles S/M).
+# Se dispara con tags v*. La carpeta del addon se zippea ENTERA (así el zip nunca
+# desincroniza con el .toc). Para distribución CurseForge/Wago usar la Ruta B
+# (BigWigsMods/packager + .pkgmeta), ver AddonTemplate/docs/03-tooling.md §7.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  ADDON: QuantumDungeonTools   # ← nombre de la carpeta del addon
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version in TOC
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i "s/@project-version@/$VERSION/" "$ADDON/$ADDON.toc"
+
+      - name: Build zip
+        run: zip -r "$ADDON-${GITHUB_REF_NAME}.zip" "$ADDON/"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.zip'
+          generate_release_notes: true

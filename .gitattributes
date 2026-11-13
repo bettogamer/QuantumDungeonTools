@@ -1,0 +1,21 @@
+# .gitattributes estándar de addon — copiar a la raíz del repo como `.gitattributes`.
+#
+# Por qué existe: en Windows `core.autocrlf` suele estar a true. Sin este archivo, git avisa
+# en cada `add` (LF→CRLF), los diffs cambian según la máquina desde la que se trabaje, y —lo
+# grave— git "normaliza" finales de línea DENTRO de los binarios de WoW y los corrompe.
+
+# Por defecto: git detecta si es texto y lo guarda con LF en el repo; al checkout, LF.
+* text=auto eol=lf
+
+# Excepción: los .bat los ejecuta cmd.exe de Windows, que espera CRLF.
+*.bat text eol=crlf
+
+# Binarios de addon de WoW: nunca tocar (una "normalización" los corrompe).
+*.tga binary
+*.blp binary
+*.ttf binary
+*.otf binary
+*.mp3 binary
+*.ogg binary
+*.png binary
+*.zip binary

@@ -1,0 +1,97 @@
+# .github/workflows/ci.yml — verificación en push/PR.
+#   * lint (todos los niveles): luacheck.
+#   * lua51 (todos): `luac -p` con el Lua 5.1 REAL — pilla el tope de 60 upvalues por función
+#     que el luac 5.4 local no ve (el cliente rechaza el archivo entero).
+#   * test (nivel M/L, OBLIGATORIO con un solo spec): suite headless sobre Lua 5.1 = el target
+#     REAL del sandbox de WoW (las máquinas locales corren 5.4). BORRAR solo en nivel S.
+#   * taintlint (todos): secret values 12.0+. Elige la base de datos por el `## Interface:`.
+
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: luacheck
+        uses: nebularg/actions-luacheck@v1
+        with:
+          files: QuantumDungeonTools/          # ← carpeta del addon
+          config: .luacheckrc
+
+  # ── Todos los niveles: compilar con el Lua de destino. ───────────────────────────────
+  # Lua 5.1 aborta la compilación de una función con >60 upvalues ("function at line N has
+  # more than 60 upvalues"); 5.4 (el de la máquina de dev) admite 255 y no avisa. SMRT lo
+  # descubrió por un BugSack in-game (Timeline.lua build(): 62). Coste: 5 segundos.
+  lua51:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
+      - name: luac -p (5.1) over every addon file, vendored libs excluded
+        run: |
+          find QuantumDungeonTools -name '*.lua' -not -path '*/libs/*' -print0 | xargs -0 -n1 luac -p
+
+  # ── Nivel M/L: correr el suite en el Lua de destino. Borrar SOLO en nivel S. ─────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Lua 5.1 = target real del sandbox de WoW (CI es el único sitio donde la suite
+      # corre sobre la versión de destino; local suele ser 5.4).
+      - uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
+      # SIN lista de specs ni glob: el runner descubre tests/**/*_spec.lua él solo (cada spec
+      # en su entorno). Un glob a mano se queda viejo al añadir `tests/data/` y los specs
+      # nuevos no corren jamás con CI en verde (Coffer: 30 specs, cuatro semanas).
+      - name: Test suite (mini-runner; exit != 0 si algo falla)
+        run: lua tests/run.lua
+      # Mira el "N spec files, M ok" del log: si N no coincide con los specs que crees tener,
+      # el descubrimiento no está viendo una carpeta.
+
+  taintlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Action propio (github.com/marketplace/actions/taintlint): secret values 12.0+.
+      # Anota los hallazgos inline en el diff del PR y falla con findings de severidad
+      # error no baselineados. Sin setup-node: usa el Node del runner.
+      #
+      # POLÍTICA DE PIN (doc 03 §3):
+      #   * Addon en desarrollo, sin release → `@v0` (tag móvil) + `version` por defecto
+      #     (latest). Sube solo: es lo que se quiere, el lint al día.
+      #   * Repo CON release (libs, addons publicados) → pin EXACTO en las dos cosas:
+      #       uses: bettogamer/taintlint@v0.5.0   y   version: 0.5.0
+      #     y se sube en un commit propio cuando sale base de datos nueva. Un CI que cambia
+      #     de veredicto sin que cambie el repo no es reproducible.
+      #   * NUNCA `git clone` + build de HEAD sin pin (lo que hacían weave y loom): cualquier
+      #     commit de taintlint cambia el resultado y se pierden las anotaciones del PR.
+      - uses: bettogamer/taintlint@v0
+        with:
+          path: QuantumDungeonTools            # ← carpeta del addon (o su .toc). NUNCA un .lua suelto:
+                                   #   el `## Interface:` del .toc elige la base de datos del
+                                   #   cliente (12.1.5 / 12.1.0 / 12.0.7 retail; 16000-16999 =
+                                   #   WoW Forever). Un Interface viejo = reglas del parche
+                                   #   actual silenciadas sin avisar.
+                                   #   Un toc Classic Era da "nothing to check": cliente sin
+                                   #   secret values, verde que NO significa "limpio".
+                                   #   Repo con varios .toc (lib + demo): un paso por cada
+                                   #   `path:` (copia este bloque), no uno solo.
+          # min-severity: warning  # default; el gate estándar de doc 03
+          # target: 12.1.5         # analizar contra OTRO build (default: el del .toc). Para
+                                   #   ver qué rompe el próximo parche — no como gate diario.
+          # version: 0.5.0         # pin de repos con release (default: latest)
+      # Addon con deuda pre-12.0: congelarla UNA vez en local
+      # (`npx taintlint . --update-baseline`) y commitear taintlint-baseline.json —
+      # CI solo fallará con hallazgos NUEVOS. Ver taintlint/docs/ACTION.md.
+      # Nota: con path en subcarpeta las anotaciones pueden no anclarse al diff
+      # (salen en el log igual). Badge "secret-safe": taintlint/docs/BADGES.md.

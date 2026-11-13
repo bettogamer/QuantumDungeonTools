@@ -1,0 +1,45 @@
+-- tests/modules/InstanceTracker/Guid_spec.lua -- PURE GUID parser, no WoW mock.
+local helper = dofile("tests/helper.lua")
+
+local ns = helper.newNS()
+helper.loadModule("QuantumDungeonTools/modules/InstanceTracker/core/Guid.lua", "QuantumDungeonTools", ns)
+local Guid = ns.InstanceGuid
+
+describe("InstanceGuid.parse", function()
+  it("separa los campos de un GUID de criatura", function()
+    local g = Guid.parse("Creature-0-4372-2999-12345-3976-00002ABCDE")
+    assert_eq(g.type, "Creature")
+    assert_eq(g.serverID, 4372)
+    assert_eq(g.instanceID, 2999)
+    assert_eq(g.zoneUID, "12345")
+    assert_eq(g.npcID, 3976)
+    assert_eq(g.spawnUID, "00002ABCDE")
+  end)
+
+  it("lee el zoneUID de un castGUID (fuente de Naowh Forever)", function()
+    local g = Guid.parse("Cast-3-4372-2999-12345-133-0000ABCDEF")
+    assert_eq(g.type, "Cast")
+    assert_eq(g.instanceID, 2999)
+    assert_eq(g.zoneUID, "12345")
+    assert_eq(g.npcID, 133)
+  end)
+
+  it("un GUID de jugador no trae zoneUID", function()
+    local g = Guid.parse("Player-4372-0ABCDEF1")
+    assert_eq(g.type, "Player")
+    assert_eq(g.zoneUID, nil)
+  end)
+
+  it("devuelve nil con nil, vacío, no-string o criatura truncada", function()
+    assert_eq(Guid.parse(nil), nil)
+    assert_eq(Guid.parse(""), nil)
+    assert_eq(Guid.parse(42), nil)
+    assert_eq(Guid.parse("Creature-0-4372-2999"), nil)
+  end)
+
+  it("un campo vacío se queda en nil, no en cadena vacía", function()
+    local g = Guid.parse("Creature-0-4372-2999--3976-")
+    assert_eq(g.zoneUID, nil)
+    assert_eq(g.spawnUID, nil)
+  end)
+end)

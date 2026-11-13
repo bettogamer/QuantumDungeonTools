@@ -1,0 +1,689 @@
+-- Dialog.lua
+-- Spec: docs/components/dialog.md
+-- Design: shadcn Lyra (cn-dialog-content)
+--   .cn-dialog-content  { @apply bg-popover ring-foreground/10 gap-4 rounded-none p-4
+--                                ring-1 sm:max-w-sm; }
+--   .cn-dialog-close    { @apply absolute top-2 right-2; }   -- 8px
+--   .cn-dialog-title    { @apply text-sm font-medium; }       -- 14px
+--   .cn-dialog-description { @apply text-muted-foreground text-xs/relaxed; }
+
+local Craft = LibStub("Craft-2.0")
+local Weave = LibStub("Weave-1.0")
+local _BUILD = ((select(2, ...)) or {}).CRAFT_BUILD or 0  -- this copy's build (see Craft.register)
+
+local Dialog = {}
+Dialog.__index = Dialog
+
+-- Size presets (sm:max-w-sm = 384px default)
+local WIDTHS = {
+    sm      = 320,
+    default = 384,
+    lg      = 512,
+    xl      = 640,
+}
+
+-- Auto-incrementing instance counter used for UISpecialFrames registration.
+local _instanceCount = 0
+
+-- Modal scope (FR-119): what the backdrop blocks. nil/true = the whole screen (the
+-- historical behaviour), "window" = only the window that hosts the dialog,
+-- false/"none" = nothing (a non-blocking dialog).
+local MODAL_MODES = { screen = "screen", window = "window", none = "none" }
+
+local function modalMode(v)
+    if v == nil or v == true then return "screen" end
+    if v == false then return "none" end
+    return MODAL_MODES[v] or "screen"
+end
+
+-- Accepts a Craft component (anything with GetFrame) or a raw frame.
+local function frameOf(x)
+    if type(x) == "table" and type(x.GetFrame) == "function" then return x:GetFrame() end
+    return x
+end
+
+-- Nudge (FR-119): a click on the blocked area shakes the dialog sideways — the
+-- de-facto "can't do that, deal with this first" cue (macOS sheets, login boxes).
+-- Damped sine: NUDGE_CYCLES full swings whose amplitude decays linearly to 0, so
+-- the dialog always lands exactly where it was. Short on purpose — it must read
+-- as a reminder, not as an animation the user has to wait for.
+local NUDGE_DURATION  = 0.4
+local NUDGE_AMPLITUDE = 6      -- px, before the dialog's own scale
+local NUDGE_CYCLES    = 3
+
+local function nudgeOffset(p)
+    if p >= 1 then return 0 end
+    return NUDGE_AMPLITUDE * math.sin(p * NUDGE_CYCLES * 2 * math.pi) * (1 - p)
+end
+
+-- ─── Create ────────────────────────────────────────────────────────────────
+function Dialog:Create(parent, config)
+    local self = setmetatable({}, Dialog)
+
+    config = config or {}
+    self._cfg = {
+        title        = config.title        or "",
+        description  = config.description,
+        size         = config.size         or "default",
+        onClose      = config.onClose,
+        closeOnEscape= config.closeOnEscape ~= false,  -- default true
+        -- 1px rule under the header (FR-088). OPT-IN, and deliberately so: Lyra's
+        -- `.cn-dialog-header` is `gap-1 text-left` with NO border-b, so the default
+        -- dialog keeps the shadcn look. See the _headerBorder block below.
+        headerBorder = config.headerBorder and true or false,
+        -- Layer `modal` (FULLSCREEN_DIALOG) sits ABOVE any Craft.Window (`page` =
+        -- DIALOG) AND above the backdrop (`modalOverlay` = FULLSCREEN), so a modal
+        -- opened from a window floats over it and its own buttons stay clickable.
+        -- See Craft.Strata / FR-033.
+        strata       = config.strata or (Craft.Strata and Craft.Strata.modal) or "FULLSCREEN_DIALOG",
+        -- User-facing dialog scale (FR-068/FR-073). The zoom multiplies onto it.
+        scale        = config.scale or 1,
+        -- FR-102: override of the theme's outline (t.fontFlags), applyFont's 4th arg —
+        -- "" = no outline, nil = theme flag. Title + description. Re-applied on every re-theme.
+        fontFlags    = config.fontFlags,
+        -- FR-119: modal scope ("screen" | "window" | "none", see MODAL_MODES), the
+        -- frame/component a "window" modal blocks (default: the Craft.Window that
+        -- contains `parent`), and the shake on a blocked click (default on).
+        modal        = modalMode(config.modal),
+        modalTarget  = config.modalTarget,
+        nudge        = config.nudge ~= false,
+    }
+    self._parent    = parent
+    self._baseScale = self._cfg.scale
+    self._lastZoom  = 1
+
+    _instanceCount = _instanceCount + 1
+    self._instanceId = _instanceCount
+
+    -- ── Root frame ─────────────────────────────────────────────────────────
+    -- Strata `modal` (FULLSCREEN_DIALOG by default, see Craft.Strata): a modal must
+    -- float above any Craft.Window (`page` = DIALOG) it was opened from, and above
+    -- its own backdrop (`modalOverlay` = FULLSCREEN, one rung below) — FR-033.
+    --
+    -- Parent = UIParent, NOT the caller's `parent`. A modal is a screen-level
+    -- object (centered on UIParent, floats above the whole UI). If it were a child
+    -- of the caller's frame, a high strata request is NOT honoured reliably against
+    -- a UIParent-level sibling like the backdrop: buried in the caller's frame
+    -- hierarchy (e.g. inside a ScrollFrame at HIGH), the frame's FULLSCREEN_DIALOG
+    -- did not actually clear the FULLSCREEN backdrop, so the backdrop's EnableMouse
+    -- swallowed every click and drag (only Esc worked). Parenting to UIParent — like
+    -- the backdrop and every popover panel — makes the strata comparison global and
+    -- correct. FR-033.
+    -- Named frame required for UISpecialFrames (closeOnEscape).
+    local frameName = "CraftDialog_" .. self._instanceId
+    self.frame = CreateFrame("Frame", frameName, UIParent)
+    self._theme = Craft.Theme.resolve(parent, config, self.frame)  -- FR-104: before any child
+    self.frame:SetFrameStrata(self._cfg.strata)
+    self.frame:SetWidth(WIDTHS[self._cfg.size] or WIDTHS.default)
+    -- Height is initially set to a sensible minimum; it grows via _layoutFrames.
+    self.frame:SetHeight(120)
+
+    -- ── Modal overlay (backdrop) ─────────────────────────────────────────────
+    -- shadcn .cn-dialog-overlay (bg-black/10): dims and blocks the UI behind the
+    -- dialog. WoW has no backdrop-blur, so it's the flat black/10 fill only.
+    -- Strata `modalOverlay` = ONE RUNG BELOW the frame's `modal` strata: above any
+    -- Craft.Window (DIALOG) so the backdrop covers it, but strictly below the frame
+    -- so the backdrop's EnableMouse (which swallows clicks to the UI behind) does
+    -- NOT eat the dialog's own buttons/close. Different stratas — never rely on
+    -- frame-level within a shared strata for this (that broke every click). FR-033.
+    --
+    -- FR-119: modal = "none" builds no backdrop at all; "window" keeps it a UIParent
+    -- child in the same strata but anchors it to the target window's rectangle
+    -- (_placeOverlay, on every Show). It stays out of the window's own hierarchy on
+    -- purpose: a child overlay would have to win a frame-level race against the
+    -- window's children (and every toplevel Raise), while a strictly-higher strata
+    -- wins by construction — the FR-033 rule again. Trade-off: whatever else sits
+    -- under that rectangle at a lower strata is covered too.
+    if self._cfg.modal ~= "none" then
+        self._overlay = CreateFrame("Frame", nil, UIParent)
+        self._overlay:SetFrameStrata((Craft.Strata and Craft.Strata.modalOverlay) or "FULLSCREEN")
+        self._overlay:SetAllPoints(UIParent)
+        self._overlay:EnableMouse(true)   -- modal: swallow clicks to the UI behind
+        self._overlay:Hide()
+        local overlayTex = self._overlay:CreateTexture(nil, "BACKGROUND")
+        overlayTex:SetAllPoints(self._overlay)
+        overlayTex:SetColorTexture(0, 0, 0, 0.10)  -- bg-black/10
+        -- A swallowed click is a click the user meant for something: say why
+        -- nothing happened instead of failing silently.
+        self._overlay:SetScript("OnMouseDown", function()
+            if self._cfg.nudge then self:Nudge() end
+        end)
+    end
+
+    -- ── Open/close fade (Weave.tween) ───────────────────────────────────────
+    -- shadcn dialog fades in/out. ONLY alpha — NOT height: WoW won't repaint a
+    -- frame collapsed to 0, and a dialog is not a collapse. The overlay backdrop
+    -- fades in sync by binding it to the SAME reactives as the frame; this also
+    -- replaces the old OnShow/OnHide mirror of overlay visibility.
+    self._open = Weave.signal(false)  -- private open/close state (NOT a public prop)
+
+    -- Alpha eases 0↔1 as the open state flips. Duration/easing from the shared
+    -- motion tokens (theme/Presets) so every animated component feels consistent.
+    local motion = self._theme:get()
+    local alpha = Weave.tween(
+        Weave.computed(function() return self._open() and 1 or 0 end),
+        { duration = motion.motionFast, easing = Weave.easing[motion.motionEasing] })
+
+    -- Scale eases motionZoomFrom(0.95)↔1 in lockstep with the fade (shadcn
+    -- zoom-in-95 / zoom-out-95). SAME source (_open) and SAME duration/easing as
+    -- alpha so the pop and the fade land together. The root frame is anchored via
+    -- CENTER (see SetPoint below), so SetScale grows/shrinks from the center — the
+    -- dialog pops in place instead of drifting. Overlay is fade-only (shadcn
+    -- overlay has no zoom) so it is NOT scaled.
+    local scale = Weave.tween(
+        Weave.computed(function() return self._open() and 1 or motion.motionZoomFrom end),
+        { duration = motion.motionFast, easing = Weave.easing[motion.motionEasing] })
+
+    -- Stay visible through the CLOSE fade, then hide once the tween settles.
+    local shown = Weave.computed(function()
+        return self._open() or alpha:animating()
+    end)
+
+    -- Bind the same reactives to both the dialog and its backdrop overlay.
+    self._effects = self._effects or {}
+    self._effects[#self._effects + 1] = Weave.bind(self.frame,    "alpha", alpha)
+    self._effects[#self._effects + 1] = Weave.bind(self.frame,    "shown", shown)
+    if self._overlay then
+        self._effects[#self._effects + 1] = Weave.bind(self._overlay, "alpha", alpha)
+        self._effects[#self._effects + 1] = Weave.bind(self._overlay, "shown", shown)
+    end
+
+    -- ── Nudge (FR-119) ───────────────────────────────────────────────────────
+    -- Progress 0→1, linear; resting at 1 (= no offset). Nudge() snaps it to 0 and
+    -- the tween runs back to 1 on its own. The offset rides on the anchor captured
+    -- at the start (_nudgeBase) and the last tick puts it back exactly, so a shake
+    -- never drifts the dialog — and a dialog the user dragged shakes where it is.
+    self._nudge = Weave.tween(1, { duration = NUDGE_DURATION, easing = Weave.easing.linear })
+    self._effects[#self._effects + 1] = Weave.effect(function()
+        local p    = self._nudge()
+        local base = self._nudgeBase
+        if not self.frame or not base then return end
+        self.frame:SetPoint(base[1], base[2], base[3], base[4] + nudgeOffset(p), base[5])
+        if p >= 1 then self._nudgeBase = nil end
+    end)
+    self._effects[#self._effects + 1] = self._nudge
+    -- Drive SetScale from the tween via an effect ("scale" is not a built-in Weave
+    -- prop; SetScale is a frame-only method with no texture equivalent).
+    --
+    -- Two rules the naive `SetScale(scale())` got wrong (FR-073 / FR-068):
+    --
+    -- 1. NEVER park the idle-closed frame at motionZoomFrom. `_open` starts false,
+    --    so the dialog used to sit at 0.95 the whole time it was closed — and WoW's
+    --    GetStringWidth/GetStringHeight scale with the frame's EFFECTIVE scale. Every
+    --    string the consumer wrote into a closed dialog measured ~5% short, so every
+    --    Craft.Label with maxWidth got a 5%-narrow box and elided with "…" — silently,
+    --    and proportionally to the text length. The pop is unaffected: the tween
+    --    restarts from motionZoomFrom the moment _open flips. Craft.Tooltip already
+    --    resets to scale 1 before measuring for exactly this reason (Tooltip.lua).
+    --    Residual: text measured DURING the ~150ms animation is still off — write it
+    --    before Show() (the normal `refresh(); dialog:Show()` order) or after it settles.
+    --
+    -- 2. The zoom MULTIPLIES onto _baseScale instead of owning the frame's scale, so
+    --    a consumer-set dialog scale is not wiped by the next tween tick.
+    self._effects[#self._effects + 1] = Weave.effect(function()
+        local z    = scale()                 -- read all reactive sources up-front
+        local anim = scale:animating()
+        local open = self._open()
+        if not self.frame then return end
+        if not anim and not open then z = 1 end
+        self._lastZoom = z
+        self:_applyScale()
+    end)
+    self._effects[#self._effects + 1] = alpha  -- dispose the tween (effect + driver reg)
+    self._effects[#self._effects + 1] = scale  -- dispose the zoom tween (effect + driver reg)
+
+    -- Escape / UISpecialFrames: Blizzard calls frame:Hide() DIRECTLY, bypassing the
+    -- signal. Re-sync the state so a later Show() works (idempotent: the signal's
+    -- equality-cut drops the no-op when already false). Escape-close is instant
+    -- (acceptable); binds are reactive (no polling) so this Hide() won't re-show.
+    self.frame:HookScript("OnHide", function()
+        self:_stopNudge()  -- FR-119: an Escape mid-shake must not leave it offset
+        if self._open and self._open:peek() then
+            self._open:set(false)
+        end
+    end)
+
+    -- Drag behaviour (full dialog is the movable unit)
+    self.frame:SetMovable(true)
+    self.frame:SetClampedToScreen(true)
+    self.frame:RegisterForDrag("LeftButton")
+    -- Drag is started from the header area (see _header scripts below).
+    -- Fallback: dragging the frame itself also works.
+    self.frame:SetScript("OnDragStart", function()
+        self:_stopNudge(); self._userMoved = true
+        self.frame:StartMoving()
+    end)
+    self.frame:SetScript("OnDragStop",  function() self.frame:StopMovingOrSizing() end)
+
+    -- Center on first show
+    self.frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+
+    -- ── Ring: textura sobre la capa exterior del frame ──────────────────────
+    -- ring-1 ring-foreground/10 — same pattern as Panel: ring BEHIND (-2), opaque
+    -- bg in FRONT (-1) inset 1px. bg must be in front or the translucent ring washes
+    -- the whole popover ~10% lighter.
+    self._ringTex = self.frame:CreateTexture(nil, "BACKGROUND", nil, -2)
+    self._ringTex:SetAllPoints(self.frame)
+
+    -- ── Background: inset 1px (reveals ring) ───────────────────────────────
+    self._bg = self.frame:CreateTexture(nil, "BACKGROUND", nil, -1)
+    -- Points set in _applyTheme
+
+    -- ── Header ─────────────────────────────────────────────────────────────
+    -- The header is the drag handle area. It contains the title, optional
+    -- description, and the close button.
+    self._header = CreateFrame("Frame", nil, self.frame)
+    self._header:SetPoint("TOPLEFT",  self.frame, "TOPLEFT",  0, 0)
+    self._header:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT", 0, 0)
+    self._header:EnableMouse(true)
+    self._header:SetScript("OnMouseDown", function()
+        -- Settle a shake first: StartMoving reads the anchor the shake is moving.
+        self:_stopNudge(); self._userMoved = true
+        self.frame:StartMoving()
+    end)
+    self._header:SetScript("OnMouseUp",   function() self.frame:StopMovingOrSizing() end)
+
+    -- Title: fontBold, text-sm = 14px, popoverForeground
+    self._title = self._header:CreateFontString(nil, "OVERLAY")
+    self._title:SetJustifyH("LEFT")
+    self._title:SetJustifyV("TOP")
+
+    -- Description (optional): font, text-xs = 12px, mutedForeground
+    self._desc = self._header:CreateFontString(nil, "OVERLAY")
+    self._desc:SetJustifyH("LEFT")
+    self._desc:SetJustifyV("TOP")
+    self._desc:SetWordWrap(true)
+    if not self._cfg.description then
+        self._desc:Hide()
+    end
+
+    -- ── Header bottom separator (FR-088, opt-in) ───────────────────────────
+    -- The twin of _footerBorder, on the other edge of the same dialog. It is NOT
+    -- on by default: shadcn draws no rule under a DialogHeader (`.cn-dialog-header`
+    -- = `gap-1 text-left`), and the north is shadcn-in-WoW, so a dialog that does
+    -- not ask keeps the faithful look. `headerBorder = true` is for the modal whose
+    -- content starts with controls glued to the header — there the title, its
+    -- description and the first row of the content read as a single band, and the
+    -- line says where the heading ends and the touchable part begins.
+    -- Costs no height: it lands on the header's bottom edge, inside the `sm`
+    -- padding the header already reserves, `spacingLg` above the content.
+    self._headerBorder = CreateFrame("Frame", nil, self._header)
+    Craft.Theme.SetPixelHeight(self._headerBorder, 1)
+    self._headerBorder:SetPoint("BOTTOMLEFT",  self._header, "BOTTOMLEFT",  0, 0)
+    self._headerBorder:SetPoint("BOTTOMRIGHT", self._header, "BOTTOMRIGHT", 0, 0)
+    self._headerBorderTex = self._headerBorder:CreateTexture(nil, "BACKGROUND")
+    self._headerBorderTex:SetAllPoints(self._headerBorder)
+    self._headerBorder:SetShown(self._cfg.headerBorder)
+
+    -- ── Close button: 24×24, top-right, 8px offset ─────────────────────────
+    -- cn-dialog-close: absolute top-2 right-2
+    self._closeBtn = CreateFrame("Frame", nil, self.frame)
+    self._closeBtn:SetSize(24, 24)
+    self._closeBtn:EnableMouse(true)
+    -- The header (drag handle, EnableMouse + StartMoving) spans the full top width
+    -- and overlaps the close button. Both are children of self.frame, so without an
+    -- explicit level they tie and the header can win the mouse — clicking ✕ starts a
+    -- drag instead of closing. Lift the close button above the header so it always
+    -- receives the click. (FR-033.)
+    self._closeBtn:SetFrameLevel(self._header:GetFrameLevel() + 10)
+
+    -- Background texture (transparent default, tinted on hover/press)
+    self._closeBg = self._closeBtn:CreateTexture(nil, "BACKGROUND")
+    self._closeBg:SetAllPoints(self._closeBtn)
+    self._closeBg:SetColorTexture(0, 0, 0, 0)
+
+    -- Close icon: Lucide "x" (16px, mutedForeground)
+    self._closeIcon = self._closeBtn:CreateTexture(nil, "ARTWORK")
+    self._closeIcon:SetSize(16, 16)
+    self._closeIcon:SetPoint("CENTER", self._closeBtn, "CENTER", 0, 0)
+    Craft.Icons.Apply(self._closeIcon, "x", 16)
+
+    -- Close button hover / press / click
+    self._closeBtn:SetScript("OnEnter", function()
+        local t = self._t
+        if not t then return end
+        self._closeBg:SetColorTexture(t.accent.r, t.accent.g, t.accent.b, 1)
+        self._closeIcon:SetVertexColor(t.foreground.r, t.foreground.g, t.foreground.b)
+    end)
+    self._closeBtn:SetScript("OnLeave", function()
+        self._closeBg:SetColorTexture(0, 0, 0, 0)
+        if self._t then
+            local t = self._t
+            self._closeIcon:SetVertexColor(
+                t.mutedForeground.r, t.mutedForeground.g, t.mutedForeground.b)
+        end
+    end)
+    self._closeBtn:SetScript("OnMouseDown", function()
+        local t = self._t
+        if not t then return end
+        self._closeBg:SetColorTexture(t.accent.r, t.accent.g, t.accent.b, 0.7)
+    end)
+    self._closeBtn:SetScript("OnMouseUp", function()
+        -- Treat release as click: invoke onClose and fade out (via the open state)
+        if self._cfg.onClose then
+            self._cfg.onClose(self)
+        end
+        self:Hide()
+    end)
+
+    -- ── Content ────────────────────────────────────────────────────────────
+    -- Developer adds child frames here.
+    self._content = CreateFrame("Frame", nil, self.frame)
+
+    -- ── Footer (optional) ──────────────────────────────────────────────────
+    -- Not created by default; exposed via ShowFooter() / GetFooter().
+    self._footer = CreateFrame("Frame", nil, self.frame)
+    self._footer:SetPoint("BOTTOMLEFT",  self.frame, "BOTTOMLEFT",  0, 0)
+    self._footer:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 0, 0)
+    self._footer:Hide()
+
+    -- Footer top separator (border-t, ADR-0011)
+    self._footerBorder = CreateFrame("Frame", nil, self._footer)
+    Craft.Theme.SetPixelHeight(self._footerBorder, 1)
+    self._footerBorder:SetPoint("TOPLEFT",  self._footer, "TOPLEFT",  0, 0)
+    self._footerBorder:SetPoint("TOPRIGHT", self._footer, "TOPRIGHT", 0, 0)
+    self._footerBorderTex = self._footerBorder:CreateTexture(nil, "BACKGROUND")
+    self._footerBorderTex:SetAllPoints(self._footerBorder)
+
+    -- ── Escape key registration ─────────────────────────────────────────────
+    if self._cfg.closeOnEscape then
+        table.insert(UISpecialFrames, frameName)
+    end
+
+    -- ── Theme and layout ───────────────────────────────────────────────────
+    self._themeHandle = self._theme:register(function(t) self:_applyTheme(t) end)
+    self:_applyTheme(self._theme:get())
+    self._title:SetText(self._cfg.title)           -- after SetFont in _applyTheme
+    if self._cfg.description then
+        self._desc:SetText(self._cfg.description)
+    end
+
+    -- Start hidden; caller calls Show() when ready.
+    self.frame:Hide()
+
+    return self
+end
+
+-- ─── Layout ────────────────────────────────────────────────────────────────
+-- Anchors _header, _content, _footer inside the dialog.
+-- p-4 (16px) padding on all sides; gap-4 (16px) between sections.
+function Dialog:_layoutFrames(t)
+    local lg = t.spacingLg   -- 16px — p-4 / gap-4
+    local sm = t.spacingSm   -- 8px  — close button offset (top-2 right-2)
+    local xs = t.spacingXs   -- 4px  — gap-1 inside header
+
+    -- ── _bg inset 1px ──────────────────────────────────────────────────────
+    local px1 = Craft.Theme.px(1, self.frame)
+    self._bg:ClearAllPoints()
+    self._bg:SetPoint("TOPLEFT",     self.frame, "TOPLEFT",     px1, -px1)
+    self._bg:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", -px1, px1)
+
+    -- ── Close button: top-2 right-2 from the inner frame edge ──────────────
+    self._closeBtn:ClearAllPoints()
+    self._closeBtn:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT", -sm, -sm)
+
+    -- ── Header height: calculated from its contents ────────────────────────
+    local headerH = lg  -- padding top
+    self._title:ClearAllPoints()
+    -- Right edge leaves room for the close button (8px + 24px + 8px = 40px)
+    self._title:SetPoint("TOPLEFT",  self._header, "TOPLEFT",   lg, -lg)
+    self._title:SetPoint("TOPRIGHT", self._header, "TOPRIGHT", -(lg + 24 + sm), -lg)
+    headerH = headerH + (t.fontSizeLg or 14) + xs
+
+    -- ── Description ────────────────────────────────────────────────────────
+    self._desc:ClearAllPoints()
+    if self._cfg.description then
+        self._desc:SetPoint("TOPLEFT",  self._title, "BOTTOMLEFT",  0, -xs)
+        self._desc:SetPoint("TOPRIGHT", self._title, "BOTTOMRIGHT", 0, -xs)
+        self._desc:Show()
+        headerH = headerH + (t.fontSize or 12) + xs
+    else
+        self._desc:Hide()
+    end
+    headerH = headerH + sm  -- padding bottom
+    self._header:SetHeight(headerH)
+
+    -- ── Content + footer: grow-to-fit ─────────────────────────────────────
+    -- The dialog height is COMPUTED from its parts (header + gap + content +
+    -- gap + footer), not fixed. Content has the height the dev set on it via
+    -- GetContent():SetHeight(); footer keeps its ShowFooter() height. This is
+    -- the "altura automática según contenido" the spec describes — the old fixed
+    -- 120px frame squeezed content to a negative size when header+footer exceeded it.
+    local contentH = self._content:GetHeight() or 0
+    self._content:ClearAllPoints()
+    self._content:SetPoint("TOPLEFT",  self.frame, "TOPLEFT",   lg, -(headerH + lg))
+    self._content:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT", -lg, -(headerH + lg))
+
+    local totalH = headerH + lg + contentH
+    if self._footer:IsShown() then
+        local footerH = self._footer:GetHeight() or 0
+        self._footer:ClearAllPoints()
+        self._footer:SetPoint("TOPLEFT",  self.frame, "TOPLEFT",  0, -(headerH + lg + contentH + lg))
+        self._footer:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT", 0, -(headerH + lg + contentH + lg))
+        totalH = totalH + lg + footerH
+    else
+        totalH = totalH + lg   -- bottom padding when there's no footer
+    end
+
+    self.frame:SetHeight(math.max(totalH, 48))
+end
+
+-- ─── Theme ─────────────────────────────────────────────────────────────────
+function Dialog:_applyTheme(t)
+    self._t = t
+
+    -- Ring: foreground/10 (ring-foreground/10)
+    self._ringTex:SetColorTexture(t.foreground.r, t.foreground.g, t.foreground.b, 0.10)
+
+    -- Background: t.popover (bg-popover)
+    self._bg:SetColorTexture(t.popover.r, t.popover.g, t.popover.b)
+
+    -- Title: font-medium, fontSizeLg (14px), popoverForeground (.cn-dialog-title font-medium)
+    self._theme:applyFont(self._title, t.fontHeading or t.fontMedium or t.font, t.fontSizeLg or 14,
+        self._cfg.fontFlags)
+    self._title:SetTextColor(t.popoverForeground.r, t.popoverForeground.g, t.popoverForeground.b)
+
+    -- Description: font, fontSize (12px), mutedForeground
+    self._theme:applyFont(self._desc, t.font, t.fontSize or 12, self._cfg.fontFlags)
+    self._desc:SetTextColor(t.mutedForeground.r, t.mutedForeground.g, t.mutedForeground.b)
+
+    -- Close icon: mutedForeground default
+    self._closeIcon:SetVertexColor(
+        t.mutedForeground.r, t.mutedForeground.g, t.mutedForeground.b)
+
+    -- Footer separator: t.border
+    self._footerBorderTex:SetColorTexture(t.border.r, t.border.g, t.border.b, t.border.a)
+    Craft.Theme.SetPixelHeight(self._footerBorder, 1)
+
+    -- Header separator (FR-088): the same t.border, so both edges of the dialog
+    -- are drawn by one rule and a theme swap moves them together.
+    self._headerBorderTex:SetColorTexture(t.border.r, t.border.g, t.border.b, t.border.a)
+    Craft.Theme.SetPixelHeight(self._headerBorder, 1)
+
+    self:_layoutFrames(t)
+end
+
+-- ─── Public API ────────────────────────────────────────────────────────────
+
+-- Returns the root dialog frame.
+function Dialog:GetFrame()
+    return self.frame
+end
+
+-- Returns the content area Frame (developer adds children here).
+function Dialog:GetContent()
+    return self._content
+end
+
+-- Returns the footer Frame or nil if not active.
+function Dialog:GetFooter()
+    if self._footer:IsShown() then
+        return self._footer
+    end
+    return nil
+end
+
+-- ─── Dialog scale (FR-068 / FR-073) ────────────────────────────────────────
+-- The root frame's scale belongs to the open/close zoom, so a consumer's
+-- frame:SetScale() would be wiped on the next tween tick. SetBaseScale is the
+-- supported way in; the zoom multiplies onto it.
+function Dialog:_applyScale()
+    if not self.frame then return end
+    local s = (self._baseScale or 1) * (self._lastZoom or 1)
+    if s <= 0 then s = 1 end
+    self.frame:SetScale(s)
+end
+
+function Dialog:SetBaseScale(s)
+    s = tonumber(s)
+    if not s or s <= 0 then return end
+    self._baseScale = s
+    self._cfg.scale = s
+    self:_applyScale()
+end
+
+function Dialog:GetBaseScale()
+    return self._baseScale or 1
+end
+
+-- Updates the dialog title text.
+function Dialog:SetTitle(text)
+    self._cfg.title = text or ""
+    self._title:SetText(self._cfg.title)
+end
+
+-- Sets or clears the description below the title.
+function Dialog:SetDescription(text)
+    self._cfg.description = text
+    if text then
+        self._desc:SetText(text)
+    end
+    if self._t then
+        self:_layoutFrames(self._t)
+    end
+end
+
+-- Makes the footer area visible at the given height.
+-- Developer populates it via GetFooter().
+function Dialog:ShowFooter(height)
+    height = height or 52  -- p-4 top + ~20px content + p-4 bottom
+    self._footer:SetHeight(height)
+    self._footer:Show()
+    if self._t then
+        self:_layoutFrames(self._t)
+    end
+end
+
+-- Hides the footer area.
+function Dialog:HideFooter()
+    self._footer:Hide()
+    if self._t then
+        self:_layoutFrames(self._t)
+    end
+end
+
+-- Shows the dialog (fade in). Re-runs the layout first so the height reflects any
+-- content/footer size the dev set after Create() (grow-to-fit).
+function Dialog:Show()
+    if self._t then self:_layoutFrames(self._t) end
+    self:_placeOverlay()
+    -- Raise to the top of its strata each open, so re-opening (or opening after
+    -- another modal) lands above siblings without depending on creation order.
+    if self.frame.Raise then self.frame:Raise() end
+    self._open:set(true)
+end
+
+-- Hides the dialog (fade out) without invoking onClose.
+function Dialog:Hide()
+    self:_stopNudge()
+    self._open:set(false)
+end
+
+-- ─── Modal scope + nudge (FR-119) ─────────────────────────────────────────
+
+-- The frame a "window" modal blocks: config.modalTarget if given, else the nearest
+-- Craft.Window around `parent`, else the outermost ancestor below UIParent (a
+-- consumer's own main frame). nil = nothing to scope to (parent IS UIParent).
+function Dialog:_resolveModalTarget()
+    local explicit = frameOf(self._cfg.modalTarget)
+    if explicit then return explicit end
+    local f, outer = self._parent, nil
+    while f and f ~= UIParent do
+        if f._craftWindow then return f end
+        outer = f
+        f = f.GetParent and f:GetParent() or nil
+    end
+    return outer
+end
+
+-- Re-anchors the backdrop for the current mode. Runs on every Show, so a target
+-- resolved late (or swapped with SetModalTarget) is picked up on the next open.
+function Dialog:_placeOverlay()
+    local o = self._overlay
+    if not o then return end
+    local target = self._cfg.modal == "window" and self:_resolveModalTarget() or nil
+    self._modalTarget = target
+    o:ClearAllPoints()
+    o:SetAllPoints(target or UIParent)
+    if not target then return end
+    -- A modal for a window that is gone makes no sense: close with it. Hooked once
+    -- per target (HookScript cannot be undone); the guard keeps a stale hook inert.
+    self._hookedTargets = self._hookedTargets or {}
+    if not self._hookedTargets[target] and target.HookScript then
+        self._hookedTargets[target] = true
+        target:HookScript("OnHide", function()
+            if self.frame and self._modalTarget == target then self:Hide() end
+        end)
+    end
+    -- Open over the window it belongs to, until the user drags it elsewhere.
+    if not self._userMoved then
+        self.frame:ClearAllPoints()
+        self.frame:SetPoint("CENTER", target, "CENTER", 0, 0)
+    end
+end
+
+-- Points a "window" modal at another frame or component (e.g. the main window
+-- instead of the sub-window that hosts the dialog). Applies on the next Show.
+function Dialog:SetModalTarget(target)
+    self._cfg.modalTarget = target
+end
+
+-- Shakes the dialog once. Fired by a click on the blocked area; public so a
+-- consumer can use the same cue (e.g. a rejected Enter in a form). A nudge while
+-- one is running is dropped: hammering the backdrop must not restart the swing
+-- forever. No-op while closed.
+function Dialog:Nudge()
+    if not self.frame or not self._open:peek() then return end
+    if self._nudge:animating() then return end
+    local point, rel, relPoint, x, y = self.frame:GetPoint(1)
+    if not point then return end
+    self._nudgeBase = { point, rel, relPoint, x or 0, y or 0 }
+    self._nudge:snap(0)
+end
+
+-- Ends a running shake at its rest position (before a drag or a close).
+function Dialog:_stopNudge()
+    if self._nudgeBase and self._nudge then self._nudge:snap(1) end
+end
+
+Dialog._nudgeOffset = nudgeOffset  -- exposed for the spec (pure curve)
+
+-- Toggles visibility (fade in/out).
+function Dialog:Toggle()
+    self._open:set(not self._open:peek())
+end
+
+-- ─── Destructor ────────────────────────────────────────────────────────────
+function Dialog:Destroy()
+    if not self.frame then return end
+    Craft.Reactive.disposeAll(self)            -- cut alpha/shown binds + the tween
+    self._theme:unregister(self._themeHandle)
+    self.frame:Hide()
+    if self._overlay then
+        self._overlay:Hide()
+        self._overlay = nil
+    end
+    self.frame = nil
+end
+
+Craft.register("Dialog", Dialog, _BUILD)

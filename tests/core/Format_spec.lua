@@ -1,0 +1,45 @@
+-- tests/core/Format_spec.lua -- PURE formatting helpers.
+local helper = dofile("tests/helper.lua")
+
+local ns = helper.newNS()
+helper.loadModule("QuantumDungeonTools/core/Format.lua", "QuantumDungeonTools", ns)
+local Format = ns.Format
+
+describe("Format", function()
+  it("duration: mm:ss y h:mm:ss", function()
+    assert_eq(Format.duration(0), "00:00")
+    assert_eq(Format.duration(65), "01:05")
+    assert_eq(Format.duration(65.9), "01:05")
+    assert_eq(Format.duration(3725), "1:02:05")
+  end)
+
+  it("duration: valores inválidos dan 00:00", function()
+    assert_eq(Format.duration(-3), "00:00")
+    assert_eq(Format.duration(nil), "00:00")
+    assert_eq(Format.duration(0 / 0), "00:00")
+  end)
+
+  it("thousands agrupa de tres en tres", function()
+    assert_eq(Format.thousands(0), "0")
+    assert_eq(Format.thousands(999), "999")
+    assert_eq(Format.thousands(1000), "1,000")
+    assert_eq(Format.thousands(1234567), "1,234,567")
+    assert_eq(Format.thousands(-4500), "-4,500")
+  end)
+
+  it("clock: m:ss sin cero inicial, h:mm:ss pasada la hora", function()
+    assert_eq(Format.clock(0), "0:00")
+    assert_eq(Format.clock(238), "3:58")
+    assert_eq(Format.clock(982), "16:22")
+    assert_eq(Format.clock(3725), "1:02:05")
+    assert_eq(Format.clock(-3), "0:00")
+  end)
+
+  it("delta: signo ASCII y cero neutro", function()
+    assert_eq(Format.delta(-12), "-0:12")
+    assert_eq(Format.delta(20), "+0:20")
+    assert_eq(Format.delta(-109), "-1:49")
+    assert_eq(Format.delta(0), "0:00")
+    assert_eq(Format.delta(0.2), "0:00")
+  end)
+end)

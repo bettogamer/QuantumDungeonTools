@@ -1,0 +1,20 @@
+# .gitignore estándar de addon
+#
+# ⚠️ Los comentarios van SIEMPRE en su propia línea. En .gitignore un '#' solo abre comentario
+# al PRINCIPIO de la línea; al final forma parte del patrón, que entonces no casa con nada y
+# el archivo queda sin ignorar. Así se colaron en un commit `pipeline/.env` (credenciales de
+# la API) y un token OAuth pese a estar "ignorados" (GearScope, 2026-08-15). Y `git
+# check-ignore` NO avisa una vez el archivo está trackeado —el tracking gana sobre el ignore—,
+# así que se comprueba ANTES de commitear: `git diff --cached --name-only` en todo commit que
+# meta carpetas enteras.
+related-addons/
+*.zip
+dist/
+.claude/settings.local.json
+CLAUDE.local.md
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

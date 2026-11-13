@@ -1,0 +1,406 @@
+-- Section.lua  (Craft.Section — collapsible section / accordion item)
+-- Spec: docs/components/section.md
+-- Design: shadcn Lyra — .cn-accordion-item (not-last:border-b), .cn-accordion-trigger
+--   (py-2.5 text-xs font-medium, chevron size-4 muted-foreground rotating 180° on open),
+--   .cn-accordion-content (text-xs, pb-2.5 pt-0).
+--   Craft models a SINGLE collapsible section (the consumer stacks several); shadcn's
+--   "only one open" group behaviour can be layered on top.
+--
+-- Expand/collapse animation (ADR-0013 §4.6, collapse pattern):
+--   An `_open` signal drives two tweens. A `prog` tween (0=collapsed → 1=expanded,
+--   m.motionBase) interpolates the FRAME height between the header height (collapsed
+--   FLOOR — never 0, WoW won't repaint a frame that collapsed to 0 then regrew) and
+--   header + body. A faster `alpha` tween (m.motionFast) fades the content; `shown`
+--   stays true through the fade-out so the body isn't cut before it finishes fading.
+--   Height is derived as _headerH + prog*bodyH (FR-044: _headerH is reactive and grows
+--   when a long title wraps), so a content resize (SetContent/Refresh) or a title wrap
+--   snaps the open height without re-animating — only toggling animates.
+
+local Craft = LibStub("Craft-2.0")
+local Weave = LibStub("Weave-1.0")
+local _BUILD = ((select(2, ...)) or {}).CRAFT_BUILD or 0  -- this copy's build (see Craft.register)
+
+local Section = {}
+Section.__index = Section
+
+local PAD_V       = 10   -- py-2.5 (trigger vertical padding)
+local PAD_BOTTOM  = 10   -- pb-2.5 (content bottom padding)
+local LINE_H      = 16   -- text-xs line-height (1.33333 unitless × 12px = 16 — Lyra devtools 2026-07-19)
+local HEADER_MIN  = PAD_V * 2 + LINE_H   -- 36 (single-line floor; header grows for wrapped titles)
+local CHEVRON_SZ  = 16   -- size-4
+local CHEVRON_GAP = 8    -- breathing room reserved between a wrapped title and the chevron
+local FONT_SIZE   = 12   -- text-xs
+
+-- ─── Create ───────────────────────────────────────────────────────────────────
+function Section:Create(parent, config)
+    local self = setmetatable({}, Section)
+
+    config = config or {}
+    self._cfg = {
+        title    = config.title or "",
+        divider  = config.divider ~= false,   -- bottom border (not-last:border-b); default on
+        onToggle = config.onToggle,
+    }
+    self._expanded = (config.collapsed == false)  -- collapsed defaults to true → start collapsed
+
+    self.frame = CreateFrame("Frame", nil, parent)
+    self._theme = Craft.Theme.resolve(parent, config, self.frame)  -- FR-104: before any child
+
+    -- ── Header (trigger) ──────────────────────────────────────────────────────
+    -- Height is dynamic (FR-044): HEADER_MIN is the single-line floor; a long title
+    -- wraps and the header grows to fit it (measured in _remeasureHeader). shadcn's
+    -- trigger is `items-start` height-auto, so title + chevron are top-aligned.
+    -- FR-099: SINGLE anchor + explicit width, pushed from the section frame's
+    -- OnSizeChanged (_syncWidth). Two top anchors (TOPLEFT+TOPRIGHT) on a frame that
+    -- gets its width only after Create (SetWidth after SetContent, parent still hidden)
+    -- left the header — and everything anchored to it — without a rect in-game: no
+    -- title, no chevron, no body, while the section frame itself had one. Same family
+    -- as CLAUDE.md bug #2.
+    self._header = CreateFrame("Button", nil, self.frame)
+    self._header:SetHeight(HEADER_MIN)
+    self._header:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 0, 0)
+
+    self._title = self._header:CreateFontString(nil, "OVERLAY")
+    self._title:SetPoint("TOPLEFT", self._header, "TOPLEFT", 0, -PAD_V)
+    self._title:SetJustifyH("LEFT")
+    self._title:SetJustifyV("TOP")
+    self._title:SetWordWrap(true)   -- FR-044: long titles wrap instead of drawing over the chevron
+
+    -- hover:underline (.cn-accordion-trigger). WoW FontStrings have no text
+    -- decoration, so the underline is a 1px texture parked under the title's last
+    -- line and shown only while the cursor is over the header. Without it the
+    -- trigger gives no hover feedback at all and reads as static text until you
+    -- click it. FR-045.
+    self._titleUnderline = self._header:CreateTexture(nil, "OVERLAY")
+    self._titleUnderline:Hide()
+
+    self._chevron = self._header:CreateTexture(nil, "ARTWORK")
+    self._chevron:SetSize(CHEVRON_SZ, CHEVRON_SZ)
+    self._chevron:SetPoint("TOPRIGHT", self._header, "TOPRIGHT", 0, -PAD_V)
+
+    -- Re-measure the title (and the header height it drives) whenever the header's width
+    -- changes — the consumer sets the section frame width AFTER Create, so the reserved
+    -- title width is only knowable here (FR-044 / CLAUDE.md bug #4 font-late pattern).
+    self._header:SetScript("OnSizeChanged", function() self:_remeasureHeader() end)
+
+    -- ── Content area (holds the child frame) ──────────────────────────────────
+    self._content = CreateFrame("Frame", nil, self.frame)
+    self._content:SetPoint("TOPLEFT", self._header, "BOTTOMLEFT", 0, 0)
+
+    -- FR-099: the section frame's width is the single source for header/content/child
+    -- widths. OnSizeChanged also fires on every height tick of the expand animation,
+    -- so _syncWidth cuts on an unchanged width. OnShow re-syncs for the case where the
+    -- width was set while an ancestor was hidden.
+    self.frame:SetScript("OnSizeChanged", function(_, w) self:_syncWidth(w) end)
+    self.frame:SetScript("OnShow", function() self:_syncWidth() end)
+
+    -- ── Bottom divider (not-last:border-b) ────────────────────────────────────
+    self._border = self.frame:CreateTexture(nil, "BORDER")
+    self._border:SetPoint("BOTTOMLEFT",  self.frame, "BOTTOMLEFT",  0, 0)
+    self._border:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 0, 0)
+
+    self._header:SetScript("OnClick", function() self:Toggle() end)
+
+    -- Compose with OnClick above, never replace it (FR-045).
+    self._header:SetScript("OnEnter", function() self:_setHovered(true)  end)
+    self._header:SetScript("OnLeave", function() self:_setHovered(false) end)
+
+    -- ── Expand/collapse animation (Weave.tween — ADR-0013 §4.6) ────────────────
+    -- `_open` mirrors `_expanded` and is the reactive source; `_bodyH` publishes the
+    -- expandable region height (content + pb-2.5) so a content resize re-derives the
+    -- open height without re-animating (only a toggle moves `prog`).
+    local m = self._theme:get()
+    self._open    = Weave.signal(self._expanded)
+    self._bodyH   = Weave.signal(0)
+    self._headerH = Weave.signal(HEADER_MIN)   -- FR-044: drives the collapsed floor; grows with wrapped titles
+
+    -- prog: 0 (collapsed) → 1 (expanded), eased over motionBase (larger transition).
+    local prog = Weave.tween(
+        Weave.computed(function() return self._open() and 1 or 0 end),
+        { duration = m.motionBase, easing = Weave.easing[m.motionEasing] })
+
+    -- Frame height interpolates between the header height (collapsed FLOOR — NEVER 0,
+    -- ADR-0013 §4.6) and header + body. Snaps on content resize (bodyH changes) while
+    -- open; animates only when prog moves (a toggle).
+    local height = Weave.computed(function()
+        return self._headerH() + prog() * self._bodyH()
+    end)
+
+    -- Content fades with its own faster curve; kept shown through the fade-out so the
+    -- body isn't hidden before alpha reaches 0 (mirrors the Dialog open/close pattern).
+    local alpha = Weave.tween(
+        Weave.computed(function() return self._open() and 1 or 0 end),
+        { duration = m.motionFast, easing = Weave.easing[m.motionEasing] })
+    local contentShown = Weave.computed(function()
+        return self._open() or alpha:animating()
+    end)
+
+    self._effects = self._effects or {}
+    -- Height bind registered FIRST so it applies before the onToggle reflow below reads
+    -- GetHeight() during the animation.
+    self._effects[#self._effects + 1] = Weave.bind(self.frame,    "height", height)
+    self._effects[#self._effects + 1] = Weave.bind(self._content, "alpha",  alpha)
+    self._effects[#self._effects + 1] = Weave.bind(self._content, "shown",  contentShown)
+    self._effects[#self._effects + 1] = prog   -- dispose the tween (effect + driver reg)
+    self._effects[#self._effects + 1] = alpha  -- dispose the tween (effect + driver reg)
+
+    -- Continuous reflow: consumers that stack sections re-anchor them in onToggle by
+    -- reading each frame's GetHeight() (see the showcase). Since the height now changes
+    -- across the whole animation, ping onToggle on every prog tick so the stack follows
+    -- the animating height and settles correctly on the last tick ("notifies as today at
+    -- the end"). The initial seed is skipped (onToggle never fired during Create before);
+    -- content-resize snaps don't move prog, so they don't ping here.
+    local seededProg = false
+    self._effects[#self._effects + 1] = Weave.effect(function()
+        prog()  -- track: re-runs each animation frame
+        local animating = prog:animating()   -- read before the early return (Weave subscribe guard)
+        if not seededProg then seededProg = true; return end
+        if self._cfg.onToggle then self._cfg.onToggle(self._expanded) end
+        -- FR-135: after a fold/unfold the header, title and body were left WITHOUT a
+        -- rect (finite size, one valid anchor, GetRect() == nil) until something
+        -- re-applied their widths. The invalidation lands AFTER the tick (a forced
+        -- resync inside the same tick measured no effect in SMRT), so the re-push is
+        -- deferred one frame — coalesced, so it is one call per frame however many
+        -- ticks — and repeated once more a full motion length after the tween settles.
+        self:_scheduleResync(0)
+        if not animating then self:_scheduleResync(m.motionBase) end
+    end)
+
+    -- Chevron rotation (shadcn v4 `[&[data-state=open]>svg]:rotate-180` + transition-transform
+    -- duration-200): reuse the existing `prog` tween (already 200ms = motionBase, synced to the
+    -- expand/collapse) as the driver. chevron-down base → 0 rad collapsed (points down) → π rad
+    -- expanded (points up). SetRotation rotates the visible atlas quad around its centre.
+    self._effects[#self._effects + 1] = Weave.effect(function()
+        self._chevron:SetRotation(prog() * math.pi)
+    end)
+
+    self._themeHandle = self._theme:register(function(t) self:_applyTheme(t) end)
+    self:_applyTheme(self._theme:get())
+
+    return self
+end
+
+-- ─── Content ──────────────────────────────────────────────────────────────────
+function Section:SetContent(frame)
+    self._child = frame
+    if frame then
+        frame:SetParent(self._content)
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", self._content, "TOPLEFT", 0, 0)
+    end
+    self:_relayout()
+    self:_syncWidth(nil, true)   -- the child takes its width explicitly (single anchor)
+end
+
+function Section:GetContent()
+    return self._content
+end
+
+-- ─── Width propagation (FR-099) ───────────────────────────────────────────────
+-- A finite, positive number or nil (NaN fails `n == n`, ±inf fails the bound).
+local function finite(n)
+    if type(n) ~= "number" or n ~= n or n <= 0 or n >= math.huge then return nil end
+    return n
+end
+
+-- Push the section frame's width down to header, content and child. `w` is the
+-- OnSizeChanged argument when available (reading it avoids a lazy GetWidth during the
+-- layout pass); falls back to GetWidth. `force` re-applies even if unchanged (new child).
+function Section:_syncWidth(w, force)
+    if not self.frame then return end
+    w = finite(w) or finite(self.frame:GetWidth())
+    if not w then return end                              -- width not assigned yet
+    if not force and self._syncedW and math.abs(self._syncedW - w) < 0.01 then return end
+    self._syncedW = w
+    self._header:SetWidth(w)
+    self._content:SetWidth(w)
+    if self._child then self._child:SetWidth(w) end
+    self:_remeasureHeader()
+end
+
+-- FR-135: forced width re-push `delay` seconds from now (0 = next frame). One
+-- pending call per delay, so the per-tick schedule doesn't stack timers.
+function Section:_scheduleResync(delay)
+    if not (C_Timer and C_Timer.After) then return end
+    self._resyncPending = self._resyncPending or {}
+    if self._resyncPending[delay] then return end
+    self._resyncPending[delay] = true
+    C_Timer.After(delay, function()
+        self._resyncPending[delay] = nil
+        if self.frame then self:_syncWidth(nil, true) end
+    end)
+end
+
+-- ─── Header measure (FR-044: title wrap → dynamic header height) ───────────────
+-- Reserve `headerW - chevron - gap` for the title, turn on word wrap, and derive the
+-- header height from the wrapped title height (floored at HEADER_MIN = single line).
+-- Publishing `_headerH` re-derives the frame height reactively (collapsed floor grows).
+-- No-ops until the consumer has given the frame a width; re-runs on resize + theme/font
+-- change (a late-loading font, CLAUDE.md bug #4, re-measures once the glyphs arrive).
+function Section:_remeasureHeader()
+    if not self._header then return end
+    -- FR-099: every value that reaches SetWidth/SetHeight is checked finite — a NaN
+    -- slips through `<= 0` / `< HEADER_MIN` tests and leaves the frame without a rect.
+    local headerW = finite(self._header:GetWidth())
+    if not headerW then return end                        -- width not assigned yet
+
+    local titleW = headerW - CHEVRON_SZ - CHEVRON_GAP
+    if titleW < 1 then titleW = 1 end
+    self._title:SetWidth(titleW)
+
+    local titleH  = finite(self._title:GetStringHeight()) or LINE_H
+    local headerH = PAD_V * 2 + titleH
+    if headerH < HEADER_MIN then headerH = HEADER_MIN end
+
+    -- Guard the SetHeight (this runs inside the header's own OnSizeChanged) so an
+    -- unchanged value doesn't churn the handler.
+    if math.abs((self._header:GetHeight() or 0) - headerH) > 0.5 then
+        self._header:SetHeight(headerH)
+    end
+    if self._headerH then self._headerH:set(headerH) end
+
+    -- The rule follows the text, so it re-derives with it (FR-045).
+    if self._hovered then self:_layoutUnderline() end
+end
+
+-- ─── Hover underline (FR-045) ─────────────────────────────────────────────────
+-- Sizes/positions the 1px rule so it tracks the TEXT, not the full header width:
+-- shadcn underlines the trigger's label, and the header spans to the chevron.
+-- Re-run wherever the header is re-measured (title change, resize, late font).
+function Section:_layoutUnderline()
+    local tex = self._titleUnderline
+    if not tex or not self._t then return end
+
+    -- GetStringWidth on a width-constrained FontString reports the box, so cap it:
+    -- the rule can never be wider than the width reserved for the title.
+    local w = self._title:GetStringWidth() or 0
+    local maxW = self._title:GetWidth() or 0
+    if maxW > 0 and w > maxW then w = maxW end
+    if w < 1 then tex:Hide() return end
+
+    tex:ClearAllPoints()
+    -- BOTTOMLEFT of the title = under its LAST line. A wrapped multi-line title
+    -- therefore gets its last line underlined, not every line as CSS would — the
+    -- documented MVP degradation (these triggers are single-line in practice).
+    tex:SetPoint("TOPLEFT", self._title, "BOTTOMLEFT", 0, 0)
+    tex:SetWidth(w)
+    Craft.Theme.SetPixelHeight(tex, 1)   -- ADR-0011: never SetHeight(1) directly
+    local t = self._t
+    tex:SetColorTexture(t.foreground.r, t.foreground.g, t.foreground.b, t.foreground.a or 1)
+end
+
+function Section:_setHovered(hovered)
+    self._hovered = hovered and true or false
+    local tex = self._titleUnderline
+    if not tex then return end
+    if self._hovered then
+        self:_layoutUnderline()
+        tex:Show()
+    else
+        tex:Hide()
+    end
+end
+
+function Section:IsHovered()
+    return self._hovered or false
+end
+
+-- ─── Layout ───────────────────────────────────────────────────────────────────
+function Section:_relayout()
+    local contentH = (self._child and self._child:GetHeight()) or 0
+    local bodyH    = contentH + PAD_BOTTOM   -- content + pb-2.5 (expandable region)
+
+    -- The content frame keeps its natural height at all times; visibility is handled
+    -- by the alpha/shown binds (fade), NOT by collapsing height to ~0 (WoW won't
+    -- repaint a frame that collapsed to 0 then regrew, ADR-0013 §4.6).
+    self._content:SetHeight(bodyH)
+
+    -- Publish the expandable height. The frame height (HEADER_H + prog*bodyH) re-derives
+    -- reactively: it snaps to the new open size when content resizes, and interpolates
+    -- when a toggle moves prog. The header height is the collapsed floor (never 0).
+    if self._bodyH then self._bodyH:set(bodyH) end
+
+    self._border:SetShown(self._cfg.divider)
+end
+
+-- ─── Toggle / state ───────────────────────────────────────────────────────────
+function Section:Toggle()
+    self:SetExpanded(not self._expanded)
+end
+
+function Section:SetExpanded(expanded)
+    self._expanded = expanded
+    self:_refreshChevron()
+    self:_relayout()            -- refresh bodyH from current content before animating
+    if self._open then
+        self._open:set(expanded)  -- drives the height/alpha tweens (equality-cut on no-op)
+    end
+    -- Fire onToggle once here (preserves the "notify per toggle" semantics, including a
+    -- redundant SetExpanded(sameValue) that moves no tween). The prog effect adds the
+    -- per-frame reflow pings while the animation runs.
+    if self._cfg.onToggle then self._cfg.onToggle(self._expanded) end
+end
+
+function Section:Expand()   self:SetExpanded(true)  end
+function Section:Collapse() self:SetExpanded(false) end
+function Section:IsExpanded() return self._expanded end
+
+function Section:_refreshChevron()
+    -- Single ROTATABLE base icon (shadcn v4 AccordionTrigger): the chevron points DOWN
+    -- when collapsed (0 rad, the "expand" affordance) and rotates a continuous 180° to
+    -- point UP when expanded — driven by the `prog` tween in Create (rotation = prog*π,
+    -- 200ms = duration-200). We keep chevron-down as the base so 0 rad = natural collapsed
+    -- orientation and π rad = shadcn's `rotate-180`. Apply() only sets texture/texcoords/
+    -- size; it does NOT touch the rotation set by SetRotation, so re-applying (theme change)
+    -- is safe mid-rotation.
+    Craft.Icons.Apply(self._chevron, "chevron-down", CHEVRON_SZ)
+    if self._t then
+        local c = self._t.mutedForeground
+        self._chevron:SetVertexColor(c.r, c.g, c.b, 1)
+    end
+end
+
+-- ─── Theme ────────────────────────────────────────────────────────────────────
+function Section:_applyTheme(t)
+    self._t = t
+
+    -- .cn-accordion-trigger font-medium; t.fontHeading = eje headingFont (ADR-0014)
+    self._theme:applyFont(self._title, t.fontHeading or t.fontMedium or t.font, FONT_SIZE)
+    self._title:SetTextColor(t.foreground.r, t.foreground.g, t.foreground.b)
+    self._title:SetText(self._cfg.title)
+
+    Craft.Theme.SetPixelHeight(self._border, 1)
+    self._border:SetColorTexture(t.border.r, t.border.g, t.border.b, t.border.a)
+
+    self:_refreshChevron()
+    self:_syncWidth(nil, true) -- FR-099: width may already be known (anchored parent)
+    self:_remeasureHeader()   -- FR-044: re-measure header after (re)applying font/text
+    self:_relayout()
+end
+
+-- ─── Public misc ──────────────────────────────────────────────────────────────
+function Section:SetTitle(text)
+    self._cfg.title = text or ""
+    self._title:SetText(self._cfg.title)
+    self:_remeasureHeader()   -- FR-044: title changed → re-derive header height
+end
+
+function Section:Refresh()   -- re-read child height (call if content resized)
+    self:_relayout()
+end
+
+function Section:GetFrame()
+    return self.frame
+end
+
+-- ─── Destructor ───────────────────────────────────────────────────────────────
+function Section:Destroy()
+    if not self.frame then return end
+    Craft.Reactive.disposeAll(self)            -- cut height/alpha/shown binds + tweens
+    self._theme:unregister(self._themeHandle)
+    self.frame:Hide()
+    self.frame = nil
+    self._child = nil
+end
+
+Craft.register("Section", Section, _BUILD)

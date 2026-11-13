@@ -1,0 +1,672 @@
+---@diagnostic disable: undefined-global
+-- modules/InstanceTracker/wow/UI.lua -- the Instance Tracker widget (plan M1 F2), on Craft.
+--
+-- A transparent HUD (no background: legibility comes from OUTLINE + shadow), right-aligned,
+-- following the design canvas: header (dungeon + difficulty tag), big clock with the record or
+-- the FIRST TIME tag, info line, 14 px time bar (or boss segments without a record), XP bar,
+-- contextual "Instances X/10" and the boss list with splits and deltas. Compact mode = one line
+-- on a panel, with the boss list in a Craft.Tooltip on hover.
+--
+-- WHAT to paint comes from core/View.lua (pure, tested); colors and sizes ONLY from
+-- core/Style.lua. Craft gives the theme context (own one, so Coffer & co. are untouched), the
+-- BettoGeo fonts (applyFont arms the async font probes), the pixel-perfect border and the tooltip.
+-- Only the header row (or the compact panel) takes the mouse: the rest is click-through.
+local _, ns = ...
+local L, T = ns.L, ns.InstanceTracker
+local View, Style, Demo = ns.InstanceTrackerView, ns.InstanceTrackerStyle, ns.InstanceTrackerDemo
+local S, C, FONT = Style.SIZE, Style.C, Style.FONT
+
+local UI = {}
+ns.InstanceTrackerUI = UI
+
+local THEME_NAME = "QuantumDungeonTools"
+local TICK = 0.5
+
+local Craft            -- resolved in Init (LibStub)
+local ctx              -- our Craft theme context
+local root             -- position anchor, holds both layouts
+local W = {}           -- widgets of the full layout
+local K = {}           -- widgets of the compact layout
+local fontOf = {}      -- FontString -> Style.FONT entry (re-applied on theme / font-metrics change)
+local forced           -- nil (automatic) | "show" | "hide"; reset on every zone change
+local demo             -- nil | scenario name of core/Demo.lua
+local lastView         -- what was painted last (the tick repaints only when the clock moves)
+
+local function db() return ns.db.instanceTracker end
+
+------------------------------------------------------------------------------
+-- Building blocks
+------------------------------------------------------------------------------
+local function setColor(tex, c) tex:SetColorTexture(c.r, c.g, c.b, c.a or 1) end
+
+local function applyFont(fs)
+  local f = fontOf[fs]
+  local weight = f.weight ~= "regular" and f.weight or nil
+  ctx:applyFont(fs, ctx:getFont(weight), f.size)
+end
+
+local function newText(parent, font)
+  local fs = parent:CreateFontString(nil, "OVERLAY")
+  fontOf[fs] = font
+  applyFont(fs)
+  fs:SetShadowColor(C.shadow.r, C.shadow.g, C.shadow.b, C.shadow.a)
+  fs:SetShadowOffset(1, -1)
+  fs:SetWordWrap(false)
+  fs:SetJustifyH("RIGHT")
+  return fs
+end
+
+local function setText(fs, text, color)
+  fs:SetText(text or "")
+  if color then fs:SetTextColor(color.r, color.g, color.b, color.a or 1) end
+end
+
+-- 1px border (Craft's corner-safe helper) in a given color.
+local function newBorder(frame, layer)
+  local b = {}
+  for i = 1, 4 do b[i] = frame:CreateTexture(nil, layer or "BORDER") end
+  Craft.Theme.AnchorBorder(frame, b[1], b[2], b[3], b[4])
+  return b
+end
+
+local function colorBorder(b, c)
+  for i = 1, 4 do setColor(b[i], c) end
+end
+
+-- Tag = text with a 1px border and no fill (design: "tags = only border").
+local function newTag(parent, font)
+  local tag = CreateFrame("Frame", nil, parent)
+  tag.text = newText(tag, font)
+  tag.text:SetPoint("CENTER", tag, "CENTER", 0, 0)
+  tag.border = newBorder(tag)
+  return tag
+end
+
+local function setTag(tag, text, textColor, borderColor)
+  setText(tag.text, text, textColor)
+  colorBorder(tag.border, borderColor)
+  tag:SetSize(math.ceil(tag.text:GetStringWidth()) + 2 * S.tagPadX,
+    math.ceil(tag.text:GetStringHeight()) + 2 * S.tagPadY + 2)
+end
+
+-- Chains the shown regions right-to-left inside `row` (pieces[1] is the rightmost).
+-- `point` = "BOTTOM" aligns baselines roughly (mixed font sizes), "CENTER" centers them.
+local function chain(row, pieces, point, gap)
+  local prev
+  for _, r in ipairs(pieces) do
+    if r:IsShown() then
+      r:ClearAllPoints()
+      if prev then
+        r:SetPoint(point .. "RIGHT", prev, point .. "LEFT", -(gap or S.rowGap), 0)
+      else
+        r:SetPoint(point .. "RIGHT", row, point .. "RIGHT", 0, 0)
+      end
+      prev = r
+    end
+  end
+end
+
+local function heightOf(pieces)
+  local h = 0
+  for _, r in ipairs(pieces) do
+    if r:IsShown() then
+      local rh = r.GetStringHeight and r:GetStringHeight() or r:GetHeight()
+      if rh > h then h = rh end
+    end
+  end
+  return math.ceil(h)
+end
+
+local function newRow(parent)
+  local row = CreateFrame("Frame", nil, parent)
+  row:SetWidth(S.width)
+  return row
+end
+
+------------------------------------------------------------------------------
+-- Position
+------------------------------------------------------------------------------
+local function savePosition()
+  local right, top = root:GetRight(), root:GetTop()
+  local pr, pt = UIParent:GetRight(), UIParent:GetTop()
+  if right and top and pr and pt then
+    db().pos = { "TOPRIGHT", "TOPRIGHT", right - pr, top - pt }
+  end
+end
+
+local function restorePosition()
+  root:ClearAllPoints()
+  local p = db().pos
+  if p then
+    root:SetPoint(p[1], UIParent, p[2], p[3], p[4])
+  else
+    root:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -40, -200)
+  end
+end
+
+-- The header row / compact panel move the whole widget; right click hides it.
+local function makeHandle(frame)
+  frame:EnableMouse(true)
+  frame:RegisterForDrag("LeftButton")
+  frame:SetScript("OnDragStart", function() root:StartMoving() end)
+  frame:SetScript("OnDragStop", function()
+    root:StopMovingOrSizing()
+    savePosition()
+  end)
+  frame:SetScript("OnMouseUp", function(_, button)
+    if button == "RightButton" then UI:Hide() end
+  end)
+end
+
+------------------------------------------------------------------------------
+-- Full layout
+------------------------------------------------------------------------------
+local function buildFull()
+  local full = CreateFrame("Frame", nil, root)
+  full:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, 0)
+  full:SetWidth(S.width)
+  W.frame = full
+
+  -- Header: dungeon + difficulty tag (the drag handle)
+  W.head = newRow(full)
+  makeHandle(W.head)
+  W.name = newText(W.head, FONT.head)
+  W.diff = newTag(W.head, FONT.tag)
+
+  -- Clock row: deaths, clock, "/ record" or FIRST TIME
+  W.clockRow = newRow(full)
+  W.deaths = newText(W.clockRow, FONT.deaths)
+  W.clock = newText(W.clockRow, FONT.clock)
+  W.ref = newText(W.clockRow, FONT.ref)
+  W.strike = W.clockRow:CreateTexture(nil, "OVERLAY", nil, 7)
+  W.strike:SetPoint("LEFT", W.ref, "LEFT", -1, 0)
+  W.strike:SetPoint("RIGHT", W.ref, "RIGHT", 1, 0)
+  W.strike:SetHeight(2)
+  W.first = newTag(W.clockRow, FONT.tagStrong)
+
+  -- Info row: "Bosses 3/7 · vs. record -0:17" (+ NEW RECORD tag)
+  W.infoRow = newRow(full)
+  W.info = newText(W.infoRow, FONT.info)
+  W.record = newTag(W.infoRow, FONT.tagStrong)
+
+  -- Time bar (with record) / boss segments (first time)
+  W.bar = newRow(full)
+  W.bar:SetHeight(S.barH)
+  W.barTrack = W.bar:CreateTexture(nil, "BACKGROUND")
+  W.barTrack:SetAllPoints()
+  W.barBorder = newBorder(W.bar)
+  W.barFill = W.bar:CreateTexture(nil, "ARTWORK")
+  W.barFill:SetPoint("TOPLEFT", W.bar, "TOPLEFT", 0, 0)
+  W.barFill:SetPoint("BOTTOMLEFT", W.bar, "BOTTOMLEFT", 0, 0)
+  W.ticks = {}
+  W.segRow = newRow(full)
+  W.segRow:SetHeight(S.segH)
+  W.segs = {}
+
+  -- XP: bar (before the run / gained / rested) + two labels
+  W.xp = newRow(full)
+  W.xpBar = CreateFrame("Frame", nil, W.xp)
+  W.xpBar:SetPoint("TOPLEFT", W.xp, "TOPLEFT", 0, 0)
+  W.xpBar:SetPoint("TOPRIGHT", W.xp, "TOPRIGHT", 0, 0)
+  W.xpBar:SetHeight(S.xpBarH)
+  W.xpTrack = W.xpBar:CreateTexture(nil, "BACKGROUND")
+  W.xpTrack:SetAllPoints()
+  W.xpBorder = newBorder(W.xpBar)
+  W.xpRested = W.xpBar:CreateTexture(nil, "ARTWORK", nil, 1)
+  W.xpCur = W.xpBar:CreateTexture(nil, "ARTWORK", nil, 2)
+  W.xpBase = W.xpBar:CreateTexture(nil, "ARTWORK", nil, 3)
+  for _, tex in ipairs({ W.xpRested, W.xpCur, W.xpBase }) do
+    tex:SetPoint("TOPLEFT", W.xpBar, "TOPLEFT", 0, 0)
+    tex:SetPoint("BOTTOMLEFT", W.xpBar, "BOTTOMLEFT", 0, 0)
+  end
+  W.xpLeft = newText(W.xp, FONT.small)
+  W.xpLeft:SetJustifyH("LEFT")
+  W.xpLeft:SetPoint("TOPLEFT", W.xpBar, "BOTTOMLEFT", 0, -3)
+  W.xpRight = newText(W.xp, FONT.small)
+  W.xpRight:SetPoint("TOPRIGHT", W.xpBar, "BOTTOMRIGHT", 0, -3)
+
+  -- Extras: "Instances 8/10 · free in 12:40" (gold and reputation arrive in F4)
+  W.extras = newRow(full)
+  W.instances = newTag(W.extras, FONT.small)
+
+  W.bosses = {}
+end
+
+local function bossRow(i)
+  local r = W.bosses[i]
+  if r then return r end
+  r = newRow(W.frame)
+  r.name = newText(r, FONT.bossName)
+  r.time = newText(r, FONT.bossTime)
+  r.delta = newText(r, FONT.bossDelta)
+  W.bosses[i] = r
+  return r
+end
+
+local function tick(i)
+  local t = W.ticks[i]
+  if t then return t end
+  t = W.bar:CreateTexture(nil, "OVERLAY")
+  t:SetWidth(S.tickW)
+  t:SetHeight(S.barH + 2 * S.tickOut)
+  W.ticks[i] = t
+  return t
+end
+
+local function segment(i)
+  local s = W.segs[i]
+  if s then return s end
+  s = CreateFrame("Frame", nil, W.segRow)
+  s.fill = s:CreateTexture(nil, "BACKGROUND")
+  s.fill:SetAllPoints()
+  s.border = newBorder(s)
+  colorBorder(s.border, C.hairline)
+  W.segs[i] = s
+  return s
+end
+
+local function paintTimeBar(bar)
+  setColor(W.barTrack, C.track)
+  colorBorder(W.barBorder, C.hairline)
+  local width = S.width
+  if bar.fill > 0 then
+    W.barFill:SetWidth(width * bar.fill)
+    setColor(W.barFill, C.gold)
+    W.barFill:Show()
+  else
+    W.barFill:Hide()
+  end
+  for i, t in ipairs(bar.ticks) do
+    local tx = tick(i)
+    tx:ClearAllPoints()
+    tx:SetPoint("CENTER", W.bar, "LEFT", width * t.pos, 0)
+    setColor(tx, Style.tone(t.tone))
+    tx:Show()
+  end
+  for i = #bar.ticks + 1, #W.ticks do W.ticks[i]:Hide() end
+end
+
+local function paintSegments(bar)
+  local n = #bar.segs
+  local w = (S.width - (n - 1) * S.segGap) / n
+  for i, tone in ipairs(bar.segs) do
+    local s = segment(i)
+    s:ClearAllPoints()
+    s:SetPoint("TOPLEFT", W.segRow, "TOPLEFT", (i - 1) * (w + S.segGap), 0)
+    s:SetSize(w, S.segH)
+    setColor(s.fill, Style.tone(tone))
+    s:Show()
+  end
+  for i = n + 1, #W.segs do W.segs[i]:Hide() end
+end
+
+local function paintXP(xp)
+  local width = S.width
+  setColor(W.xpTrack, C.track)
+  colorBorder(W.xpBorder, C.hairline)
+  local function seg(tex, frac, color)
+    if frac and frac > 0 then
+      tex:SetWidth(width * frac)
+      setColor(tex, color)
+      tex:Show()
+    else
+      tex:Hide()
+    end
+  end
+  seg(W.xpRested, xp.rested, C.rested)
+  seg(W.xpCur, xp.cur, C.turquoise)
+  seg(W.xpBase, xp.base, C.xpBase)
+  setText(W.xpLeft, L.IT_XP_RUN:format(Style.code("xpLight") .. "+" .. xp.gained .. "|r"), C.muted)
+  setText(W.xpRight, L.IT_XP_LEVEL:format(xp.level, xp.pct)
+    .. (xp.restedPct and L.IT_XP_RESTED:format(xp.restedPct) or ""), C.muted)
+  W.xp:SetHeight(S.xpBarH + 3 + math.ceil(W.xpLeft:GetStringHeight()))
+end
+
+local SEP = "  ·  "
+
+local function infoText(v)
+  local total = v.totalKnown and tostring(v.total) or "?"
+  local text = L.IT_BOSSES:format(Style.code(v.bossesTone) .. v.killed .. "/" .. total .. "|r")
+  local note = v.note
+  if not v.totalKnown and #v.bosses == 0 then
+    text = text .. SEP .. L.IT_WAITING
+  elseif note and note.kind == "vsPB" then
+    text = text .. SEP .. L.IT_VS_PB:format(Style.code(note.tone) .. note.text .. "|r")
+  elseif note and note.kind == "firstHint" then
+    text = text .. SEP .. L.IT_FIRST_HINT
+  elseif note and note.kind == "newRecord" then
+    text = text .. SEP
+  end
+  return text
+end
+
+local function renderFull(v)
+  local y = 0
+  local function place(frame, h, extra)
+    y = y + (extra or 0)
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPRIGHT", W.frame, "TOPRIGHT", 0, -y)
+    frame:SetHeight(h)
+    frame:Show()
+    y = y + h + S.gap
+  end
+
+  -- Header
+  setText(W.name, v.name, C.muted)
+  if v.difficulty then
+    setTag(W.diff, v.difficulty, C.sand, C.goldSoft)
+    W.diff:Show()
+  else
+    W.diff:Hide()
+  end
+  local head = { W.diff, W.name }
+  chain(W.head, head, "", S.rowGap)
+  place(W.head, heightOf(head))
+
+  -- Clock row
+  setText(W.clock, v.clock, Style.tone(v.clockTone))
+  W.deaths:SetShown(v.deaths ~= nil)
+  if v.deaths then
+    setText(W.deaths, (v.deaths == 1 and L.IT_DEATH or L.IT_DEATHS):format(v.deaths), C.red)
+  end
+  local right
+  if v.ref.kind == "pb" then
+    setText(W.ref, v.ref.struck and v.ref.text or ("/ " .. v.ref.text), C.muted)
+    W.ref:Show()
+    W.first:Hide()
+    W.strike:SetShown(v.ref.struck)
+    setColor(W.strike, C.muted)
+    right = W.ref
+  else
+    setTag(W.first, L.IT_FIRST_TAG, C.xpLight, C.xpLightHalf)
+    W.first:Show()
+    W.ref:Hide()
+    W.strike:Hide()
+    right = W.first
+  end
+  local clockRow = { right, W.clock, W.deaths }
+  chain(W.clockRow, clockRow, "BOTTOM", 10)
+  place(W.clockRow, heightOf(clockRow))
+
+  -- Info row
+  setText(W.info, infoText(v), C.muted)
+  if v.note and v.note.kind == "newRecord" then
+    setTag(W.record, L.IT_NEW_RECORD:format(v.note.text), C.turquoise, C.turquoise)
+    W.record:Show()
+  else
+    W.record:Hide()
+  end
+  local infoRow = { W.record, W.info }
+  chain(W.infoRow, infoRow, "", 0)
+  place(W.infoRow, heightOf(infoRow))
+
+  -- Bar
+  W.bar:Hide()
+  W.segRow:Hide()
+  if v.bar and v.bar.mode == "time" then
+    paintTimeBar(v.bar)
+    place(W.bar, S.barH, S.gap)
+  elseif v.bar and v.bar.mode == "segments" and #v.bar.segs > 0 then
+    paintSegments(v.bar)
+    place(W.segRow, S.segH, S.gap)
+  end
+
+  -- XP
+  if v.xp then
+    paintXP(v.xp)
+    place(W.xp, W.xp:GetHeight(), 2)
+  else
+    W.xp:Hide()
+  end
+
+  -- Extras (level 2, contextual)
+  if v.instances then
+    local i = v.instances
+    local text = L.IT_INSTANCES:format(i.count, i.limit) .. (i.freeIn and L.IT_INSTANCES_FREE:format(i.freeIn) or "")
+    local color = i.full and C.red or C.gold
+    setTag(W.instances, text, color, i.full and C.red or C.goldHalf)
+    W.instances:Show()
+    chain(W.extras, { W.instances }, "", 0)
+    place(W.extras, W.instances:GetHeight(), 2)
+  else
+    W.extras:Hide()
+  end
+
+  -- Bosses
+  y = y + S.bossTop - S.gap
+  for i, b in ipairs(v.bosses) do
+    local r = bossRow(i)
+    local tone = Style.tone(b.tone)
+    setText(r.name, b.name, tone)
+    setText(r.time, b.time, tone)
+    r.time:SetShown(b.time ~= "")
+    r.delta:SetShown(b.delta ~= nil)
+    if b.delta then setText(r.delta, b.delta, Style.tone(b.deltaTone)) end
+    local pieces = { r.name, r.time, r.delta }
+    chain(r, pieces, "BOTTOM", 8)
+    r:ClearAllPoints()
+    r:SetPoint("TOPRIGHT", W.frame, "TOPRIGHT", 0, -y)
+    r:SetHeight(heightOf(pieces))
+    r:Show()
+    y = y + r:GetHeight() + S.bossGap
+  end
+  for i = #v.bosses + 1, #W.bosses do W.bosses[i]:Hide() end
+
+  W.frame:SetHeight(math.max(1, y))
+  return S.width, y
+end
+
+------------------------------------------------------------------------------
+-- Compact layout
+------------------------------------------------------------------------------
+local function compactLines()
+  local v = lastView
+  if not v then return {} end
+  local title = v.name .. (v.difficulty and (" · " .. v.difficulty) or "")
+  local deaths = v.deaths and (v.deaths == 1 and L.IT_DEATH or L.IT_DEATHS):format(v.deaths) or nil
+  local lines = { { left = title, right = deaths, leftColor = C.muted, rightColor = C.red } }
+  lines[#lines + 1] = { separator = true }
+  for _, b in ipairs(v.bosses) do
+    local tone = Style.tone(b.tone)
+    local time = b.time ~= "" and (b.time:gsub("[%[%]]", "")) or "--"
+    lines[#lines + 1] = { left = b.name, right = time, leftColor = tone, rightColor = tone }
+  end
+  if v.ref.kind == "pb" then
+    lines[#lines + 1] = { separator = true }
+    lines[#lines + 1] = { left = L.IT_RECORD, right = v.ref.text, leftColor = C.muted, rightColor = C.muted }
+  end
+  return lines
+end
+
+local function buildCompact()
+  local f = CreateFrame("Frame", nil, root)
+  f:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, 0)
+  K.frame = f
+  K.bg = f:CreateTexture(nil, "BACKGROUND")
+  K.bg:SetAllPoints()
+  K.border = newBorder(f)
+  makeHandle(f)
+  K.bosses = newText(f, FONT.compact)
+  K.sep1 = f:CreateTexture(nil, "ARTWORK")
+  K.clock = newText(f, FONT.compact)
+  K.delta = newText(f, FONT.compactSm)
+  K.sep2 = f:CreateTexture(nil, "ARTWORK")
+  K.xp = newText(f, FONT.compact)
+  for _, s in ipairs({ K.sep1, K.sep2 }) do s:SetSize(1, S.compactSep) end
+  Craft.Tooltip.Attach(f, { lines = compactLines, fontFlags = "", side = "bottom", delay = 150 })
+end
+
+local function renderCompact(v)
+  setColor(K.bg, C.panelBg)
+  colorBorder(K.border, C.hairline)
+  setColor(K.sep1, C.goldSoft)
+  setColor(K.sep2, C.goldSoft)
+  local total = v.totalKnown and tostring(v.total) or "?"
+  setText(K.bosses, L.IT_BOSSES:format(v.killed .. "/" .. total), Style.tone(v.bossesTone))
+  setText(K.clock, v.clock, Style.tone(v.clockTone))
+  K.delta:SetShown(v.compactDelta ~= nil)
+  if v.compactDelta then setText(K.delta, v.compactDelta.text, Style.tone(v.compactDelta.tone)) end
+  K.sep2:SetShown(v.xp ~= nil)
+  K.xp:SetShown(v.xp ~= nil)
+  if v.xp then setText(K.xp, L.IT_XP_SHORT:format("+" .. v.xp.gained), C.xpLight) end
+
+  -- Left to right, from the panel's left padding.
+  local x = S.compactPadX
+  for _, r in ipairs({ K.bosses, K.sep1, K.clock, K.delta, K.sep2, K.xp }) do
+    if r:IsShown() then
+      r:ClearAllPoints()
+      r:SetPoint("LEFT", K.frame, "LEFT", x, 0)
+      local w = r.GetStringWidth and math.ceil(r:GetStringWidth()) or r:GetWidth()
+      x = x + w + (r == K.clock and 4 or S.rowGap + 2)
+    end
+  end
+  local h = heightOf({ K.bosses, K.clock }) + 2 * S.compactPadY
+  K.frame:SetSize(x - S.rowGap - 2 + S.compactPadX, h)
+  return K.frame:GetWidth(), h
+end
+
+------------------------------------------------------------------------------
+-- Render / visibility
+------------------------------------------------------------------------------
+local function source()
+  if demo then
+    local run, opts, compact = Demo.get(demo)
+    return run, opts, compact
+  end
+  return T.run, { xp = T:XPSnapshot() }, db().compact
+end
+
+local function build()
+  root = CreateFrame("Frame", "QDTInstanceTrackerFrame", UIParent)
+  Craft.Theme.resolve(nil, { theme = ctx }, root)   -- marks the frame: Craft overlays inherit our context
+  root:SetFrameStrata("MEDIUM")
+  root:SetClampedToScreen(true)
+  root:SetMovable(true)
+  root:SetSize(S.width, 1)
+  restorePosition()
+  buildFull()
+  buildCompact()
+
+  local acc = 0
+  root:SetScript("OnUpdate", function(_, dt)
+    acc = acc + dt
+    if acc < TICK then return end
+    acc = 0
+    local run, opts = source()
+    local v = View.build(run, opts)
+    if v and (not lastView or v.clock ~= lastView.clock) then UI:Render() end
+  end)
+
+  -- Theme or font metrics changed (first-ever BettoGeo load is async): re-font and repaint.
+  ctx:register(function()
+    for fs in pairs(fontOf) do applyFont(fs) end
+    if root:IsShown() then UI:Render() end
+  end)
+end
+
+function UI:Render()
+  if not root then return end
+  local run, opts, compact = source()
+  local v = View.build(run, opts)
+  lastView = v
+  if not v then
+    W.frame:Hide()
+    K.frame:Hide()
+    return
+  end
+  local w, h
+  if compact then
+    W.frame:Hide()
+    K.frame:Show()
+    w, h = renderCompact(v)
+  else
+    K.frame:Hide()
+    W.frame:Show()
+    w, h = renderFull(v)
+  end
+  root:SetSize(w, math.max(1, h))
+end
+
+function UI:Update(reason)
+  if not ctx then return end
+  if reason == "zone" then forced = nil end
+  local want
+  if demo or forced == "show" then
+    want = true
+  elseif forced == "hide" then
+    want = false
+  else
+    want = db().autoShow and T.inInstance and T.run ~= nil
+  end
+  if want and not root then build() end
+  if not root then return end
+  if want then
+    self:Render()
+    root:Show()
+  else
+    root:Hide()
+  end
+end
+
+function UI:Hide()
+  forced = "hide"
+  demo = nil
+  self:Update()
+end
+
+function UI:Toggle()
+  forced = (root and root:IsShown()) and "hide" or "show"
+  self:Update()
+end
+
+function UI:ToggleCompact()
+  local it = db()
+  it.compact = not it.compact
+  self:Update()
+  return it.compact
+end
+
+-- name: a Demo scenario, or "off". Returns true when the name was valid.
+function UI:Demo(name)
+  if name == "off" then
+    demo = nil
+    self:Update()
+    return true
+  end
+  if not Demo.get(name) then return false end
+  demo = name
+  self:Update()
+  return true
+end
+
+-- For /qdt check f2: what was built and painted (plain values only).
+function UI:Snapshot()
+  return {
+    craft = Craft ~= nil, context = ctx and ctx.name or nil,
+    built = root ~= nil, shown = root and root:IsShown() or false,
+    compact = db().compact == true, demo = demo,
+    width = root and root:GetWidth() or nil, height = root and root:GetHeight() or nil,
+    fonts = (function() local n = 0 for _ in pairs(fontOf) do n = n + 1 end return n end)(),
+  }
+end
+
+function UI:Init()
+  Craft = LibStub and LibStub("Craft-2.0", true)
+  if not Craft then
+    ns.say(L.IT_NO_CRAFT)
+    return
+  end
+  ctx = Craft.Theme.context(THEME_NAME, {
+    font = "bettogeo", headingFont = "bettogeo",
+    overrides = {
+      fontFlags = "OUTLINE",
+      primary = C.gold, primaryForeground = C.panel,
+      foreground = C.cream, mutedForeground = C.muted,
+      popover = C.panel, popoverForeground = C.cream,
+      border = C.hairline, destructive = C.red,
+    },
+  })
+  T:OnChange(function(reason) UI:Update(reason) end)
+end
+
+return UI

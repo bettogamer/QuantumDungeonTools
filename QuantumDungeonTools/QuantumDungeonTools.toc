@@ -1,0 +1,78 @@
+## Interface: 16001
+## Title: Quantum Dungeon Tools
+## Notes: Dungeon toolkit of the Quantum guild. Instance Tracker: bosses left, run timer with splits and XP gained.
+## Notes-esES: Herramientas de mazmorra de la guild Quantum. Instance Tracker: jefes restantes, cronómetro con splits y XP ganada.
+## Notes-esMX: Herramientas de mazmorra de la guild Quantum. Instance Tracker: jefes restantes, cronómetro con splits y XP ganada.
+## Author: Alberto Gomez
+## Version: @project-version@
+## SavedVariables: QuantumDungeonToolsDB
+## Category: Other
+## X-Website: https://github.com/bettogamer/QuantumDungeonTools
+
+# Vendored libs (read-only) -- versions in libs/README.md. Order: LibStub -> Weave -> Craft
+# (Craft Reactive.lua needs Weave loaded first).
+libs\LibStub\LibStub.lua
+libs\Weave\Weave.xml
+
+# Craft v2.47.0 (Craft-2.0, build 49). media/ resolves by _hostName
+# (Interface\AddOns\QuantumDungeonTools\libs\Craft\media\). Mirror order of Craft.toc.
+libs\Craft\Craft.lua
+libs\Craft\Reactive.lua
+libs\Craft\theme\Presets.lua
+libs\Craft\theme\Theme.lua
+libs\Craft\theme\Shapes.lua
+libs\Craft\icons\Atlas.lua
+libs\Craft\icons\Icons.lua
+libs\Craft\layout\Flex.lua
+libs\Craft\layout\Grid.lua
+libs\Craft\components\ScrollBar.lua
+libs\Craft\components\Avatar.lua
+libs\Craft\components\Badge.lua
+libs\Craft\components\Button.lua
+libs\Craft\components\Checkbox.lua
+libs\Craft\components\ColorSwatch.lua
+libs\Craft\components\Input.lua
+libs\Craft\components\RadioGroup.lua
+libs\Craft\components\Textarea.lua
+libs\Craft\components\CodeEditor.lua
+libs\Craft\components\Label.lua
+libs\Craft\components\Field.lua
+libs\Craft\components\Empty.lua
+libs\Craft\components\Panel.lua
+libs\Craft\components\Dialog.lua
+libs\Craft\components\DragList.lua
+libs\Craft\components\Select.lua
+libs\Craft\components\Menu.lua
+libs\Craft\components\Popover.lua
+libs\Craft\components\Progress.lua
+libs\Craft\components\ProgressRing.lua
+libs\Craft\components\Combobox.lua
+libs\Craft\components\Separator.lua
+libs\Craft\components\Sidebar.lua
+libs\Craft\components\Slider.lua
+libs\Craft\components\Switch.lua
+libs\Craft\components\Toast.lua
+libs\Craft\components\Scroll.lua
+libs\Craft\components\Section.lua
+libs\Craft\components\Toggle.lua
+libs\Craft\components\ToggleGroup.lua
+libs\Craft\components\Tabs.lua
+libs\Craft\components\Tooltip.lua
+libs\Craft\components\Window.lua
+
+# Load order: Locale -> core/ (pure Lua) -> wow/ (integration) -> modules (core, then wow) -> Config.
+# The core/ <-> wow/ boundary is enforced by .luacheckrc (files{}): core/ may NOT touch WoW API.
+Locale.lua
+core\Format.lua
+core\Brand.lua
+wow\Bootstrap.lua
+modules\InstanceTracker\core\Run.lua
+modules\InstanceTracker\core\Guid.lua
+modules\InstanceTracker\core\Style.lua
+modules\InstanceTracker\core\View.lua
+modules\InstanceTracker\core\Demo.lua
+modules\InstanceTracker\wow\Tracker.lua
+modules\InstanceTracker\wow\UI.lua
+modules\InstanceTracker\wow\CheckF1.lua
+modules\InstanceTracker\wow\CheckF2.lua
+Config.lua
