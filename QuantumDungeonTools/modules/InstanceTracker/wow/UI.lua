@@ -171,9 +171,15 @@ end
 -- "+4 [gold] 12 [silver]" with the game's coin icons at a fixed, measurable size. Pattern from
 -- Coffer MoneyDisplay.Format: auto-sized icons (":0:0:") measure ~0 px and the last token of the
 -- string is dropped from the measurement, hence the pinned size and the closing space.
+-- Margins of the design (2 px before each coin, 5 px after one that has a coin next): BettoGeo
+-- has no thin spaces (only U+0020, ~3.5 px), so they are transparent spacer textures.
+local BLANK = [[Interface\AddOns\QuantumDungeonTools\media\blank]]
+local function spacer(px) return "|T" .. BLANK .. ":1:" .. px .. "|t" end
+
 local function moneyText(copper)
   local s = GetMoneyString and GetMoneyString(copper, true) or GetCoinTextureString(copper)
-  s = s:gsub("|T([^|:]+):[^|]*|t", "|T%1:" .. S.coinSize .. "|t")   -- icon right after its number
+  s = s:gsub("|T([^|:]+):[^|]*|t", spacer(S.coinBefore) .. "|T%1:" .. S.coinSize .. "|t")
+  s = s:gsub("|t +(%d)", "|t" .. spacer(S.coinAfter) .. "%1")   -- the next denomination
   return "+" .. s .. " "
 end
 

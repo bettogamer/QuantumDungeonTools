@@ -90,6 +90,8 @@ Style.SIZE = {
   extrasGap = 12,   -- between money, reputation and the instances tag (design: 12)
   repMinW   = 60,   -- totals row: below this room the faction is hidden instead of cut
   coinSize  = 11,   -- inline coin icons in the totals row (= FONT.small size)
+  coinBefore = 2,   -- design: margin 0 5px 0 2px around each coin icon
+  coinAfter  = 5,
   compactPadX = 10,
   compactPadY = 6,
   compactSep  = 14, -- height of the compact separators
