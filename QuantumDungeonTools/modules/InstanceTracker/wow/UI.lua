@@ -363,7 +363,12 @@ local function buildFull()
   W.bosses = {}
   W.rares = {}
 
-  attachDetail(full, true)
+  -- Detail only over the top block (header to totals row), never over the boss list: in
+  -- combat the cursor sweeps the boss names all the time (owner, 2026-11-13).
+  W.hover = CreateFrame("Frame", nil, full)
+  W.hover:SetPoint("TOPLEFT", full, "TOPLEFT", 0, 0)
+  W.hover:SetPoint("TOPRIGHT", full, "TOPRIGHT", 0, 0)
+  attachDetail(W.hover, true)
   attachDetail(W.head, false)   -- the header grabs the mouse (drag): it shows the detail too
 end
 
@@ -584,6 +589,8 @@ local function renderFull(v)
   else
     W.extras:Hide()
   end
+
+  W.hover:SetHeight(math.max(1, y - S.gap))
 
   -- Bosses
   y = y + S.bossTop - S.gap

@@ -231,7 +231,7 @@ XP de las últimas 5 runs terminadas de esa mazmorra, o la propia run si ya term
 con la misma firma de grupo) e INSTANCIAS (solo si llega `opts.instances.slots`, lo da F5). La firma
 del grupo (`Detail.groupKey`: nombres de `party1..4` ordenados) se guarda en `run.group` al empezar
 y en cada `GROUP_ROSTER_UPDATE` mientras la run está viva. UI: `Craft.Tooltip` a la izquierda del
-widget completo; el marco solo captura el hover (`SetMouseMotionEnabled`, sin clics) y la cabecera
+widget completo, solo sobre el bloque de arriba (cabecera → fila de totales; la lista de jefes no, owner: en combate el cursor la barre); esa zona solo captura el hover (`SetMouseMotionEnabled`, sin clics) y la cabecera
 también lo muestra. Historial y grupo se leen solo al pasar el ratón. Specs: `Detail_spec.lua`.
 
 ## F5 — Contador 10/hora, aviso 10/10, toast de fin de run
