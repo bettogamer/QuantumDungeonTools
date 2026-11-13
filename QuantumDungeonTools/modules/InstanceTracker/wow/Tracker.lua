@@ -15,6 +15,7 @@
 -- issecretvalue FIRST, and API calls go through pcall.
 local _, ns = ...
 local Run = ns.InstanceRun
+local Records = ns.InstanceRecords
 local Guid = ns.InstanceGuid
 local issecretvalue = ns.issecretvalue
 
@@ -137,6 +138,7 @@ function T:_notify(reason)
   local run = self.run
   if run and run:isFinished() and not run.archived then
     run.archived = true
+    if Records.consider(db().records, run) then run.newRecord = true end
     self:_pushHistory(run)
   end
   db().current = run and run:toTable() or nil
@@ -164,9 +166,16 @@ function T:_close()
   self.run = nil
 end
 
+-- A new run races against the record of its dungeon + difficulty as it is NOW (a copy).
+local function newRun(inst)
+  local run = Run.new(inst, deps)
+  run.pb = Records.get(db().records, run)
+  return run
+end
+
 function T:StartRun(inst, copy)
   self:_close()
-  self.run = Run.new(inst, deps)
+  self.run = newRun(inst)
   self.copyPending = false
   if copy then self.run:observeCopy(copy) end
   self:Refresh()
@@ -181,7 +190,7 @@ function T:Refresh()
       if run:lockoutWasReset(list) then
         local inst = { instanceID = run.instanceID, name = run.name, difficulty = run.difficulty }
         self:_close()
-        self.run = Run.new(inst, deps)
+        self.run = newRun(inst)
         run = self.run
       end
       run:setBosses(list)
@@ -250,6 +259,11 @@ end
 -- Events
 ------------------------------------------------------------------------------
 function T:PLAYER_ENTERING_WORLD() self:CheckZone() end
+
+-- Deaths only count inside the instance, while the run is live (Run:addDeath guards the rest).
+function T:PLAYER_DEAD()
+  if self.run and self.inInstance and self.run:addDeath() then self:_notify("data") end
+end
 function T:ZONE_CHANGED_NEW_AREA() self:CheckZone() end
 function T:UPDATE_INSTANCE_INFO() self:Refresh() end
 
@@ -337,7 +351,7 @@ local EVENTS = {
   "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "UPDATE_INSTANCE_INFO",
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
   "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
-  "CHAT_MSG_SYSTEM", "PLAYER_LOGOUT",
+  "CHAT_MSG_SYSTEM", "PLAYER_LOGOUT", "PLAYER_DEAD",
 }
 
 local frame

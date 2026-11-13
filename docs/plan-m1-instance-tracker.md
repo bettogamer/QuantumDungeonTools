@@ -23,7 +23,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 |------|---------|--------|------|
 | **F1** | Sondas de Forever (`/qdt check f1`) | 🔨 EN CURSO (código hecho, falta la prueba in-game) | solo medir lo que el diseño asume; el v0.1 nativo NO se prueba (owner, 2026-11-12) |
 | **F2** | Vendoreo de Craft + widget nuevo | 🔨 EN CURSO (código hecho, falta `/qdt check f2` + prueba in-game + `ui-critic`) | niveles 1-2 del diseño: En curso, Completada, Compacto, Primera vez; aquí se pasa por fin el checklist de doc 00 §6 |
-| **F3** | Modelo v2: récord, pausa/retomada, muertes | ⬜ PENDIENTE | schema DB v2, zoneUID, deltas contra el récord |
+| **F3** | Modelo v2: récord, pausa/retomada, muertes | 🔨 EN CURSO (código hecho 2026-11-13, falta la prueba in-game) | `core/Records.lua` + `Run.deaths`/`Run.pb`; DB aditiva (`records`), sin migración |
 | **F4** | Oro, reputación, ritmo + tooltip Detalle | ⬜ PENDIENTE | nivel 3 (hover) |
 | **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ⬜ PENDIENTE | nivel 4 (avisos) |
 | **F6** | Ventana Historial + ajustes por línea | ⬜ PENDIENTE | nivel 4 (Historial), líneas desactivables |
@@ -200,6 +200,13 @@ Antes de cerrar la fase, pasarla por `ui-critic` con capturas contra los artboar
 
 **Entregado (v0.3):** `Run.lua` ampliado + `Records.lua` puro, specs nuevas, widget con delta.
 
+**Hecho (2026-11-13):** `core/Records.lua` (clave `instanceID|dificultad`, solo runs terminadas y
+limpias, gana la más rápida, `get` devuelve copia). Cada run guarda al empezar el récord contra el
+que corre (`run.pb`), así «Completada» sigue mostrando el delta contra el récord viejo; al terminar,
+`Tracker._notify` llama a `Records.consider` y marca `run.newRecord` (va al historial, F6). Muertes:
+`PLAYER_DEAD` dentro de la instancia → `Run:addDeath()` (no cuenta en pausa ni con la run cerrada).
+Pausa/retomada y reset ya estaban (`8738836`, `f8ee478`). Specs: `Records_spec.lua`.
+
 ## F4 — Oro, reputación, ritmo + tooltip Detalle
 
 **Alcance:** oro looteado por run (`CHAT_MSG_MONEY`, que se parsea con las globales que mide F1;
@@ -244,6 +251,10 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 - [ ] **Pausa del reloj**: dentro de una run, salir de la mazmorra unos minutos → al volver el
   reloj sigue donde estaba (no suma el tiempo fuera). Desloguear dentro y volver a entrar → igual.
 - [ ] Fuera más de 30 min (o con otra dificultad) → al volver, run nueva.
+- [ ] **Récord (F3)**: terminar una run limpia (entrando con la mazmorra sin tocar) → la siguiente
+  run de esa mazmorra y dificultad muestra «/ tiempo», marcas de split en la barra y delta por jefe.
+  Una run con jefes ya muertos al entrar NO se guarda como récord.
+- [ ] **Muertes (F3)**: morir dentro → «1 muerte» en rojo junto al reloj; morir fuera no suma.
 - [ ] Run completada: salir y volver a entrar (o `/reload` dentro) → sigue mostrándose Completada
   con su tiempo, no una run vacía.
 

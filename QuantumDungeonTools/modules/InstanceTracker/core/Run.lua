@@ -25,7 +25,7 @@ local function never() return false end
 local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
-  "pausedAt", "pausedTotal",
+  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord",
 }
 
 -- info = { instanceID = number, name = string, difficulty = string }
@@ -51,6 +51,8 @@ function Run.new(info, deps)
   self.copy = nil         -- zoneUID of the instance COPY (from the player's castGUIDs)
   self.pausedAt = nil     -- set while the player is outside the instance (or logged out)
   self.pausedTotal = 0    -- seconds spent paused; they never count for the clock
+  self.deaths = 0         -- player deaths inside the instance during the run
+  self.pb = nil           -- the record this run races against (core/Records.lua copy), set at start
   return self
 end
 
@@ -270,6 +272,13 @@ function Run:close()
   if not self.finishedAt and not self.endedAt then self.endedAt = self.pausedAt or self._now() end
 end
 
+-- addDeath(): the player died inside. Not counted once the run is finished, closed or paused.
+function Run:addDeath()
+  if self.finishedAt or self.endedAt or self.pausedAt then return false end
+  self.deaths = (self.deaths or 0) + 1
+  return true
+end
+
 function Run:isPaused() return self.pausedAt ~= nil end
 
 -- pause(): the player left the instance (or logged out). Idempotent; no-op once closed.
@@ -349,10 +358,18 @@ function Run.resetName(fmt, text, isSecret)
   return text:match("^" .. pattern .. "$")
 end
 
+local function copyPB(pb)
+  if type(pb) ~= "table" then return nil end
+  local splits = {}
+  for k, v in pairs(pb.splits or {}) do splits[k] = v end
+  return { total = pb.total, splits = splits, deaths = pb.deaths, at = pb.at }
+end
+
 function Run:toTable()
   local t = {}
   for _, k in ipairs(FIELDS) do t[k] = self[k] end
   t.bosses = copyBosses(self.bosses)
+  t.pb = copyPB(self.pb)
   return t
 end
 
@@ -363,6 +380,7 @@ function Run.fromTable(t, deps)
     if t[k] ~= nil then self[k] = t[k] end
   end
   self.bosses = copyBosses(t.bosses)
+  self.pb = copyPB(t.pb)
   self._seq = #self.bosses
   for _, b in ipairs(self.bosses) do
     if b.seq > self._seq then self._seq = b.seq end

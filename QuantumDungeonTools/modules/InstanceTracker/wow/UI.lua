@@ -614,7 +614,8 @@ local function source()
     local run, opts, compact = Demo.get(demo)
     return run, opts, compact
   end
-  return T.run, { xp = T:XPSnapshot() }, db().compact
+  local run = T.run
+  return run, { xp = T:XPSnapshot(), pb = run and run.pb, deaths = run and run.deaths }, db().compact
 end
 
 local function build()

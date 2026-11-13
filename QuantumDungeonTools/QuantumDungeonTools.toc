@@ -68,6 +68,7 @@ core\Format.lua
 core\Brand.lua
 wow\Bootstrap.lua
 modules\InstanceTracker\core\Run.lua
+modules\InstanceTracker\core\Records.lua
 modules\InstanceTracker\core\Guid.lua
 modules\InstanceTracker\core\DungeonData.lua
 modules\InstanceTracker\core\Dungeons.lua
