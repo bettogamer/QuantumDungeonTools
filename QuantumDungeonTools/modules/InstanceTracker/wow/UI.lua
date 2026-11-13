@@ -173,7 +173,7 @@ end
 -- string is dropped from the measurement, hence the pinned size and the closing space.
 local function moneyText(copper)
   local s = GetMoneyString and GetMoneyString(copper, true) or GetCoinTextureString(copper)
-  s = s:gsub("|T([^|:]+):[^|]*|t", " |T%1:" .. S.coinSize .. "|t")
+  s = s:gsub("|T([^|:]+):[^|]*|t", "|T%1:" .. S.coinSize .. "|t")   -- icon right after its number
   return "+" .. s .. " "
 end
 
@@ -590,6 +590,20 @@ local function renderFull(v)
     -- tag sits at the right one (a right-to-left chain left the coins hanging past the bar).
     W.instances:ClearAllPoints()
     W.instances:SetPoint("RIGHT", W.extras, "RIGHT", 0, 0)
+    -- The reputation gets what money and the tag leave: a long faction name is cut with "..."
+    -- by the FontString, and hidden when the gap is too small (the detail tooltip has it all).
+    if W.rep:IsShown() then
+      local room = S.width
+      if W.money:IsShown() then room = room - math.ceil(W.money:GetStringWidth()) - S.extrasGap end
+      if W.instances:IsShown() then room = room - math.ceil(W.instances:GetWidth()) - S.extrasGap end
+      W.rep:SetWidth(0)
+      local natural = math.ceil(W.rep:GetStringWidth())
+      if room < S.repMinW then
+        W.rep:Hide()
+      else
+        W.rep:SetWidth(math.min(natural, room))
+      end
+    end
     local left = W.extras
     for _, r in ipairs({ W.money, W.rep }) do
       if r:IsShown() then
