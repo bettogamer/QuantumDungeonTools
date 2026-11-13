@@ -259,7 +259,7 @@ Fila rare en `UI.lua` (owner, 2026-11-13, revisando el lienzo): **«RARO [6:10] 
 DELANTE del tiempo, así «[tiempo] nombre» se lee como en los jefes), 13 px, atenuada viva y **dorada
 muerta** (no crema: crema = jefe pendiente). Tooltip del compacto: «Nombre  RARO». Lienzo
 actualizado a esta fila (v23: Main, Completada, Primera vez).
-Falta probarlo in-game (`/qdt it demo live|done|first|compact`). Nombres en inglés en la tabla:
+Probado in-game con las demos live/done/first/compact (2026-11-13): cuadra con el lienzo; falta ver el tooltip del compacto y una run real. Nombres en inglés en la tabla:
 aprobado por el owner (doc 11).
 (2) próxima run del owner en una mazmorra que da XP (más larga):
 el registro pasivo de check f1 sigue armado (600 líneas) → leer con un reductor y verificar el
