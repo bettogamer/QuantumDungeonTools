@@ -14,9 +14,24 @@
 
 | Ancla | Una línea | Fecha |
 |-------|-----------|-------|
+| [wow-tamano-fuente-caja-de-linea](#wow-tamano-fuente-caja-de-linea) | el texto sale ~7 % más grande que en el diseño | 2026-11-13 |
 | [craft-tooltip-lines-posicionales](#craft-tooltip-lines-posicionales) | tooltip de Craft vacío (cuadro diminuto) | 2026-11-13 |
 
 ---
+
+## wow-tamano-fuente-caja-de-linea
+
+- **Síntoma:** con los mismos px que el lienzo de diseño, el texto in-game sale más grande en
+  proporción a barras y marcos (la fila de totales se salía por la izquierda de la barra).
+- **Causa (hipótesis por medida visual, pendiente de confirmar in-game):** CSS dimensiona por el
+  em (upem = 1000) y WoW ajusta la caja de línea (hhea ascender + |descender| = 740 + 192 = 932 en
+  BettoGeo) a la altura pedida → glifos ×1000/932.
+- **Patrón correcto:** un factor único `Style.EM = 932/1000` aplicado en `applyFont`; los
+  tamaños de `Style.FONT` se quedan como en el diseño. Otra fuente = recalcular el factor con
+  sus métricas (`head.unitsPerEm`, `hhea`).
+- **Cómo se comprueba:** captura in-game junto al artboard: el reloj y las barras guardan la
+  misma proporción.
+- **Origen:** M1 F4b, revisión visual del owner contra el artboard Main.
 
 ## craft-tooltip-lines-posicionales
 

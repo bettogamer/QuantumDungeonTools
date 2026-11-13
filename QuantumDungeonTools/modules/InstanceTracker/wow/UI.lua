@@ -47,7 +47,7 @@ local function setColor(tex, c) tex:SetColorTexture(c.r, c.g, c.b, c.a or 1) end
 local function applyFont(fs)
   local f = fontOf[fs]
   local weight = f.weight ~= "regular" and f.weight or nil
-  ctx:applyFont(fs, ctx:getFont(weight), f.size, f.flags)   -- nil flags: the theme's
+  ctx:applyFont(fs, ctx:getFont(weight), f.size * Style.EM, f.flags)   -- nil flags: the theme's
 end
 
 local function newText(parent, font)

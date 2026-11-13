@@ -97,6 +97,13 @@ Style.SIZE = {
 -- `flags` overrides the theme outline ("OUTLINE, SLUG") for one element: the Slug outline is
 -- vector and grows with the font size, so the big clock blurs with it; there the classic ~1 px
 -- OUTLINE reads better (owner, 2026-11-13).
+-- The sizes above are the CSS font-size of the design canvas (em box = 1000 units). WoW sizes
+-- the whole LINE box (ascender + descender = 740 + 192 = 932 units in BettoGeo) to the
+-- requested height, so the same number draws every glyph 1000/932 = ~7 % bigger than on the
+-- canvas. wow/UI.lua multiplies every size by this to match the artboards (owner saw the text
+-- outgrow the bars, 2026-11-13).
+Style.EM = 932 / 1000
+
 Style.FONT = {
   head      = { size = 12, weight = "medium" },
   tag       = { size = 11, weight = "medium" },
