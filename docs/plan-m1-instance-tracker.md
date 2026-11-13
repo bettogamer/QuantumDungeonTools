@@ -263,7 +263,7 @@ Probado in-game con las demos live/done/first/compact (2026-11-13): cuadra con e
 **Tags sobre `Craft.Badge`** (FR-140, Craft 2.48.0, 2026-11-13): `newTag`/`setTag` de `UI.lua` crean
 un Badge `outline` con fuente/padding/colores propios; la línea base sale de `GetBaselineOffset`.
 **Falta prueba in-game:** alto de los tags (el Badge usa la línea CSS, puede salir +1 px), tags sin
-la sombra 1,-1 del resto del HUD, y RARE a 9 px. Componentes de Craft para el resto: doc 12.
+la sombra 1,-1 del resto del HUD, RARE subido a 10 px (owner, 2026-11-13). Demos first/done/compact vistas in-game: tags alineados. Componentes de Craft para el resto: doc 12.
 **Aceptado (owner, 2026-11-13):** los tags tienen ~2-4 px más de hueco a la derecha. Medido in-game
 («Normal»: caja 61.94 = 5.73 + texto 49.32 + 6.88, igual tras `/reload`, no es la carga async del
 font): ~1 px del redondeo a píxel del Badge y el resto el avance tras la última letra que

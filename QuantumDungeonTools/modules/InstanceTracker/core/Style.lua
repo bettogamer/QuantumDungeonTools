@@ -105,7 +105,7 @@ Style.FONT = {
   bossDelta = { size = 11, weight = "medium" },
   rareName  = { size = 13, weight = "medium" },
   rareTime  = { size = 12, weight = "medium" },
-  rareTag   = { size = 9,  weight = "medium" },
+  rareTag   = { size = 10, weight = "medium" },
   compact   = { size = 13, weight = "medium" },
   compactSm = { size = 11, weight = "medium" },
 }
