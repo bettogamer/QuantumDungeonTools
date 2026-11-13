@@ -23,7 +23,7 @@
 
 - **Síntoma:** con los mismos px que el lienzo de diseño, el texto in-game sale más grande en
   proporción a barras y marcos (la fila de totales se salía por la izquierda de la barra).
-- **Causa (hipótesis por medida visual, pendiente de confirmar in-game):** CSS dimensiona por el
+- **Causa (confirmada in-game 2026-11-13: con ×0.932 reloj/barra = 0.32, igual que el artboard):** CSS dimensiona por el
   em (upem = 1000) y WoW ajusta la caja de línea (hhea ascender + |descender| = 740 + 192 = 932 en
   BettoGeo) a la altura pedida → glifos ×1000/932.
 - **Patrón correcto:** un factor único `Style.EM = 932/1000` aplicado en `applyFont`; los
