@@ -359,6 +359,8 @@ local function buildFull()
   W.instances = newTag(W.extras, FONT.small)
   W.money = newText(W.extras, FONT.small)
   W.rep = newText(W.extras, FONT.small)
+  W.money:SetJustifyH("LEFT")
+  W.rep:SetJustifyH("LEFT")
 
   W.bosses = {}
   W.rares = {}
@@ -584,7 +586,22 @@ local function renderFull(v)
   if v.rep then setText(W.rep, repText(v.rep), C.muted) end
   W.rep:SetShown(v.rep ~= nil)
   if v.instances or v.copper or v.rep then
-    chain(W.extras, { W.instances, W.rep, W.money }, "", S.extrasGap)
+    -- Design: space-between. Money + reputation start at the bars' left edge, the instances
+    -- tag sits at the right one (a right-to-left chain left the coins hanging past the bar).
+    W.instances:ClearAllPoints()
+    W.instances:SetPoint("RIGHT", W.extras, "RIGHT", 0, 0)
+    local left = W.extras
+    for _, r in ipairs({ W.money, W.rep }) do
+      if r:IsShown() then
+        r:ClearAllPoints()
+        if left == W.extras then
+          r:SetPoint("LEFT", W.extras, "LEFT", 0, 0)
+        else
+          r:SetPoint("LEFT", left, "RIGHT", S.extrasGap, 0)
+        end
+        left = r
+      end
+    end
     place(W.extras, heightOf({ W.instances, W.rep, W.money }), 2)
   else
     W.extras:Hide()
