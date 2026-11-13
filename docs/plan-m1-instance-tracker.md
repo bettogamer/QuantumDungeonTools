@@ -250,7 +250,11 @@ Compacto. El historial sube de 20 a **100 runs** (owner, 2026-11-12); los récor
 - [ ] `Siguiente:` escrito aquí antes de proponer cortar sesión.
 - [ ] Release v1.0 con el ritual de doc 04.
 
-**Siguiente:** guion F2 de arriba (owner) → `ui-critic` con las capturas → cerrar F2 → F3 en sesión nueva.
+**Siguiente (2026-11-13):** (1) tabla de mazmorras generada por script (doc 11: orden + rares que no
+cuentan para X/Y ni fin de run); (2) próxima run del owner en una mazmorra que da XP (más larga):
+el registro pasivo de check f1 sigue armado (600 líneas) → leer con un reductor y verificar el
+muestreo de XP (`SampleXP`); (3) reset de instancia por el mensaje «X has been reset.»; (4) punto 7
+(ping). Después: `ui-critic` con capturas → cerrar F2 → F3.
 **Antes:** F2 en sesión nueva (AGENTS.md + este plan). F1 queda abierta solo por lo que
 pide grupo u oro real, y el registro pasivo lo captura solo: una línea de `CHAT_MSG_MONEY` y otra
 de reputación, `isKilled` y el 4.º booleano tras matar un jefe, y si se aplica el límite por hora.
