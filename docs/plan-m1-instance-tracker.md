@@ -264,6 +264,10 @@ Probado in-game con las demos live/done/first/compact (2026-11-13): cuadra con e
 un Badge `outline` con fuente/padding/colores propios; la línea base sale de `GetBaselineOffset`.
 **Falta prueba in-game:** alto de los tags (el Badge usa la línea CSS, puede salir +1 px), tags sin
 la sombra 1,-1 del resto del HUD, y RARE a 9 px. Componentes de Craft para el resto: doc 12.
+**Aceptado (owner, 2026-11-13):** los tags tienen ~2-4 px más de hueco a la derecha. Medido in-game
+(«Normal»: caja 61.94 = 5.73 + texto 49.32 + 6.88, igual tras `/reload`, no es la carga async del
+font): ~1 px del redondeo a píxel del Badge y el resto el avance tras la última letra que
+`GetStringWidth` incluye. Sin FR ni parche local.
 Nombres en inglés en la tabla:
 aprobado por el owner (doc 11).
 (2) próxima run del owner en una mazmorra que da XP (más larga):
