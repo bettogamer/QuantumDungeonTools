@@ -241,6 +241,11 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
   instances» → el widget cierra la run al momento (sin esperar a entrar). Volver a entrar → run
   nueva con el reloj a 0. Probarlo también como miembro no líder (¿le llega el mensaje?; si no,
   lo cubre el castGUID al primer hechizo).
+- [ ] **Pausa del reloj**: dentro de una run, salir de la mazmorra unos minutos → al volver el
+  reloj sigue donde estaba (no suma el tiempo fuera). Desloguear dentro y volver a entrar → igual.
+- [ ] Fuera más de 30 min (o con otra dificultad) → al volver, run nueva.
+- [ ] Run completada: salir y volver a entrar (o `/reload` dentro) → sigue mostrándose Completada
+  con su tiempo, no una run vacía.
 
 ## Puntos abiertos
 
@@ -250,7 +255,7 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 | 2 | Rama de trabajo: trunk-based o `dev` (AGENTS.md §8 PENDIENTE) | **owner** | trunk-based en `main` (proyecto de una persona) + primer commit del v0.1 antes de F2 | ✅ **trunk-based en `main`** (2026-11-12) |
 | 3 | Tope del historial (20 hoy, 80 en NF) | **owner** | 100 runs + récords aparte (los récords no caducan) | ✅ **100** (2026-11-12) |
 | 4 | Resolución del reloj: `time()` (1 s, sobrevive a relog) o `GetTime()` (preciso, se reinicia) | agente | `time()` como ancla persistida + `GetTime()` solo para pintar fracciones; los splits se guardan en segundos enteros | ⬜ |
-| 6 | Pausa/retomada: la copia sale del castGUID (✅ medido); ¿qué hacer mientras aún no hay ningún hechizo lanzado en la copia? | **owner** | Respaldo hasta el primer hechizo: retomar si se cumple TODO: misma instanceID+dificultad, sin mensaje de reset entre medias, fuera < 30 min y el lockout no tiene menos muertos que la run (si los tiene, es una copia nueva). Si no, run nueva. `/qdt new` sigue como salida manual | ✅ **Lo propuesto** (owner, 2026-11-12) |
+| 6 | Pausa/retomada: la copia sale del castGUID (✅ medido); ¿qué hacer mientras aún no hay ningún hechizo lanzado en la copia? | **owner** | Respaldo hasta el primer hechizo: retomar si se cumple TODO: misma instanceID+dificultad, sin mensaje de reset entre medias, fuera < 30 min y el lockout no tiene menos muertos que la run (si los tiene, es una copia nueva). Si no, run nueva. `/qdt new` sigue como salida manual | ✅ **Lo propuesto** (owner, 2026-11-12). Implementado 2026-11-13 (`Run:pause/resume/canResume`, reset por `CHAT_MSG_SYSTEM`); el chequeo del lockout con menos muertos sigue en `lockoutWasReset` |
 | 7 | Idea del owner (2026-11-13): clic en el nombre de un jefe → ping (sistema de pings de WoW: «atacar» + localizarlo) | **owner** (alcance) | Viable solo como botón seguro con macro `/target <nombre>` + `/ping attack` + `/targetlasttarget` (owner: así no pierdes tu objetivo; ojo, sin objetivo previo puede seleccionar uno antiguo; un ping necesita unidad: sin posición en mazmorra no se puede pingear a distancia); solo funciona si el jefe está a la vista, y las filas seguras no se crean en combate. Forever SÍ tiene pings (owner los usa siempre, 2026-11-13); falta solo comprobar `/ping` en macro. | ⬜ |
 | 5 | Si F1 dice que no existe el límite 10/hora en Forever | **owner** | quitar el contador del widget y dejar solo la cuenta informativa en el tooltip | ⬜ |
 

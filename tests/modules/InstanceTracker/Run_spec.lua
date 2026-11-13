@@ -284,4 +284,73 @@ describe("InstanceRun con la tabla de mazmorras (resolver)", function()
     local secret = helper.newFakeSecret()
     assert_eq(Run.resetName("%s has been reset.", secret, helper.isFakeSecret), nil)
   end)
+
+  it("pausa: el tiempo fuera no cuenta en el reloj ni en los splits", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    r:setBosses(lockout())
+    c.t = c.t + 100
+    assert_true(r:pause())
+    assert_false(r:pause(), "idempotente")
+    c.t = c.t + 600
+    assert_eq(r:elapsed(), 100, "congelado mientras está en pausa")
+    assert_true(r:resume())
+    assert_eq(r:elapsed(), 100)
+    c.t = c.t + 50
+    assert_eq(r:elapsed(), 150)
+    r:markKilled("Witherfang")
+    assert_eq(r.bosses[1].killedAt, 150, "el split descuenta la pausa")
+  end)
+
+  it("pausa: sobrevive a toTable/fromTable (logout dentro de la mazmorra)", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    c.t = c.t + 40
+    r:pause()
+    c.t = c.t + 3600 * 17
+    local loaded = Run.fromTable(r:toTable(), { now = c.now })
+    assert_eq(loaded:elapsed(), 40, "17 h desconectado no cuentan")
+    loaded:resume()
+    c.t = c.t + 5
+    assert_eq(loaded:elapsed(), 45)
+  end)
+
+  it("pausa: cerrar una run en pausa la congela donde se pausó", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    c.t = c.t + 30
+    r:pause()
+    c.t = c.t + 900
+    r:close()
+    assert_eq(r:elapsed(), 30)
+  end)
+
+  it("retomar: misma mazmorra y dificultad dentro de la ventana", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    r:pause()
+    c.t = c.t + 29 * 60
+    assert_true(r:canResume(INFO, 30 * 60))
+    assert_false(r:canResume({ instanceID = 2999, difficulty = "Heroic" }, 30 * 60), "otra dificultad")
+    assert_false(r:canResume({ instanceID = 1, difficulty = "Normal" }, 30 * 60), "otra mazmorra")
+    c.t = c.t + 2 * 60
+    assert_false(r:canResume(INFO, 30 * 60), "fuera más de 30 min: copia nueva")
+    r:close()
+    assert_false(r:canResume(INFO), "cerrada no se retoma")
+  end)
+
+  it("retomar: una run completada sigue como completada y su tiempo no cambia", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    r:setBosses(lockout())
+    c.t = c.t + 200
+    r:markKilled("Witherfang"); r:markKilled("The Abandoned"); r:markKilled("The Butcher")
+    assert_true(r:isFinished())
+    assert_true(r:pause(), "registra la salida")
+    c.t = c.t + 300
+    assert_true(r:canResume(INFO, 30 * 60))
+    r:resume()
+    assert_eq(r:elapsed(), 200)
+    assert_eq(r.pausedTotal, 0)
+  end)
 end)

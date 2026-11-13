@@ -25,6 +25,7 @@ local function never() return false end
 local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
+  "pausedAt", "pausedTotal",
 }
 
 -- info = { instanceID = number, name = string, difficulty = string }
@@ -48,6 +49,8 @@ function Run.new(info, deps)
   self.archived = false   -- already copied to the history
   self.lockKilled = 0     -- most kills the LOCKOUT itself has reported (not the events)
   self.copy = nil         -- zoneUID of the instance COPY (from the player's castGUIDs)
+  self.pausedAt = nil     -- set while the player is outside the instance (or logged out)
+  self.pausedTotal = 0    -- seconds spent paused; they never count for the clock
   return self
 end
 
@@ -73,9 +76,11 @@ end
 
 function Run:isFinished() return self.finishedAt ~= nil end
 
--- Seconds since the start; frozen once the run is finished (or closed unfinished).
+-- Seconds played: since the start minus the pauses; frozen once the run is finished, closed
+-- unfinished or paused.
 function Run:elapsed()
-  local e = (self.finishedAt or self.endedAt or self._now()) - (self.startedAt or 0)
+  local stop = self.finishedAt or self.endedAt or self.pausedAt or self._now()
+  local e = stop - (self.startedAt or 0) - (self.pausedTotal or 0)
   if e < 0 then return 0 end
   return e
 end
@@ -259,9 +264,44 @@ function Run:observeCopy(zoneUID)
 end
 
 -- close(): the run is abandoned (new run, instance reset). Freezes its clock without
--- marking it finished, so the history shows the time actually played.
+-- marking it finished, so the history shows the time actually played (a paused run ends
+-- when it was paused: the time outside never counts).
 function Run:close()
-  if not self.finishedAt and not self.endedAt then self.endedAt = self._now() end
+  if not self.finishedAt and not self.endedAt then self.endedAt = self.pausedAt or self._now() end
+end
+
+function Run:isPaused() return self.pausedAt ~= nil end
+
+-- pause(): the player left the instance (or logged out). Idempotent; no-op once closed.
+-- A FINISHED run also records when it was left (canResume needs it), but its clock is
+-- already frozen at finishedAt, so its pauses never touch it.
+function Run:pause()
+  if self.endedAt or self.pausedAt then return false end
+  self.pausedAt = self._now()
+  return true
+end
+
+-- resume(): back in the same copy; the paused time is discounted from the clock.
+function Run:resume()
+  if not self.pausedAt then return false end
+  local away = self._now() - self.pausedAt
+  if away > 0 and not self.finishedAt then self.pausedTotal = (self.pausedTotal or 0) + away end
+  self.pausedAt = nil
+  return true
+end
+
+-- canResume(info, window): re-entering an instance with this run open, is it (most likely)
+-- the same copy? Same instanceID and difficulty, still running, and paused for at most
+-- `window` seconds (a 5-man copy does not outlive ~30 min empty). A finished run also
+-- "resumes" (it keeps showing as completed: /reload, a step outside). The castGUID of the
+-- first spell has the last word (wow/Tracker); a reset message closes the run before this.
+function Run:canResume(info, window)
+  if type(info) ~= "table" or self.endedAt then return false end
+  if info.instanceID ~= self.instanceID or (info.difficulty or "") ~= (self.difficulty or "") then
+    return false
+  end
+  if self.pausedAt and window and self._now() - self.pausedAt > window then return false end
+  return true
 end
 
 function Run:addXP(n)

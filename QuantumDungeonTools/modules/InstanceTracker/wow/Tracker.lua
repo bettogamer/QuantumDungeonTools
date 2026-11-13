@@ -26,6 +26,7 @@ ns.InstanceTracker = T
 
 local HISTORY_MAX = 100
 local REFRESH_DELAY = 2   -- seconds after a kill before re-reading the lockout
+local RESUME_WINDOW = 30 * 60   -- away longer than this = a new copy (owner, plan M1 point 6)
 
 local deps = {
   now = function() return time() end,
@@ -192,15 +193,20 @@ end
 function T:CheckZone()
   local inst = currentInstance()
   self.inInstance = inst ~= nil
+  local run = self.run
   if inst then
-    if not self.run or self.run.instanceID ~= inst.instanceID then
+    if not run or not run:canResume(inst, RESUME_WINDOW) then
       self:StartRun(inst)
     else
-      -- Same dungeon again: same copy or not is decided by the first cast (_onCast).
-      self.copyPending = self.run.copy ~= nil
+      -- Same dungeon again: resume the clock; same copy or not is confirmed by the first
+      -- cast (_onCast), which starts a new run if it is another copy.
+      run:resume()
+      self.copyPending = run.copy ~= nil
       self:Refresh()
     end
     requestLockout()   -- the answer (UPDATE_INSTANCE_INFO) refreshes again
+  elseif run then
+    run:pause()        -- outside: the clock stops until we come back
   end
   self:_notify("zone")
 end
@@ -246,6 +252,13 @@ end
 function T:PLAYER_ENTERING_WORLD() self:CheckZone() end
 function T:ZONE_CHANGED_NEW_AREA() self:CheckZone() end
 function T:UPDATE_INSTANCE_INFO() self:Refresh() end
+
+-- Logging out (or /reload) inside the instance: pause, so the time offline never counts.
+-- On login PLAYER_ENTERING_WORLD -> CheckZone resumes it (or starts a new run).
+function T:PLAYER_LOGOUT()
+  local run = self.run
+  if run and run:pause() then db().current = run:toTable() end
+end
 
 local function bossDied(name)
   local run = T.run
@@ -324,7 +337,7 @@ local EVENTS = {
   "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "UPDATE_INSTANCE_INFO",
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
   "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
-  "CHAT_MSG_SYSTEM",
+  "CHAT_MSG_SYSTEM", "PLAYER_LOGOUT",
 }
 
 local frame
