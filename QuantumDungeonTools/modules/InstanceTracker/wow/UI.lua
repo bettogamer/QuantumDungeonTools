@@ -90,7 +90,7 @@ local function setTag(tag, text, textColor, borderColor, padX, padY)
 end
 
 -- Chains the shown regions right-to-left inside `row` (pieces[1] is the rightmost).
--- `point` = "BOTTOM" aligns baselines roughly (mixed font sizes), "CENTER" centers them.
+-- `point` = "" centers them vertically ("BOTTOM" aligns box bottoms: use chainBaseline for text).
 local function chain(row, pieces, point, gap)
   local prev
   for _, r in ipairs(pieces) do
@@ -113,6 +113,51 @@ local function heightOf(pieces)
       local rh = r.GetStringHeight and r:GetStringHeight() or r:GetHeight()
       if rh > h then h = rh end
     end
+  end
+  return math.ceil(h)
+end
+
+-- Baseline alignment (design: align-items: baseline). Anchoring by BOTTOM is not enough: the
+-- descender gap grows with the font size, so 12 px text beside the 42 px clock sat ~6 px low.
+-- BettoGeo: descender 192 of a 932 line box (hhea; the Win metrics give the same ~20 %), so the
+-- baseline is that fraction of the measured line height above the bottom of the FontString.
+local DESCENT = 192 / 932
+
+local function descentOf(r)
+  if r.GetStringHeight then return r:GetStringHeight() * DESCENT end
+  if r.text then   -- tag: its text is centered inside the border
+    local th = r.text:GetStringHeight()
+    return (r:GetHeight() - th) / 2 + th * DESCENT
+  end
+  return 0
+end
+
+local function heightRaw(r)
+  return r.GetStringHeight and r:GetStringHeight() or r:GetHeight()
+end
+
+-- Chains the shown pieces right-to-left on a common baseline; returns the row height.
+local function chainBaseline(row, pieces, gap)
+  local shown, dmax = {}, 0
+  for _, r in ipairs(pieces) do
+    if r:IsShown() then
+      shown[#shown + 1] = r
+      local d = descentOf(r)
+      if d > dmax then dmax = d end
+    end
+  end
+  local h, prev, dprev = 0, nil, 0
+  for _, r in ipairs(shown) do
+    local d = descentOf(r)
+    r:ClearAllPoints()
+    if prev then
+      r:SetPoint("BOTTOMRIGHT", prev, "BOTTOMLEFT", -(gap or S.rowGap), dprev - d)
+    else
+      r:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, dmax - d)
+    end
+    local top = heightRaw(r) - d + dmax
+    if top > h then h = top end
+    prev, dprev = r, d
   end
   return math.ceil(h)
 end
@@ -399,8 +444,7 @@ local function renderFull(v)
     right = W.first
   end
   local clockRow = { right, W.clock, W.deaths }
-  chain(W.clockRow, clockRow, "BOTTOM", 10)
-  place(W.clockRow, heightOf(clockRow))
+  place(W.clockRow, chainBaseline(W.clockRow, clockRow, 10))
 
   -- Info row
   setText(W.info, infoText(v), C.muted)
@@ -462,6 +506,7 @@ local function renderFull(v)
       setTag(r.tag, L.IT_RARE, C.muted, C.mutedHalf, S.rareTagPadX, S.rareTagPadY)
       pieces = { r.name, r.time, r.tag }
       chain(r, pieces, "", 8)
+      r.h = nil
     else
       nb = nb + 1
       r = bossRow(nb)
@@ -471,11 +516,11 @@ local function renderFull(v)
       r.delta:SetShown(b.delta ~= nil)
       if b.delta then setText(r.delta, b.delta, Style.tone(b.deltaTone)) end
       pieces = { r.name, r.time, r.delta }
-      chain(r, pieces, "BOTTOM", 8)
+      r.h = chainBaseline(r, pieces, 8)
     end
     r:ClearAllPoints()
     r:SetPoint("TOPRIGHT", W.frame, "TOPRIGHT", 0, -y)
-    r:SetHeight(heightOf(pieces))
+    r:SetHeight(r.h or heightOf(pieces))
     r:Show()
     y = y + r:GetHeight() + S.bossGap
   end
