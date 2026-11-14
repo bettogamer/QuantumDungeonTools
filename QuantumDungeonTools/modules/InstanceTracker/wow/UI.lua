@@ -1095,6 +1095,17 @@ function UI:Demo(name)
   return true
 end
 
+-- Building blocks for the other screens of the module (wow/Alerts.lua): same fonts, borders,
+-- tags and coins as the widget, re-fonted with it on theme changes. nil before Init / no Craft.
+function UI:Kit()
+  if not ctx then return nil end
+  return {
+    Craft = Craft, ctx = ctx, newText = newText, setText = setText, setColor = setColor,
+    newBorder = newBorder, colorBorder = colorBorder, newTag = newTag, setTag = setTag,
+    moneyText = moneyText,
+  }
+end
+
 -- For /qdt check f2: what was built and painted (plain values only).
 function UI:Snapshot()
   return {

@@ -66,6 +66,8 @@ SlashCmdList.QDT = function(msg)
     else
       say(L.IT_DEMO_USAGE:format(table.concat(ns.InstanceTrackerDemo.NAMES, ", ")))
     end
+  elseif msg == "it alert" or msg:find("^it alert ") then
+    if not ns.InstanceAlertsUI:Preview((msg:gsub("^it alert%s*", ""))) then say(L.IT_A_USAGE) end
   elseif msg == "check f2" then
     ns.CheckF2:Run()
   elseif msg == "check f1" or msg:find("^check f1 ") then

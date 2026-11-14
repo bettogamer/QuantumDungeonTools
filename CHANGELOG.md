@@ -6,6 +6,12 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Añadido
 
+- **Avisos de instancias y toast de fin de run** (hito M1 F5b/F5c): aviso rojo «Límite de
+  instancias: 10/10» con el tiempo hasta el siguiente hueco (al entrar en la décima, al unirte a un
+  grupo estando en 10/10 y cuando el juego rechaza la entrada); franja ámbar al entrar en la 8.ª y
+  la 9.ª; y al terminar la run, una tarjeta con el tiempo, el delta y NUEVO RÉCORD, muertes, XP,
+  oro y reputación, con «Compartir en grupo» (una línea por el canal del grupo). Vistas previas:
+  `/qdt it alert toast|cap|near`.
 - **Instancias en la última hora** (hito M1 F5a): el tooltip Detalle enseña «INSTANCIAS EN LA
   ÚLTIMA HORA · N/10» para toda la cuenta (todos los personajes) y cuándo se libera el siguiente
   hueco. Cuenta al entrar en una copia nueva; volver a la misma copia dentro de la hora no suma.

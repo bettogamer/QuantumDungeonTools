@@ -25,7 +25,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 | **F2** | Vendoreo de Craft + widget nuevo | 🔨 EN CURSO (código hecho, falta `/qdt check f2` + prueba in-game + `ui-critic`) | niveles 1-2 del diseño: En curso, Completada, Compacto, Primera vez; aquí se pasa por fin el checklist de doc 00 §6 |
 | **F3** | Modelo v2: récord, pausa/retomada, muertes | 🔨 EN CURSO (código hecho 2026-11-13, falta la prueba in-game) | `core/Records.lua` + `Run.deaths`/`Run.pb`; DB aditiva (`records`), sin migración |
 | **F4** | Oro, reputación, ritmo + tooltip Detalle | ✅ HECHA en código (2026-11-13: F4a fila de totales, F4b tooltip Detalle); falta prueba in-game | nivel 3 (hover) |
-| **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | 🔨 EN CURSO (F5a contador + Detalle hecho 2026-11-14; faltan F5b aviso y F5c toast) | nivel 4 (avisos) |
+| **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ✅ HECHA en código (2026-11-14: F5a contador + Detalle, F5b avisos, F5c toast); falta prueba in-game | nivel 4 (avisos) |
 | **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ⬜ PENDIENTE (tras F5) | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run |
 | **F6** | Ventana Historial + ajustes por línea | ⬜ PENDIENTE | nivel 4 (Historial), líneas desactivables |
 
@@ -252,6 +252,20 @@ primer hechizo (`Hourly.bindCopy`): si esa copia ya estaba contada en la hora, l
 quita. `T:HourSnapshot()` → `opts.instances` del Detalle (se lee solo al pasar el ratón);
 `T:OnHourEntry(fn)` queda para el aviso de F5b. Specs: `Hourly_spec.lua`.
 
+**F5b + F5c en código (2026-11-14):** `core/Alerts.lua` (puro: `hourNotice`, `toast`, `shareLine`,
+`coins`, `chunks`) + `wow/Alerts.lua` (marcos, con el kit de `UI:Kit()`). Decisiones del owner
+(2026-11-14): aviso 10/10 con **tres disparos** (entrada que llega a 10/10, `GROUP_JOINED` en
+10/10, rechazo del juego: `TRANSFER_ABORT_TOO_MANY_INSTANCES`/`ERR_TOO_MANY_INSTANCES` por
+`CHAT_MSG_SYSTEM` o `UI_ERROR_MESSAGE`); franja ámbar **al entrar en la 8.ª y la 9.ª**, 8 s; botón
+**Historial oculto hasta F6**; «Compartir» = **una línea resumen** por INSTANCE_CHAT/RAID/PARTY
+(sin texturas, menos ASCII, `QDT:` sin color, troceada a 255, `pcall`). Elecciones del agente
+pendientes de OK del owner: el aviso y el toast van arriba al centro (`S.alertTop`, el lienzo no
+fija sitio), apilados; el aviso dura 15 s y el toast 30 s (se paran con el ratón encima; clic en el
+cuerpo = cerrar); el botón es el `Craft.Button` primario (oro con texto navy, el Primary elegido del
+tema), no el crema del artboard; del texto pequeño del aviso se quitó «Sale al entrar en el grupo o
+al acercarte a una entrada» (sin posición en mazmorra no se puede detectar «acercarte»).
+Specs: `Alerts_spec.lua`.
+
 ## F6 — Ventana Historial + ajustes
 
 **Alcance:** `Craft.Window` Historial (artboard Historial) con filtros por mazmorra, dificultad y
@@ -293,6 +307,13 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 - [ ] **Instancias/hora (F5a)**: entrar en 2 mazmorras distintas → Detalle «INSTANCIAS EN LA ÚLTIMA
   HORA · 2/10», «Siguiente hueco en» ≈ 60 min menos lo pasado. Salir y volver a la MISMA copia (o
   `/reload` dentro) → sigue 2/10. Con un alt → la cuenta sigue sumando. Reset y volver a entrar → 3/10.
+- [ ] **Avisos (F5b)**: sin mazmorra, `/qdt it alert cap` y `/qdt it alert near` → cotejar con el
+  artboard Avisos (borde rojo / ámbar, icono triángulo, «12:40» en crema). En la run real: al
+  entrar en la 8.ª instancia de la hora sale la franja; en la 10.ª, el rojo.
+- [ ] **Toast (F5c)**: `/qdt it alert toast` → «Run completada» + NUEVO RÉCORD, 29:51 y −1:49 en
+  turquesa, Muertes 3 (rojo), XP +41,220, Oro con monedas, Rep. +875, botón «Compartir en grupo».
+  En grupo: Compartir → en el chat del grupo «QDT: … 29:51 · nuevo récord -1:49 · 3 muertes · …».
+  Solo: «no estás en grupo». Al matar el último jefe de una run real sale solo.
 - [ ] **encounterID (punto 8e)**: **sin run dedicada: solo cuando toque esa mazmorra.** Ya medido en las runs del 2026-11-13: Deadmines emite los IDs nuevos 2741-2747 (no los clásicos 161-167 de FDJ) y Excavation Site 3480-3482; Miner Johnson no salió. Anotar qué ID llega en `ENCOUNTER_END` en Gnomeregan, Thaurissan, Thalnos, Lorgus Jett y Rend (el de NF o el alternativo de FDJ), y si los jefes de Dire Maul (Pusillin, Tsu'zee, Hel'nurath), Miner Johnson, Skul, Stonespine y Atal'alarion emiten alguno.
 
 ## Siguiente (handoff 2026-11-13, sesión F4b)

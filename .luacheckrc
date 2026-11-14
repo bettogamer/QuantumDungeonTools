@@ -72,6 +72,9 @@ files = {
             "IsXPUserDisabled", "GetLocale",
             -- Boss ping (UI.lua, plan M1 point 7): secure buttons + attack cursor
             "InCombatLockdown", "SetCursor", "ResetCursor", "wipe",
+            -- Alerts (Alerts.lua, plan M1 F5): share line + the game's "too many instances"
+            "IsInGroup", "IsInRaid", "LE_PARTY_CATEGORY_INSTANCE", "SendChatMessage", "C_ChatInfo",
+            "TRANSFER_ABORT_TOO_MANY_INSTANCES", "ERR_TOO_MANY_INSTANCES",
         },
     },
 

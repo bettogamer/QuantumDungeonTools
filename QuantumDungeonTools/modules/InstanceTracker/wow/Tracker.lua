@@ -24,7 +24,7 @@ local issecretvalue = ns.issecretvalue
 -- copyPending: we re-entered the instance of an existing run and do not know yet whether it
 -- is the same copy; the lockout is not merged until the first cast tells us (it may belong
 -- to the leader's copy, not to this run).
-local T = { listeners = {}, hourListeners = {}, inInstance = false, copyPending = false }
+local T = { listeners = {}, hourListeners = {}, finishListeners = {}, inInstance = false, copyPending = false }
 ns.InstanceTracker = T
 
 local HISTORY_MAX = 100
@@ -169,6 +169,10 @@ function T:_notify(reason)
     run.archived = true
     if Records.consider(db().records, run) then run.newRecord = true end
     self:_pushHistory(run)
+    for _, fn in ipairs(self.finishListeners) do
+      local ok, err = pcall(fn, run)
+      if not ok then geterrorhandler()(err) end
+    end
   end
   db().current = run and run:toTable() or nil
   for _, fn in ipairs(self.listeners) do
@@ -262,6 +266,9 @@ function T:_noteEntry(inst, copy)
     end
   end
 end
+
+-- Called once when a run finishes (every counted boss dead): fn(run). The toast (F5c).
+function T:OnFinish(fn) self.finishListeners[#self.finishListeners + 1] = fn end
 
 -- Called after every entry that counted: fn(snapshot). The alerts (F5b) hang from here.
 function T:OnHourEntry(fn) self.hourListeners[#self.hourListeners + 1] = fn end

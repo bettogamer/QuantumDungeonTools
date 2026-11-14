@@ -71,6 +71,7 @@ f:SetScript("OnEvent", function(_, event, arg1)
     -- World loaded: start the modules (each one injects the real game deps into its pure core).
     if ns.InstanceTracker then ns.InstanceTracker:Init() end
     if ns.InstanceTrackerUI then ns.InstanceTrackerUI:Init() end
+    if ns.InstanceAlertsUI then ns.InstanceAlertsUI:Init() end
     if ns.CheckF1 then ns.CheckF1:Init() end   -- re-arms the F1 passive log if it is on
     ns.version = ns.resolveVersion(C_AddOns.GetAddOnMetadata(ADDON, "Version"))
     print(L.MSG_LOADED:format(ns.Brand.title(), ns.version))

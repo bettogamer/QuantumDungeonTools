@@ -42,6 +42,8 @@ C.mutedHalf   = Style.rgba(HEX.muted, 0.5)      -- RARE tag border
 C.rested      = Style.rgba(HEX.turquoise, 0.22) -- rested XP extent
 C.hairline    = Style.rgba(HEX.white, 0.1)      -- 1px bar borders
 C.panelBg     = Style.rgba(HEX.panel, 0.82)     -- compact panel
+C.alertBg     = Style.rgba(HEX.panel, 0.88)     -- 10/10 alert and 8/10 strip (artboard Avisos)
+C.goldBorder  = Style.rgba(HEX.gold, 0.6)       -- 8/10 strip border
 C.shadow      = { r = 0, g = 0, b = 0, a = 0.9 }
 Style.C = C
 
@@ -113,6 +115,22 @@ Style.SIZE = {
   detailSecGap = 10, -- between sections (no hairline)
   infoSep     = 10, -- each side of the "·" in the info row (design gap 10)
   pingIcon    = 13, -- crosshair left of a live boss name on hover (artboard Ping, variant B)
+  -- Alerts (artboard Avisos, plan M1 F5): end-of-run toast and the 10/10 / 8/10 notices.
+  alertW      = 360,
+  alertPadX   = 14,
+  alertPadY   = 12,
+  alertGap    = 6,   -- between the lines of the 10/10 alert
+  alertIconGap = 8,  -- warning icon <-> title
+  alertIcon   = 16,
+  stripPadY   = 10,  -- the 8/10 strip is one line: 10x14
+  alertTop    = 140, -- from the top of the screen (no place in the design: owner may move it)
+  alertStack  = 16,  -- between the alert and the toast when both are shown
+  toastGap    = 10,  -- between the blocks of the toast body
+  toastHeadH  = 44,  -- header row "Run completada  [NUEVO RÉCORD]" (12 + 14 + ~6 + 12)
+  toastStatGap = 8,  -- between the four stat columns
+  toastStatKV = 2,   -- stat label <-> value
+  toastClockGap = 10, -- big clock <-> delta
+  toastBtnTop = 4,   -- extra space above the buttons
 }
 
 -- The numbers above and the font sizes below are the CSS px of the design canvas. WoW sizes
@@ -149,6 +167,13 @@ Style.FONT = {
   panelSm   = { size = 11, weight = "medium", flags = "" },
   detail      = { size = 12, weight = "medium" },     -- detail tooltip rows
   detailTitle = { size = 11, weight = "semibold" },   -- its section titles (Craft: the medium file)
+  -- Alerts and toast: solid panels, so no outline and no shadow (like the compact panel).
+  alertTitle  = { size = 14, weight = "semibold", flags = "" },
+  alertBody   = { size = 12, weight = "medium", flags = "" },
+  alertSmall  = { size = 11, weight = "medium", flags = "" },
+  toastClock  = { size = 34, weight = "bold", flags = "" },
+  toastDelta  = { size = 14, weight = "medium", flags = "" },
+  toastStat   = { size = 13, weight = "semibold", flags = "" },
 }
 
 return Style

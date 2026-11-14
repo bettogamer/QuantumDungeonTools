@@ -10,12 +10,13 @@ ns.L = L
 L.MSG_LOADED   = "%s v%s loaded. Type /qdt for options."
 L.MSG_ON       = "on"
 L.MSG_OFF      = "off"
-L.HELP_USAGE   = "usage: /qdt [it | it compact | it demo | new | history | auto | info | check f1 | check f2]"
+L.HELP_USAGE   = "usage: /qdt [it | it compact | it demo | it alert | new | history | auto | info | check f1|f2]"
 L.HELP_LINES   = {
   "/qdt it -- show/hide the Instance Tracker widget",
   "/qdt it compact -- one-line widget, bosses on hover (on/off)",
   "/qdt it demo <live | done | first | compact | off> -- preview a state of the widget",
   "/qdt it mark <marker> -- raid marker of the right click on a boss (default: skull)",
+  "/qdt it alert <toast | cap | near> -- preview the end-of-run toast or the instance alerts",
   "/qdt new -- forget the current run and start a new one",
   "/qdt history -- last runs (time, bosses, XP)",
   "/qdt auto -- open the window automatically inside dungeons (on/off)",
@@ -82,6 +83,26 @@ L.IT_D_NEXT_SLOT    = "Next slot"
 L.IT_D_THEN_SLOT    = "Then"
 L.IT_D_IN           = "in %s"
 L.IT_D_EMPTY        = "Nothing to show yet."
+-- Alerts (plan M1 F5, artboard Avisos)
+L.IT_A_CAP_TITLE    = "Instance limit: %d/%d"
+L.IT_A_CAP_BODY     = "You cannot enter a new dungeon for %s."
+L.IT_A_CAP_BODY_NOW = "You cannot enter a new dungeon right now."
+L.IT_A_CAP_NOTE     = "Going back to your current copy is still allowed."
+L.IT_A_NEAR         = "Instances %d/%d in the last hour · next slot in %s"
+L.IT_A_DONE         = "Run complete"
+L.IT_A_RECORD       = "NEW RECORD"
+L.IT_A_DEATHS       = "Deaths"
+L.IT_A_XP           = "XP"
+L.IT_A_GOLD         = "Gold"
+L.IT_A_REP          = "Rep."
+L.IT_A_SHARE        = "Share with group"
+L.IT_A_HISTORY      = "History"
+L.IT_A_NO_GROUP     = "not in a group: nothing sent."
+L.IT_A_SEND_FAIL    = "the game did not let the line through."
+L.IT_A_W_RECORD     = "new record"
+L.IT_A_W_DEATH1     = "1 death"
+L.IT_A_W_DEATHN     = "%d deaths"
+L.IT_A_USAGE        = "alert previews: toast, cap, near"
 L.CHECK_F2_SAVED    = "check f2: %d/%d ok (%s). Saved to QuantumDungeonToolsDB._checkF2."
 L.CHECK_F2_FAIL     = "  FAIL %s: %s"
 
@@ -100,12 +121,13 @@ if locale == "esES" or locale == "esMX" then
   L.MSG_LOADED   = "%s v%s cargado. Escribe /qdt para opciones."
   L.MSG_ON       = "activado"
   L.MSG_OFF      = "desactivado"
-  L.HELP_USAGE   = "uso: /qdt [it | it compact | it demo | new | history | auto | info | check f1 | check f2]"
+  L.HELP_USAGE   = "uso: /qdt [it | it compact | it demo | it alert | new | history | auto | info | check f1|f2]"
   L.HELP_LINES   = {
     "/qdt it -- mostrar/ocultar el widget del Instance Tracker",
     "/qdt it compact -- widget en una línea, jefes al pasar el mouse (sí/no)",
     "/qdt it demo <live | done | first | compact | off> -- ver un estado del widget",
     "/qdt it mark <marca> -- marca del clic derecho en un jefe (por defecto: calavera)",
+    "/qdt it alert <toast | cap | near> -- ver el toast de fin de run o los avisos de instancias",
     "/qdt new -- olvidar la run actual y empezar otra",
     "/qdt history -- últimas runs (tiempo, jefes, XP)",
     "/qdt auto -- abrir la ventana sola al entrar en mazmorras (sí/no)",
@@ -170,6 +192,25 @@ if locale == "esES" or locale == "esMX" then
   L.IT_D_THEN_SLOT    = "Después"
   L.IT_D_IN           = "en %s"
   L.IT_D_EMPTY        = "Todavía no hay nada que mostrar."
+  L.IT_A_CAP_TITLE    = "Límite de instancias: %d/%d"
+  L.IT_A_CAP_BODY     = "No podrás entrar en una mazmorra nueva hasta dentro de %s."
+  L.IT_A_CAP_BODY_NOW = "Ahora mismo no puedes entrar en una mazmorra nueva."
+  L.IT_A_CAP_NOTE     = "Volver a tu copia actual sigue permitido."
+  L.IT_A_NEAR         = "Instancias %d/%d en la última hora · siguiente hueco en %s"
+  L.IT_A_DONE         = "Run completada"
+  L.IT_A_RECORD       = "NUEVO RÉCORD"
+  L.IT_A_DEATHS       = "Muertes"
+  L.IT_A_XP           = "XP"
+  L.IT_A_GOLD         = "Oro"
+  L.IT_A_REP          = "Rep."
+  L.IT_A_SHARE        = "Compartir en grupo"
+  L.IT_A_HISTORY      = "Historial"
+  L.IT_A_NO_GROUP     = "no estás en grupo: no se envió nada."
+  L.IT_A_SEND_FAIL    = "el juego no dejó pasar la línea."
+  L.IT_A_W_RECORD     = "nuevo récord"
+  L.IT_A_W_DEATH1     = "1 muerte"
+  L.IT_A_W_DEATHN     = "%d muertes"
+  L.IT_A_USAGE        = "vistas de los avisos: toast, cap, near"
   L.CHECK_F2_SAVED    = "check f2: %d/%d ok (%s). Guardado en QuantumDungeonToolsDB._checkF2."
   L.CHECK_F2_FAIL     = "  FALLA %s: %s"
 
