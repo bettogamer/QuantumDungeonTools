@@ -318,6 +318,11 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 
 ## Siguiente (handoff 2026-11-13, sesión F4b)
 
+> **Sesión F5 (2026-11-14, cierre):** F5 hecha en código (`9b6e7a4`, `e35bb2a`) y desplegada.
+> Pendiente: el owner mira `/qdt it alert toast|cap|near` contra el artboard Avisos y da OK (o no) a
+> las elecciones del agente listadas en F5b+F5c (posición, duraciones, botón oro). Después: **F4c**
+> (% de trash con los totales de FDJ + tiempo fuera) y luego **F6**. Nada a medias.
+
 > **Sesión FDJ (2026-11-13, cierre):** inventario de ForeverDungeonJournal y cotejo de encounterID en
 > `docs/16` §Inventario y §Cotejo; punto abierto 8 decidido: (a) retomar 90/20 min y (e) IDs alternativos
 > de FDJ en el generador, ambos ✅ en código; (b) reset de la run como botón en los ajustes, en F6; (c)+(d)
