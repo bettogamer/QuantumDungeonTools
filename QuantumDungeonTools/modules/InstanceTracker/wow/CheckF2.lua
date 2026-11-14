@@ -92,11 +92,15 @@ function C:Run()
 
   -- F6c: the module page of the main window builds its 8 settings.
   local MW, Page = ns.MainWindow, ns.InstanceTrackerPage
+  local pageProbe
   if Craft and MW and Page then
     local wasShown = MW:IsShown()
     local ok, err = pcall(MW.Open, MW, "it")
     local ps = Page:Snapshot()
     check("page it", ok and ps.built and ps.cells == 8, ok and ps.cells or err)
+    pageProbe = ps.probe
+    -- Rects only resolve once the page has been on screen: checked when the window was open.
+    if wasShown then check("page it painted", ps.painted, ps.probe and ps.probe.last) end
     if not wasShown and MW:IsShown() then MW:Toggle() end
   end
 
@@ -117,7 +121,7 @@ function C:Run()
   local build = { GetBuildInfo() }
   QuantumDungeonToolsDB._checkF2 = {
     at = time(), build = { enc(build[1]), enc(build[2]), enc(build[4]) },
-    results = results, apis = apis, sizes = sizes, ui = UI:Snapshot(),
+    results = results, apis = apis, sizes = sizes, ui = UI:Snapshot(), page = pageProbe,
   }
   ns.say(L.CHECK_F2_SAVED:format(okCount, #results, tostring(build[1])))
   for _, r in ipairs(results) do

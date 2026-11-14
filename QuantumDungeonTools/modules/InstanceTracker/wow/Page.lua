@@ -351,6 +351,7 @@ local function buildSummary(frame, onHistory)
   scroll:GetFrame():SetAllPoints(frame)
   local child = scroll:GetScrollChild()
   child:SetHeight(1)
+  P.scroll, P.child = scroll, child
 
   local last
   -- The scroll child's height follows the fold while it animates (measured, not summed: the
@@ -362,13 +363,17 @@ local function buildSummary(frame, onHistory)
 
   local label = B.label(child, L.IT_P_MODULE)
   label:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -S.pageTop)
+  P.firstLabel = label
   local card = buildModule(child, label)
+  P.card = card
   label = B.label(child, L.IT_P_WIDGET)
   label:SetPoint("TOPLEFT", card, "BOTTOMLEFT", 0, -S.pageBlockGap)
   local fold = buildFold(child, label, fit)
+  P.fold = fold
   label = B.label(child, L.IT_P_RUN)
   label:SetPoint("TOPLEFT", fold, "BOTTOMLEFT", 0, -S.pageBlockGap)
   last = buildRun(child, label, onHistory)
+  P.last = last
   child:SetScript("OnShow", fit)
   child:SetScript("OnSizeChanged", fit)
   fit()
@@ -388,26 +393,41 @@ function Page:Build(page, blocks)
   local head = B.header(page, L.IT_TITLE, L.IT_P_SUB, L.IT_P_KICKER:format(L.IT_P_SUMMARY))
   head.rule:Hide()   -- the tab bar draws the line here
 
+  -- Craft.Tabs is only the bar here: its content frames never got a rect in-game (GetRect nil,
+  -- nothing inside painted; check f2 probe 2026-11-14), so the tab pages are our own frames
+  -- under the bar, switched in onTabChange.
+  local panes = {}
+  local function showPane(id)
+    for pid, f in pairs(panes) do f:SetShown(pid == id) end
+    head.kicker:SetText(L.IT_P_KICKER:format(id == "history" and L.IT_P_HISTORY or L.IT_P_SUMMARY))
+  end
   local tabs = Craft.Tabs:Create(page, {
     variant = "line", defaultTab = "summary",
     tabs = { { id = "summary", label = L.IT_P_SUMMARY }, { id = "history", label = L.IT_P_HISTORY } },
-    onTabChange = function(id)
-      head.kicker:SetText(L.IT_P_KICKER:format(id == "history" and L.IT_P_HISTORY or L.IT_P_SUMMARY))
-    end,
+    onTabChange = function(id) showPane(id) end,
   })
   local tf = tabs:GetFrame()
   tf:SetPoint("TOPLEFT", head.sub, "BOTTOMLEFT", 0, -12)
-  tf:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -B.padX, 0)
+  tf:SetPoint("RIGHT", page, "RIGHT", -B.padX, 0)
+  tf:SetHeight(S.pageTabsH)
   P.tabs = tabs
+  for _, id in ipairs({ "summary", "history" }) do
+    local f = CreateFrame("Frame", nil, page)
+    f:SetPoint("TOPLEFT", tf, "BOTTOMLEFT", 0, 0)
+    f:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -B.padX, 0)
+    panes[id] = f
+  end
+  P.panes = panes
 
-  buildSummary(tabs:GetContentFrame("summary"), function() tabs:SetActiveTab("history") end)
+  buildSummary(panes.summary, function() tabs:SetActiveTab("history") end)
 
   -- History: F6d. Until then, the same "coming soon" state as the other pages.
-  local empty = Craft.Empty:Create(tabs:GetContentFrame("history"), { title = L.MW_SOON_TITLE,
+  local empty = Craft.Empty:Create(panes.history, { title = L.MW_SOON_TITLE,
     description = L.MW_SOON_DESC, icon = "hourglass" })
   local ef = empty:GetFrame()
-  ef:SetPoint("TOPLEFT", tabs:GetContentFrame("history"), "TOPLEFT", 0, -S.pageTop)
-  ef:SetPoint("RIGHT", tabs:GetContentFrame("history"), "RIGHT", 0, 0)
+  ef:SetPoint("TOPLEFT", panes.history, "TOPLEFT", 0, -S.pageTop)
+  ef:SetPoint("RIGHT", panes.history, "RIGHT", 0, 0)
+  showPane("summary")
 
   self:OnModuleChange(refreshModule)
   refreshModule()
@@ -439,7 +459,20 @@ end
 function Page:Snapshot()
   local n = 0
   for _ in pairs(cells) do n = n + 1 end
-  return { built = P.tabs ~= nil, cells = n, folded = P.foldProg and P.foldProg:peek() == 0 or false }
+  local function rect(f)
+    if not f then return "nil" end
+    local l, b, w, h = f:GetRect()
+    return ("%s shown=%s vis=%s a=%.2f rect=%s,%s %sx%s"):format(f.GetObjectType and f:GetObjectType() or "?",
+      tostring(f:IsShown()), tostring(f:IsVisible()), f:GetAlpha() or -1, tostring(l and math.floor(l)),
+      tostring(b and math.floor(b)), tostring(w and math.floor(w)), tostring(h and math.floor(h)))
+  end
+  return { built = P.tabs ~= nil, cells = n,
+    painted = P.last ~= nil and P.last:GetRect() ~= nil, folded = P.foldProg and P.foldProg:peek() == 0 or false,
+    probe = P.tabs and {   -- why the Summary tab paints nothing (F6c in-game, 2026-11-14)
+      tabs = rect(P.tabs:GetFrame()), content = rect(P.panes and P.panes.summary),
+      scroll = rect(P.scroll and P.scroll:GetFrame()), child = rect(P.child), label = rect(P.firstLabel),
+      card = rect(P.card), fold = rect(P.fold), last = rect(P.last),
+    } or nil }
 end
 
 return Page
