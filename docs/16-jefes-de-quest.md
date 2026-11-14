@@ -188,3 +188,53 @@ Es sobre todo un **diario de mazmorra** (jefes, loot, quests, mapas); el tracker
   - Contar trash total por mazmorra y mostrar % (`runLogTrashTotal`, `:57`); tiempo fuera de la mazmorra (corpse run).
   - Botones seguros `SecureActionButtonTemplate` para fijar objetivo de un jefe (`RunLogUI.lua:2860`): solo fuera de combate.
   - Idiomas: nosotros mantenemos EN + esMX; las 10 localizaciones de FDJ son un listado de nombres de jefe por idioma, no un modelo.
+
+### Cotejo encounterID QDT ↔ FDJ (2026-11-13)
+
+Comparado a mano, mazmorra a mazmorra, `DungeonData.lua` (`modules/InstanceTracker/core/`) contra `Data/RunLogEncounters.lua` de FDJ
+(`[id] = {mazmorra, jefe}`, build 70862). Un jefe «coincide» si al menos un ID de QDT está en FDJ para ese mismo jefe.
+
+**1. Resumen:** 226 jefes en QDT (`DungeonData.lua:11-302`, 31 mazmorras/alas).
+- **189 coinciden** (incluye Sunken Temple por IDs viejos y Upper Blackrock Spire con nombre distinto, ver abajo).
+- **8 difieren** de ID (tabla). **29 solo en QDT** (sin ID en FDJ). FDJ tiene además **11 jefes/IDs que QDT no tiene**.
+
+**2. Discrepancias (ID distinto o nombre contradictorio)**
+| Mazmorra | Jefe | ID QDT | ID(s) FDJ | Nota |
+|---|---|---|---|---|
+| Blackrock Depths | Emperor Dagran Thaurissan | 2790 (`:53`) | 245 (`:68`) | FDJ no tiene 2790 |
+| Blackfathom Deeps | Lorgus Jett | 2913, 2764 (`:22`) | 222 (`:25`) | ninguno de los dos de QDT está en FDJ |
+| Gnomeregan | Grubbis | 2768 | 379 | **los 5 jefes** difieren: QDT 2768-2772 vs FDJ 378-382 |
+| Gnomeregan | Viscous Fallout | 2769 | 378 | (`DungeonData.lua:112-116`, FDJ `:101-105`) |
+| Gnomeregan | Electrocutioner 6000 | 2770 | 380 | |
+| Gnomeregan | Crowd Pummeler 9-60 | 2771 | 381 | |
+| Gnomeregan | Mekgineer Thermaplugg | 2772 | 382 | |
+| Scarlet Monastery: Graveyard | Bloodmage Thalnos | 2779 (`:195`) | 445 (`:181`) | FDJ no tiene 2779 |
+| Upper Blackrock Spire | Warchief Rend Blackhand | 3063 (`:278`) | 278 (`:275`); 3063 = «Gyth» (`:279`) | mismo ID, jefe distinto: ¿Gyth y Rend comparten encuentro? |
+
+**3. Sin ID en el otro lado**
+- **Solo QDT (29).** Casi todos son opcionales/rares/quest, que FDJ trata como jefes sin evento (`optional`/`rare`/`spawnQuest`):
+  Moira 2789; Dalaran Mana Wraith 3312 y Arcanic Enigma 3301; Miner Johnson 3676; Dire Maul Pusillin 2792, Tsu'zee 2794, Hel'nurath 2793;
+  **Highland Horror 3644**; Hall of Thanes Magmatus 3495; Ruins The Butcher 3355; Stratholme Skul 2799 y Stonespine 2800; Uldaman
+  Obsidian Sentinel 1887; Atal'alarion (Sunken Temple, 3582/2814).
+  **Candidatos a «sin ENCOUNTER_END» como Highland Horror:** los 3 de Dire Maul (2792-2794), Miner Johnson, Skul, Stonespine, Lyn/Lordaeron Captain
+  (esos sí están en FDJ). Que FDJ no tenga el ID no prueba que no se emita: su tabla sale del db2 + DBM/LittleWigs, no de observación.
+- **Mazmorras enteras solo en QDT:** Scholomance (14 jefes, 2801-2813 y Kormok 3055) y Onyxia (1084): FDJ no las cubre.
+- **Solo FDJ:** BRD Ring of Law 230 y The Seven 243 (`:53`, `:66`); Drowned City Deathless Marrow 3478 (`:255`); Stratholme Malor the Zealous 476
+  (`:217`); Uldaman The Lost Dwarves 548 (`:266`); UBRS Solakar Flamewreath 277 (`:274`); Shaper's Terrace Titanosaur 3498, Thunderhoof 3500,
+  Venomridge 3501, Direhorn Matriarch 3507, Vitrix 3600 (`:203-211`).
+  Los de Shaper's Terrace parecen rares/opcionales que QDT no lista; no tienen flag en FDJ.
+
+**4. IDs alternativos de FDJ que QDT no escucha** (QDT usa solo los 27xx/3xxx; el db2 trae además los clásicos)
+- Un ID viejo por jefe: BFD 219-222,224-226; Ragefire 430-433; Razorfen Downs 434-437; Razorfen Kraul 439-441,443,883; Shadowfang 464-471;
+  Deadmines 161-167. En estos QDT ya cubre los 27xx; si el cliente emitiera el viejo, no contaría.
+- Sunken Temple: FDJ agrupa por pares («Dreamscythe & Weaver» 486/487, «Morphaz & Hazzas» 490/491); QDT sí escucha 486-493 pero
+  no hay confirmación de que 3583-3589 existan en FDJ.
+- UBRS: 276-280 (legacy) además de 3062-3070.
+
+**5. Recomendación (no aplicado; `DungeonData.lua` es generado por `scripts/gen-dungeons.lua`)**
+1. Gnomeregan: añadir `378-382` como IDs alternativos a los 27xx (idem BRD Thaurissan `245`, Thalnos `445`, Lorgus `222`). Un ID extra no
+   rompe nada si FDJ dice que son únicos (`RunLogEncounters.lua:10-11`).
+2. Añadir los viejos de §4 como ids secundarios en el generador, solo donde QDT tiene un único ID.
+3. Revisar en el generador de dónde sale Gnomeregan 27xx y Lorgus 2913/2764 (¿Naowh o medido?) antes de tocarlos.
+4. **Confirmar in-game** con `/dj bossids` o nuestro log de ENCOUNTER_END: Gnomeregan (cuál ID llega), Thaurissan, Thalnos, Lorgus, Rend/Gyth (3063),
+   y qué jefes opcionales/rares de §3 emiten evento (Dire Maul 2792-2794, Miner Johnson, Skul/Stonespine, Atal'alarion).
