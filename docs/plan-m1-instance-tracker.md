@@ -261,8 +261,8 @@ quita. `T:HourSnapshot()` → `opts.instances` del Detalle (se lee solo al pasar
 (sin texturas, menos ASCII, `QDT:` sin color, troceada a 255, `pcall`). Elecciones del agente
 (✅ OK del owner in-game 2026-11-14, con las vistas previas animadas): el aviso y el toast van arriba al centro (`S.alertTop`, el lienzo no
 fija sitio), apilados; el aviso dura 15 s y el toast 30 s (se paran con el ratón encima; clic en el
-cuerpo = cerrar); el botón es el `Craft.Button` primario (oro con texto navy, el Primary elegido del
-tema), no el crema del artboard; del texto pequeño del aviso se quitó «Sale al entrar en el grupo o
+cuerpo = cerrar); el botón «Compartir» es crema con texto navy como el artboard (`Craft.Button` `secondary`,
+tokens en `UI:Init`; corregido 2026-11-14 tras salir oro); del texto pequeño del aviso se quitó «Sale al entrar en el grupo o
 al acercarte a una entrada» (sin posición en mazmorra no se puede detectar «acercarte»).
 Specs: `Alerts_spec.lua`.
 
