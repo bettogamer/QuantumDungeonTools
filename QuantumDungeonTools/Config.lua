@@ -38,6 +38,9 @@ SlashCmdList.QDT = function(msg)
   msg = (msg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
   if msg == "" then
     ns.MainWindow:Toggle("home")
+  elseif not ns.itLoaded and (msg == "it" or msg == "tracker" or msg == "new" or msg == "auto"
+      or msg:find("^it ") or msg:find("^check f")) then
+    say(L.IT_MODULE_OFF)   -- module switched off: nothing of it is running
   elseif msg == "it" or msg == "tracker" then
     ns.InstanceTrackerUI:Toggle()
   elseif msg == "new" then

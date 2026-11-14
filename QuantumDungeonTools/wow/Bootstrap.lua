@@ -37,6 +37,7 @@ function ns.InitDB()
   -- Widget settings (autoShow, compact, line switches, pingMarker, locked): additive fields,
   -- defaults in modules/InstanceTracker/core/Settings.lua (F6).
   ns.InstanceSettings.applyDefaults(it)
+  if it.enabled == nil then it.enabled = true end   -- module switch (F6c), additive
   it.history = it.history or {}
   it.records = it.records or {}     -- F3: PB per dungeon + difficulty (additive, no migration)
   it.trash = it.trash or {}         -- F4c: trash per dungeon (instanceID), learned from clean runs
@@ -72,10 +73,15 @@ f:SetScript("OnEvent", function(_, event, arg1)
     -- World loaded: the addon UI kit (Craft theme context) first, then the modules (each one
     -- injects the real game deps into its pure core and builds its UI on the kit).
     if ns.Kit then ns.Kit:Init() end
-    if ns.InstanceTracker then ns.InstanceTracker:Init() end
-    if ns.InstanceTrackerUI then ns.InstanceTrackerUI:Init() end
-    if ns.InstanceAlertsUI then ns.InstanceAlertsUI:Init() end
-    if ns.CheckF1 then ns.CheckF1:Init() end   -- re-arms the F1 passive log if it is on
+    -- Module switch (main window, F6c): read once here, applied by a reload. Off = no events,
+    -- no widget, no alerts; its page and data stay.
+    ns.itLoaded = ns.InstanceSettings.isOn(ns.db.instanceTracker)
+    if ns.itLoaded then
+      if ns.InstanceTracker then ns.InstanceTracker:Init() end
+      if ns.InstanceTrackerUI then ns.InstanceTrackerUI:Init() end
+      if ns.InstanceAlertsUI then ns.InstanceAlertsUI:Init() end
+      if ns.CheckF1 then ns.CheckF1:Init() end   -- re-arms the F1 passive log if it is on
+    end
     ns.version = ns.resolveVersion(C_AddOns.GetAddOnMetadata(ADDON, "Version"))
     print(L.MSG_LOADED:format(ns.Brand.title(), ns.version))
   end

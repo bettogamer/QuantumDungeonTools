@@ -295,9 +295,20 @@ cuando toque (el acceso «Mover marcos» de Inicio lo abrirá).
 |-----|-----|--------|
 | F6a | Modelo puro: `core/History.lua` (filtros mazmorra/dificultad/personaje, fila por run con fecha «Hoy/Ayer/10 nov», kind récord/atrasada/adelantada/sin terminar/primera, pie media/récord) + `core/Settings.lua` (defaults de las 8 opciones del grupo «Qué enseña», «N cambiados», Restablecer, resumen «3 de 4 líneas») + campo `run.char` («Name-Realm», aditivo) | ✅ código + specs |
 | F6b | Ventana principal: `Craft.Window` headless (cabecera propia con «Recargar UI» y X), Sidebar 220 px (Inicio, MAZMORRAS › Instance Tracker, Minimap Lens «PRONTO», Ajustes generales, Novedades, versión), un frame por página con Show/Hide, página Inicio (AHORA, ABRIR, MÓDULOS). `/qdt` abre Inicio (la ayuda pasa a `/qdt help`). Exponer el `ctx` de tema de `UI.lua` | ✅ código (`wow/MainWindow.lua`, `View.now` + specs); ✅ vista in-game (owner, 2026-11-14, BugSack limpio). Desvíos: «PRONTO» del sidebar va en tooltip (Craft no tiene badge de fila → FR-152 de Craft); «Mover marcos» y el interruptor del módulo, visibles pero deshabilitados hasta F6c; la ventana tomaba tema y fuentes de `InstanceTrackerUI:Kit()` → ✅ subido a nivel addon (2026-11-14, previo a F6c): `core/Style.lua` (paleta, tonos, `WIN`, fuentes `win*`; el Style del módulo hereda con `Style.extend`) y `wow/Kit.lua` (contexto de tema, texto, borde, etiqueta; lo arranca Bootstrap antes que los módulos). La ventana ya no depende del módulo; ✅ in-game (owner, 2026-11-14: `check f2` 16/16 y ventana igual que antes) |
-| F6c | IT › Resumen: interruptor del módulo (pide recargar), grupo plegable «Qué enseña» en 2 columnas con punto oro y pie Restablecer; el widget obedece las 4 líneas, `locked` y la marca; grupo RUN con «Reiniciar la run» (8b) | ⬜ |
+| F6c | IT › Resumen: interruptor del módulo (pide recargar), grupo plegable «Qué enseña» en 2 columnas con punto oro y pie Restablecer; el widget obedece las 4 líneas, `locked` y la marca; grupo RUN con «Reiniciar la run» (8b) | ✅ código (2026-11-14: `modules/InstanceTracker/wow/Page.lua`; puro `Settings.lines/isOn/needsReload` + `View.withLines`, specs; `check f2` gana «line bosses off» y «page it»); ⬜ vista in-game (guion abajo). Elecciones del agente: grupo plegable propio con `Weave.tween` (Craft.Section no tiene hueco para el resumen y pone el chevron a la derecha); módulo apagado = no arrancan Tracker/widget/avisos/F1 y los `/qdt it…`, `new`, `auto`, `check` responden «está apagado»; aviso dorado «Se aplica al recargar la UI» junto al interruptor (el botón Recargar ya está arriba); «Reiniciar la run» pide un segundo clic en 4 s; las líneas apagadas valen en el modo completo (el compacto es su propia línea); interruptor de Inicio cableado y sincronizado con el de la página; pestaña Historial = «Muy pronto» hasta F6d. Desvío: el subrayado de la pestaña activa sale crema (Craft `line` usa `foreground`), el artboard lo pinta oro |
 | F6d | IT › Historial: 3 Select de filtro + «Instancias última hora», tabla con scroll (filas fijas reutilizadas, 9 columnas, monedas), pie; `/qdt history` y botón «Historial» del toast abren aquí | ⬜ |
 | F6e | Icono del minimapa (vendorear LibDataBroker-1.1 + LibDBIcon-1.0; anotarlos en AGENTS.md §4 y `libs/README.md`), clic = Inicio, mayús+clic = Historial; Ajustes generales con su interruptor | ⬜ |
+
+**Guion F6c (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 18/18) → `/qdt` →
+Instance Tracker. (1) Pestañas Resumen | Historial; el kicker cambia a «Instance Tracker / Historial».
+(2) Plegar/desplegar «Qué enseña»: anima, el chevron gira (abajo ↔ derecha). (3) `/qdt it demo live` y
+apagar Lista de jefes, Barra de tiempo, Barra de XP y Fila de totales una a una: el widget pierde esa
+línea al momento; sale el punto oro y el pie «N ajustes cambiados»; el resumen dice «X de 4 líneas».
+«Restablecer el widget ›» lo devuelve todo y el pie dice «Todos los ajustes con su valor por defecto».
+(4) Bloquear posición: el widget no se arrastra. (5) Marca: elegir Estrella; clic derecho en un jefe
+vivo pone la estrella (esto sí necesita mazmorra: va a la run de prueba). (6) Apagar el módulo: aviso
+dorado; el interruptor de Inicio también se apaga; Recargar UI → no sale el widget y `/qdt it` dice
+«está apagado»; volver a encender + recargar.
 
 Abiertos para preguntar al owner cuando toque (no bloquean F6b): «Buscar ajustes» (filtrar por nombre)
 y contenido de «Novedades» — propuesta: dejarlos para después de F6e; «Pug ×4» del artboard — hoy
@@ -310,6 +321,8 @@ la columna Grupo pinta los nombres (sin reino) porque no hay forma fiable de dis
 Las mazmorras de Forever son largas: no se prueba cambio a cambio (owner, 2026-11-13). Cada
 cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 
+- [ ] **Marca del ajuste (F6c)**: con «Marca al clic derecho» en Estrella, clic derecho en un jefe vivo
+  de la lista → le pone la estrella (y otro clic se la quita).
 - [ ] **Copia de la mazmorra (`3461ce9`)**: entrar solo y matar adds → salir → unirse a un grupo
   → entrar en la copia del líder. Al primer hechizo el widget empieza run nueva (reloj a 0); la
   run de solo adds no va al historial; la kill del primer jefe se queda.

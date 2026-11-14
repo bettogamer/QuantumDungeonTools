@@ -72,11 +72,12 @@ local function section(parent, label, anchor, gap)
   return fs
 end
 
--- Kicker, title, subtitle and the bottom rule. Returns the rule (the next block hangs from it).
-local function pageHeader(page, title, sub)
+-- Kicker, title, subtitle and the bottom rule. Returns the rule (the next block hangs from it),
+-- then the kicker and the subtitle FontStrings.
+local function pageHeader(page, title, sub, kickerText)
   local kicker = text(page, FONT.winKicker, C.muted)
   kicker:SetPoint("TOPLEFT", WIN.padX, -WIN.padY)
-  kicker:SetText(ns.Brand.TITLE)
+  kicker:SetText(kickerText or ns.Brand.TITLE)
   local h1 = text(page, FONT.winTitle, C.cream)
   h1:SetPoint("TOPLEFT", kicker, "BOTTOMLEFT", 0, -4)
   h1:SetText(title)
@@ -86,8 +87,27 @@ local function pageHeader(page, title, sub)
   local rule = hline(page)
   rule:SetPoint("TOPLEFT", s, "BOTTOMLEFT", 0, -16)
   rule:SetPoint("RIGHT", page, "RIGHT", -WIN.padX, 0)
-  return rule
+  return rule, kicker, s
 end
+
+-- A block label (NOW, OPEN, MODULE...) without an anchor yet.
+local function label(parent, textValue)
+  local fs = text(parent, FONT.winSection, C.muted)
+  fs:SetText(textValue)
+  return fs
+end
+
+-- What a module page builds with (modules/<Name>/wow/Page.lua).
+local blocks = {
+  text = function(...) return text(...) end,
+  box = function(...) return box(...) end,
+  hline = function(...) return hline(...) end,
+  label = function(...) return label(...) end,
+  header = function(page, title, sub, kicker)
+    local rule, k, s = pageHeader(page, title, sub, kicker)
+    return { rule = rule, kicker = k, sub = s }
+  end,
+}
 
 ------------------------------------------------------------------------------
 -- Pages
@@ -205,9 +225,16 @@ local function buildModules(page, anchor)
   local name = text(it, FONT.winModule, C.cream)
   name:SetPoint("LEFT", 16, 0)
   name:SetText(L.IT_TITLE)
-  -- The module switch (asks for a reload) is wired in F6c, with the module's own page.
-  local sw = Craft.Switch:Create(it, { checked = true, disabled = true })
+  -- The module switch (applied on reload), shared with the module's page.
+  local Page = ns.InstanceTrackerPage
+  local sw = Craft.Switch:Create(it, { checked = Page:ModuleOn(),
+    onChange = function(v) if not home.silent then Page:SetModuleOn(v) end end })
   sw:GetFrame():SetPoint("LEFT", name, "RIGHT", 14, 0)
+  Page:OnModuleChange(function(on)
+    home.silent = true
+    if sw:GetChecked() ~= on then sw:SetChecked(on) end
+    home.silent = false
+  end)
   local cmd = text(it, FONT.winRowSub, C.tickIdle)
   cmd:SetPoint("LEFT", sw:GetFrame(), "RIGHT", 14, 0)
   cmd:SetText("/qdt it")
@@ -368,7 +395,12 @@ local function buildMain(content)
   body:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, 0)
   body:SetPoint("BOTTOMRIGHT", main, "BOTTOMRIGHT", 0, 0)
   buildHome(body)
-  placeholder(body, "it", L.IT_TITLE, L.MW_IT_DESC)
+  if ns.InstanceTrackerPage then
+    blocks.padX = WIN.padX
+    ns.InstanceTrackerPage:Build(newPage(body, "it"), blocks)
+  else
+    placeholder(body, "it", L.IT_TITLE, L.MW_IT_DESC)
+  end
   placeholder(body, "general", L.MW_GENERAL, L.MW_GENERAL_SUB)
   placeholder(body, "news", L.MW_NEWS, L.MW_NEWS_SUB)
 end

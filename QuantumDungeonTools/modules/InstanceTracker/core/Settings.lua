@@ -76,4 +76,25 @@ function Settings.summary(db)
            autoShow = Settings.get(db, "autoShow") and true or false }
 end
 
+-- The widget lines that are on, as View.withLines takes them.
+function Settings.lines(db)
+  return {
+    bosses = Settings.get(db, "showBosses") and true or false,
+    timeBar = Settings.get(db, "showTimeBar") and true or false,
+    xpBar = Settings.get(db, "showXPBar") and true or false,
+    totals = Settings.get(db, "showTotals") and true or false,
+  }
+end
+
+-- Module switch (artboard: MODULE card). Off = the module does not start on the next load
+-- (its events, widget and alerts); the page and the history stay reachable. Field `enabled` of
+-- db.instanceTracker (additive, default on). Applied by a reload: `loadedOn` is how it started.
+function Settings.isOn(db)
+  return not (type(db) == "table" and db.enabled == false)
+end
+
+function Settings.needsReload(loadedOn, db)
+  return (loadedOn and true or false) ~= Settings.isOn(db)
+end
+
 return Settings

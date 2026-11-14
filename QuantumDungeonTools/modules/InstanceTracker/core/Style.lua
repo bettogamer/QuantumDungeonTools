@@ -79,6 +79,22 @@ local SIZE = {
   toastStatGap = 8,  -- between the four stat columns
   toastStatKV = 2,   -- stat label <-> value
   toastClockGap = 10, -- big clock <-> delta
+  -- Module page of the main window (F6c, artboard «Instance Tracker · Resumen»).
+  pageTop     = 16,  -- tab bar -> first block label
+  pageLabelGap = 10, -- block label -> its card
+  pageBlockGap = 16, -- card -> next block label (gap 10 + margin-top 6)
+  pagePadX    = 16,  -- inside cards and setting cells
+  pageCardH   = 44,  -- MODULE card (padding 12 + 18 switch + 12)
+  pageFoldH   = 40,  -- «Qué enseña» header (padding 11 + 14 title + 11)
+  pageRowH    = 46,  -- a setting cell (padding 9 + 13 label + 1 + 11 hint + 9)
+  pageFootH   = 30,  -- «N cambiados · Restablecer» footer
+  pageRunH    = 48,  -- RUN rows (padding 10 + 28 button + 10)
+  pageRunGap  = 10,  -- between the two RUN rows
+  pageIcon    = 14,  -- chevrons
+  pageIconGap = 10,
+  pageDot     = 5,   -- the gold "changed" dot
+  pageSelectW = 130,
+  pageBottom  = 16,  -- room under the last block (scroll)
 }
 
 -- `flags` overrides the theme outline ("OUTLINE, SLUG") for one element: the Slug outline is

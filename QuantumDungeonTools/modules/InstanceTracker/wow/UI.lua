@@ -15,7 +15,7 @@
 local _, ns = ...
 local L, T = ns.L, ns.InstanceTracker
 local View, Style, Demo = ns.InstanceTrackerView, ns.InstanceTrackerStyle, ns.InstanceTrackerDemo
-local Detail, Records = ns.InstanceTrackerDetail, ns.InstanceRecords
+local Detail, Records, Settings = ns.InstanceTrackerDetail, ns.InstanceRecords, ns.InstanceSettings
 local S, C, FONT = Style.SIZE, Style.C, Style.FONT
 
 local UI = {}
@@ -226,12 +226,20 @@ local function restorePosition()
   end
 end
 
--- The header row / compact panel move the whole widget; right click hides it.
+-- The header row / compact panel move the whole widget (unless "Lock position" is on, F6c);
+-- right click hides it.
+local moving = false
 local function makeHandle(frame)
   frame:EnableMouse(true)
   frame:RegisterForDrag("LeftButton")
-  frame:SetScript("OnDragStart", function() root:StartMoving() end)
+  frame:SetScript("OnDragStart", function()
+    if db().locked then return end
+    moving = true
+    root:StartMoving()
+  end)
   frame:SetScript("OnDragStop", function()
+    if not moving then return end
+    moving = false
     root:StopMovingOrSizing()
     savePosition()
     UI:SyncPings()   -- the ping buttons sit by screen coordinates (see Boss ping)
@@ -1084,7 +1092,7 @@ function UI:Render()
   else
     K.frame:Hide()
     W.frame:Show()
-    w, h = renderFull(v)
+    w, h = renderFull(View.withLines(v, Settings.lines(db())))   -- the lines turned off (F6c)
   end
   root:SetSize(w, math.max(1, h))
   self:SyncPings()

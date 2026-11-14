@@ -198,6 +198,18 @@ function View.build(run, opts)
   return v
 end
 
+-- The widget lines the settings turn off (plan M1 F6c, group «Qué enseña»): lines = { bosses,
+-- timeBar, xpBar, totals } (Settings.lines; nil = all on). The header (name, clock, info row)
+-- always stays. Works on the view in place and returns it; the "time bar" is either bar mode.
+function View.withLines(v, lines)
+  if not v or type(lines) ~= "table" then return v end
+  if lines.bosses == false then v.bosses = {} end
+  if lines.timeBar == false then v.bar = nil end
+  if lines.xpBar == false then v.xp = nil end
+  if lines.totals == false then v.copper, v.rep = nil, nil end
+  return v
+end
+
 -- Macro of the boss ping (plan M1 point 7): target the boss by name, attack ping on it, give
 -- the previous target back. /cleartarget first: when the boss is out of sight /target fails and
 -- would leave the OLD target, which got the ping (owner, in-game 2026-11-13). /targetexact so a

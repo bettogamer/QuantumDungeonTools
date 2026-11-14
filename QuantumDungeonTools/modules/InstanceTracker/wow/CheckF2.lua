@@ -76,7 +76,28 @@ function C:Run()
       check("demo " .. name, ok and snap.shown and w > 10 and h > 10,
         ok and (math.floor(w) .. "x" .. math.floor(h)) or err)
     end
+    -- F6c: a line switched off shrinks the widget (boss list off, then back as it was).
+    local it = ns.db.instanceTracker
+    local saved = it.showBosses
+    it.showBosses = true
+    pcall(UI.Demo, UI, "live")
+    local h1 = UI:Snapshot().height or 0
+    it.showBosses = false
+    pcall(UI.Demo, UI, "live")
+    local h2 = UI:Snapshot().height or 0
+    it.showBosses = saved
+    check("line bosses off", h2 > 0 and h2 < h1, math.floor(h1) .. " -> " .. math.floor(h2))
     pcall(UI.Demo, UI, "off")
+  end
+
+  -- F6c: the module page of the main window builds its 8 settings.
+  local MW, Page = ns.MainWindow, ns.InstanceTrackerPage
+  if Craft and MW and Page then
+    local wasShown = MW:IsShown()
+    local ok, err = pcall(MW.Open, MW, "it")
+    local ps = Page:Snapshot()
+    check("page it", ok and ps.built and ps.cells == 8, ok and ps.cells or err)
+    if not wasShown and MW:IsShown() then MW:Toggle() end
   end
 
   -- XP APIs in Forever (informative: the widget hides the XP bar when atMax).
