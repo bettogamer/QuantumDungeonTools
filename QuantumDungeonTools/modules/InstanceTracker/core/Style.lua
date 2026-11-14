@@ -125,12 +125,14 @@ Style.SIZE = {
   stripPadY   = 10,  -- the 8/10 strip is one line: 10x14
   alertTop    = 140, -- from the top of the screen (no place in the design: owner may move it)
   alertStack  = 16,  -- between the alert and the toast when both are shown
-  toastGap    = 10,  -- between the blocks of the toast body
+  toastNameGap = 4,  -- dungeon name -> clock (ui-critic M1, docs/17)
+  toastBlockGap = 14, -- clock -> stats -> buttons (ui-critic M1)
+  toastDeltaBase = 3, -- lifts the delta onto the clock's baseline (34 vs 16 px)
+  toastVsGap  = 6,   -- delta -> "vs record"
   toastHeadH  = 44,  -- header row "Run completada  [NUEVO RÉCORD]" (12 + 14 + ~6 + 12)
   toastStatGap = 8,  -- between the four stat columns
   toastStatKV = 2,   -- stat label <-> value
   toastClockGap = 10, -- big clock <-> delta
-  toastBtnTop = 4,   -- extra space above the buttons
 }
 
 -- The numbers above and the font sizes below are the CSS px of the design canvas. WoW sizes
@@ -173,9 +175,10 @@ Style.FONT = {
   alertBodyBold = { size = 12, weight = "bold", flags = "" },  -- the time inside the 10/10 alert
   alertSmall  = { size = 11, weight = "medium", flags = "" },
   toastClock  = { size = 34, weight = "bold", flags = "" },
-  toastDelta  = { size = 14, weight = "medium", flags = "" },
+  toastDelta  = { size = 16, weight = "semibold", flags = "" },   -- ui-critic A1
+  toastName   = { size = 13, weight = "medium", flags = "" },     -- dungeon · difficulty (M2)
   toastStat   = { size = 13, weight = "semibold", flags = "" },
-  toastTag    = { size = 11, weight = "bold", flags = "" },     -- NEW RECORD on the toast
+  toastTag    = { size = 10, weight = "bold", flags = "" },     -- NEW RECORD: gold block (Oro Forever)
   toastButton = { flags = "" },                                 -- Craft.Button keeps its own size
   panelTag    = { size = 10, weight = "medium", flags = "" },   -- RARE on the compact panel
 }

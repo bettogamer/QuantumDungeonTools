@@ -333,6 +333,18 @@ local function share()
   end
 end
 
+-- Stat columns 1fr 1fr 1.5fr 1fr (ui-critic A2): gold + silver with icons needs the room.
+local COL_FR = { 1, 1, 1.5, 1 }
+local function colWidth(inner, i)
+  return (inner - 3 * S.toastStatGap) * COL_FR[i] / 4.5
+end
+
+local function colX(inner, i)
+  local x = 0
+  for j = 1, i - 1 do x = x + colWidth(inner, j) + S.toastStatGap end
+  return x
+end
+
 local function buildToast()
   toast = panel(C.panel, C.hairline)
   local inner = S.alertW - 2 * S.alertPadX
@@ -343,22 +355,23 @@ local function buildToast()
   toast.line = toast:CreateTexture(nil, "ARTWORK")
   kit.setColor(toast.line, C.hairline)
   toast.line:SetHeight(1)
-  toast.sub = text(toast, FONT.alertBody, C.muted)
+  toast.sub = text(toast, FONT.toastName, C.cream)
   toast.clock = text(toast, FONT.toastClock)
   toast.delta = text(toast, FONT.toastDelta)
-  toast.delta:SetPoint("BOTTOMLEFT", toast.clock, "BOTTOMRIGHT", S.toastClockGap, 3)
+  toast.delta:SetPoint("BOTTOMLEFT", toast.clock, "BOTTOMRIGHT", S.toastClockGap, S.toastDeltaBase)
+  toast.vs = text(toast, FONT.alertSmall, C.muted)
+  toast.vs:SetPoint("BOTTOMLEFT", toast.delta, "BOTTOMRIGHT", S.toastVsGap, 1)
   toast.stats = {}
-  local colW = (inner - 3 * S.toastStatGap) / 4
   for i = 1, 4 do
     local k = text(toast, FONT.alertSmall, C.muted)
     local v = text(toast, FONT.toastStat)
-    k:SetWidth(colW)
-    v:SetWidth(colW)
+    k:SetWidth(colWidth(inner, i))
+    v:SetWidth(colWidth(inner, i))
     v:SetPoint("TOPLEFT", k, "BOTTOMLEFT", 0, -S.toastStatKV)
     toast.stats[i] = { k = k, v = v }
   end
   toast.share = kit.Craft.Button:Create(toast, { text = L.IT_A_SHARE, size = "sm", onClick = share,
-    variant = "secondary",   -- cream with navy text (artboard Avisos; theme tokens in UI:Init)
+    -- default = the theme's primary: gold with navy text (artboard «Oro Forever»)
     fontFlags = FONT.toastButton.flags })
 end
 
@@ -369,16 +382,16 @@ local function layoutToast()
   toast.line:SetPoint("TOPRIGHT", toast, "TOPRIGHT", 0, -head)
   local y = head + S.alertPadY
   toast.sub:SetPoint("TOPLEFT", toast, "TOPLEFT", S.alertPadX, -y)
-  y = y + toast.sub:GetStringHeight() + S.toastGap
+  y = y + toast.sub:GetStringHeight() + S.toastNameGap
   toast.clock:SetPoint("TOPLEFT", toast, "TOPLEFT", S.alertPadX, -y)
-  y = y + toast.clock:GetStringHeight() + S.toastGap
-  local colW = (S.alertW - 2 * S.alertPadX - 3 * S.toastStatGap) / 4
+  y = y + toast.clock:GetStringHeight() + S.toastBlockGap
+  local inner = S.alertW - 2 * S.alertPadX
   local statH = 0
   for i, st in ipairs(toast.stats) do
-    st.k:SetPoint("TOPLEFT", toast, "TOPLEFT", S.alertPadX + (i - 1) * (colW + S.toastStatGap), -y)
+    st.k:SetPoint("TOPLEFT", toast, "TOPLEFT", S.alertPadX + colX(inner, i), -y)
     statH = math.max(statH, st.k:GetStringHeight() + S.toastStatKV + st.v:GetStringHeight())
   end
-  y = y + statH + S.toastGap + S.toastBtnTop
+  y = y + statH + S.toastBlockGap
   local btn = toast.share:GetFrame()
   btn:ClearAllPoints()
   btn:SetPoint("TOPRIGHT", toast, "TOPRIGHT", -S.alertPadX, -y)
@@ -393,7 +406,9 @@ function A:ShowToast(run, opts)
   lastFinished = { run = run, opts = opts }
   kit.setText(toast.title, L.IT_A_DONE)
   if t.record then
-    kit.setTag(toast.tag, L.IT_A_RECORD, C.turquoise, C.turquoise)
+    -- Gold block with navy text, as the badge of «Oro Forever» (owner, 2026-11-14).
+    toast.tag.badge:SetColors({ text = C.panel, border = C.gold, fill = C.gold })
+    toast.tag.badge:SetText(L.IT_A_RECORD)
     toast.tag:Show()
   else
     toast.tag:Hide()
@@ -403,9 +418,12 @@ function A:ShowToast(run, opts)
   kit.setText(toast.clock, t.clock, Style.tone(t.clockTone))
   if t.delta then
     kit.setText(toast.delta, t.delta.text, Style.tone(t.delta.tone))
+    kit.setText(toast.vs, L.IT_A_VS_RECORD)
     toast.delta:Show()
+    toast.vs:Show()
   else
     toast.delta:Hide()
+    toast.vs:Hide()
   end
   for i, s in ipairs(t.stats) do
     local st = toast.stats[i]
