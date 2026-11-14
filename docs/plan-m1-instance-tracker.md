@@ -282,7 +282,7 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 - [ ] **Muertes (F3)**: morir dentro → «1 muerte» en rojo junto al reloj; morir fuera no suma.
 - [ ] Run completada: salir y volver a entrar (o `/reload` dentro) → sigue mostrándose Completada
   con su tiempo, no una run vacía.
-- [ ] **encounterID (punto 8e)**: anotar qué ID llega en `ENCOUNTER_END` en Gnomeregan, Thaurissan, Thalnos, Lorgus Jett y Rend (el de NF o el alternativo de FDJ), y si los jefes de Dire Maul (Pusillin, Tsu'zee, Hel'nurath), Miner Johnson, Skul, Stonespine y Atal'alarion emiten alguno.
+- [ ] **encounterID (punto 8e)**: **sin run dedicada: solo cuando toque esa mazmorra.** Ya medido en las runs del 2026-11-13: Deadmines emite los IDs nuevos 2741-2747 (no los clásicos 161-167 de FDJ) y Excavation Site 3480-3482; Miner Johnson no salió. Anotar qué ID llega en `ENCOUNTER_END` en Gnomeregan, Thaurissan, Thalnos, Lorgus Jett y Rend (el de NF o el alternativo de FDJ), y si los jefes de Dire Maul (Pusillin, Tsu'zee, Hel'nurath), Miner Johnson, Skul, Stonespine y Atal'alarion emiten alguno.
 
 ## Siguiente (handoff 2026-11-13, sesión F4b)
 
