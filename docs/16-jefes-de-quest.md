@@ -114,3 +114,77 @@ Lectura parcial de `AddOns/ForeverDungeonJournal/Systems/RunLog.lua`, `Core/Jour
   - No tiene ping, ni marcas de banda, ni aviso al salir de la mazmorra.
 - Conclusión: el objetivo de la quest 95646 (señal 1) sigue siendo la única vía que identifica a
   Highland Horror. `PARTY_KILL` anónimo + XP serviría como mucho de corroboración.
+
+### Inventario (2026-11-13)
+
+Ruta: `F:\Games\World of Warcraft\_forever_\Interface\AddOns\ForeverDungeonJournal` (493 archivos, ~85 k líneas).
+Es sobre todo un **diario de mazmorra** (jefes, loot, quests, mapas); el tracker de runs es un módulo más.
+
+**1. Metadatos** (`ForeverDungeonJournal.toc`)
+- `## Interface: 16001`, título «DungeonJournal», versión 2.0.5, autor Exehn (`:1-5`).
+- SavedVariables `ForeverDungeonJournalDB` + por personaje `ForeverDungeonJournalCharacterDB` (`:10-11`); sin dependencias.
+- AddonCompartment (click/enter/leave) y `Bindings.xml` con 2 atajos: abrir diario y abrir el objeto bajo el ratón.
+- Orden de carga: Bootstrap/Fonts → Localization (8 `Locale_*`, 9 `Content_*` + NewDungeons) → Data/* → Verified → UI/*Data →
+  Systems (MapMarkers, LootFilter, Favourites, RunLog, RunLogUI…) → `Core/Journal.lua` (`:62`) → resto de Systems → LibDeflate → CharacterSnapshot/Export/ProgressTransfer.
+- Docs propios útiles: `ARCHITECTURE.md`, `README.txt` (changelog), `SCARLET-TRACKER-FIX.md`, `TRACKER-WING-FIX.md`.
+
+**2. Módulos** (líneas)
+| Archivo | Qué hace | Tamaño |
+|---|---|---|
+| `Core/Journal.lua` | ventana del diario, páginas por mazmorra, slash `/dj`, minimapa (`:11987`) | 12,6 k |
+| `Data/Dungeons.lua` | `FDJ.DB`: mazmorras, quests, jefes, loot | 10 k |
+| `Systems/MapMarkers.lua` | pines en el mapa, ruta superpuesta, flecha de waypoint (`ForeverDungeonJournalArrow`, `:3750`) | 4 k |
+| `Data/QuestUpdates.lua` / `QuestChains` / `QuestMaps` / `QuestRewards` | parches de quests, cadenas de prerrequisitos, coordenadas de los NPC, XP | 3,8 k / 2 k / — |
+| `Systems/RunLogUI.lua` | ventana «Character Logs» (`:1254`), tracker en vivo (`:2272`), botones seguros de objetivo jefe/rare (`:2789`, `:2860`) | 3,5 k |
+| `Systems/QuestText.lua` | texto de quests (QUEST_DETAIL), menú del saco de dormir | 3,2 k |
+| `Systems/RPGMode.lua` | «modo RPG»: mazmorras bloqueadas hasta matar al jefe final | 2,9 k |
+| `Systems/RunLog.lua` | grabador de runs (kills, XP, Need, muertes) | 2,3 k |
+| `Systems/LootFilter.lua` | filtro de loot (recetas, clase, stats) | 2,1 k |
+| `Systems/SettingsPanel.lua` / `OptionsPanel` | opciones | 1,4 k / 0,1 k |
+| `Data/DungeonRoutes.lua` | ruta de viaje con polilínea por facción (2 rutas) | 1,1 k |
+| `Favourites`, `LFGButton`, `ProgressTransfer`, `OnyxiaAttunement`, `WorldMapOverlay` | favoritos de loot; ojo LFG; exportar/importar progreso; cadena de Onyxia; mapa de mazmorra sobre la M | 0,9 k / 0,9 k / 0,6 k / 0,5 k / 0,4 k |
+| `Data/RunLogEncounters.lua`, `RunLogWings.lua`, `Bosses.lua` | encounterID→jefe, firmas de ala, niveles de jefe | — |
+| Otros | `BossSummon`, `ScarletWing`, `ItemSource`, `ClientNames`, `PortraitPool`/`BakedPortraits`, `VersionCheck`, `BugReport`, `CharacterExport/Snapshot` | ≤0,35 k c/u |
+| `Libs/LibDeflate` | compresión (código de progreso) | librería |
+
+**3. De cara al usuario**
+- Un solo slash, `/dj` (`Core/Journal.lua:12205`): sin args abre el diario; `lang`, `options|settings|config`,
+  `tracker`, `reset`, `bossids [texto]`, `log|runs`, `itemtip`, `mode`, `worldmap`, `scale N`, `minimap`, `wing …`
+  y ~60 atajos de nombre de mazmorra (`/dj rfc`, `/dj brd`, `:12330-12402`).
+- Ventanas: diario, Character Logs (hasta 150 runs, `RunLog.lua:19`; QDT guarda 20), tracker en vivo con menú propio,
+  filtro de loot, favoritos, ajustes, selector de modo, aviso de desbloqueo (toast), exportación de personaje.
+- Botones: minimapa, ojo LFG en la cabecera de cada mazmorra (abre el LFG de Forever, `LFGButton.lua:1-40`),
+  botón en el mapa mundial para alternar mapa de mazmorra / mundo (`WorldMapOverlay.lua:293`), flecha de waypoint.
+- Tracker: Reabrir con `/dj tracker`; botón de reset (`FDJ.ResetTrackedRun`, `RunLogUI.lua:2006`) para cerrar la run al resetear.
+- 10 idiomas de interfaz y contenido traducido (`Localization/`, datos de traducción: no leídos).
+
+**4. Datos**
+- `FDJ.DB` = **35 mazmorras** (clave = nombre inglés), ~**346 quests**, jefes con `loot` (`Data/Dungeons.lua:5`).
+  - Mazmorra: `level, location, description, icon, quests{}, bosses{}`. Quest: `id, name, faction, level, requires, objective, pickup, turnin, rewards, rewardItems{{itemID,nombre,calidad}}, rewardChoice, liveXPFallback, noteItem/noteItemMap` (`:12-70`).
+  - Jefe: `name, npcID?, aliases{}, customIcon?, loot{{itemID,nombre,slot,calidad}}` (`:94-123`); flags que usa el tracker: `rare`, `optional`, `spawnQuest`, `summonItem`.
+- `RUNLOG_ENCOUNTERS`: **252** `[encounterID] = { mazmorra, jefe }`, con varios IDs por jefe (IDs nuevos de Forever); fuente declarada: `DungeonEncounter.db2` build 1.60.1.70862, DBM y LittleWigs (`RunLogEncounters.lua:1-14`).
+- `BOSS_LEVELS[mazmorra][jefe] = "nivel"`; `QUEST_START_MAPS[questID] = {mapID,x,y,label,targetName,detail}`;
+  `QUEST_PREREQ_CHAINS[questID] = {{id,name}}`; `RunLogWingTrash[mazmorra][npcID] = nombre` (Dire Maul, Scarlet…).
+- `DungeonRoutes`: 2 rutas (p. ej. Ruins of Lordaeron, Alianza) con `mapRoute.points{mapID,x,y,corner}` (`:9-45`).
+
+**5. Eventos y secret values**
+- RunLog escucha `PLAYER_ENTERING_WORLD/LEAVING_WORLD`, `ZONE_CHANGED(_NEW_AREA)`, `PLAYER_XP_UPDATE`, `PLAYER_DEAD`, `PARTY_KILL`,
+  `UNIT_DIED`, `ENCOUNTER_END`, `CHAT_MSG_COMBAT_XP_GAIN/HOSTILE_DEATH/LOOT/SYSTEM`, `START_LOOT_ROLL`, `GROUP_ROSTER_UPDATE` (`RunLog.lua:1975-1980`, `:2261`).
+  Cabecera: «WoW Forever closes COMBAT_LOG_EVENT_* to addons» (`:11-15`).
+- Identifica la copia de la instancia con el **zoneUID del GUID de criaturas** (`:63`); no usa `UNIT_SPELLCAST_SENT`/castGUID
+  (cero coincidencias en RunLog.lua) → en Forever, con GUID secreto dentro, es una ruta menos fiable que la nuestra (F1).
+- `issecretvalue` solo en 15 archivos (35 usos; el grueso en `MapMarkers`, 12): casi siempre el patrón `Plain(v)` (también `RPGMode.lua:23-26`). Ningún caso nuevo de taint más allá de lo ya anotado arriba.
+- Otros: `QUEST_*` (diario, texto, pines), `LFG_LIST_ACTIVE_ENTRY_UPDATE` + `ADDON_ACTION_BLOCKED/FORBIDDEN` (LFG), `LOOT_OPENED`/`BOSS_KILL` (RPG), `GET_ITEM_INFO_RECEIVED`; botones `SecureActionButtonTemplate` para marcar/apuntar jefes y rares.
+- Ahora mismo no usa C_QuestLog para jefes, ni posición del jugador (Forever no la da dentro).
+
+**6. Comparativa con QDT**
+- **FDJ sí, QDT no:** diario de loot/quests/mapas de 35 mazmorras; 10 idiomas; filtro de loot y favoritos; waypoint y rutas de viaje;
+  LFG; modo RPG; export/import; logs de 150 runs con % de trash, rolls de Need, tiempo fuera, XP por mob; botón de minimapa y atajos.
+- **QDT sí, FDJ no:** HUD con cronómetro y split por jefe sobre Craft/Weave; ping y marca de banda con clic derecho (ya anotado);
+  aviso al salir de la mazmorra; lógica específica de jefes de quest; identificación por castGUID (F1) y `/qdt check`; tests, luacheck, taintlint.
+- **Ideas reutilizables (como hechos, no copiar código):**
+  - Tabla encounterID→jefe de Forever (252, build 70862): fuente a contrastar contra los `ENCOUNTER_END` observados antes de poblar la nuestra.
+  - Reglas de reanudación de run: 90 min abierta / 20 min tras el jefe final (`RunLog.lua:22-23`) y «reset» manual de la run como botón.
+  - Contar trash total por mazmorra y mostrar % (`runLogTrashTotal`, `:57`); tiempo fuera de la mazmorra (corpse run).
+  - Botones seguros `SecureActionButtonTemplate` para fijar objetivo de un jefe (`RunLogUI.lua:2860`): solo fuera de combate.
+  - Idiomas: nosotros mantenemos EN + esMX; las 10 localizaciones de FDJ son un listado de nombres de jefe por idioma, no un modelo.
