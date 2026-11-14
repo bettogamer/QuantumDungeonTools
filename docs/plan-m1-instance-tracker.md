@@ -26,7 +26,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 | **F3** | Modelo v2: récord, pausa/retomada, muertes | 🔨 EN CURSO (código hecho 2026-11-13, falta la prueba in-game) | `core/Records.lua` + `Run.deaths`/`Run.pb`; DB aditiva (`records`), sin migración |
 | **F4** | Oro, reputación, ritmo + tooltip Detalle | ✅ HECHA en código (2026-11-13: F4a fila de totales, F4b tooltip Detalle); falta prueba in-game | nivel 3 (hover) |
 | **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ✅ HECHA en código (2026-11-14: F5a contador + Detalle, F5b avisos, F5c toast); falta prueba in-game | nivel 4 (avisos) |
-| **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ⬜ PENDIENTE (tras F5) | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run |
+| **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ⬜ PENDIENTE (tras F5) | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run **Hallazgo 2026-11-14:** FDJ NO trae totales de trash: los APRENDE por cuenta al completar runs (`RunLog.lua:498-503`, `max(seenN, kills)` → `runLogTrashTotal`), y el SavedVariables del owner no tiene ninguno. QDT tampoco cuenta kills de trash hoy. El tiempo fuera ya existe (`Run.pausedTotal`). Alcance de (c) pendiente del owner. |
 | **F6** | Ventana Historial + ajustes por línea | ⬜ PENDIENTE | nivel 4 (Historial), líneas desactivables |
 
 > Fuera de este hito por decisión previa: **Minimap Lens** (módulo futuro, hito propio);
