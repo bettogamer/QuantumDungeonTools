@@ -1155,6 +1155,8 @@ function UI:Init()
       font = Craft.mediaPath .. "BettoGeo-Medium.ttf",
       primary = C.gold, primaryForeground = C.panel,             -- Forever gold on navy (9.7:1)
       sidebarPrimary = C.gold, sidebarPrimaryForeground = C.panel,
+      -- Artboard Avisos: the toast's "Share with group" is cream with navy text.
+      secondary = C.cream, secondaryForeground = C.panel,
       foreground = C.cream, mutedForeground = C.muted,
       popover = C.panel, popoverForeground = C.cream,
       border = C.hairline, destructive = C.red,

@@ -358,6 +358,7 @@ local function buildToast()
     toast.stats[i] = { k = k, v = v }
   end
   toast.share = kit.Craft.Button:Create(toast, { text = L.IT_A_SHARE, size = "sm", onClick = share,
+    variant = "secondary",   -- cream with navy text (artboard Avisos; theme tokens in UI:Init)
     fontFlags = FONT.toastButton.flags })
 end
 
