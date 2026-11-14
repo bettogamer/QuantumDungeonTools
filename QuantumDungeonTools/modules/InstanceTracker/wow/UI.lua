@@ -424,9 +424,24 @@ local function newMira(row)
   local t = row:CreateTexture(nil, "OVERLAY")
   Craft.Icons.Apply(t, "crosshair", S.pingIcon)
   t:SetVertexColor(C.turquoise.r, C.turquoise.g, C.turquoise.b, 1)
-  t:SetPoint("RIGHT", row.name, "LEFT", -S.rowGap, 0)
   t:Hide()
   return t
+end
+
+-- The crosshair goes left of the row's LEFTMOST shown piece: the name on a live boss, the
+-- RARE / OPTIONAL / QUEST badge on a rare (anchored to the name it covered the badge).
+local function leadOf(pieces)
+  local lead
+  for _, r in ipairs(pieces) do
+    if r:IsShown() then lead = r end   -- pieces run right-to-left
+  end
+  return lead
+end
+
+local function placeMira(row, pieces)
+  row.lead = leadOf(pieces) or row.name
+  row.mira:ClearAllPoints()
+  row.mira:SetPoint("RIGHT", row.lead, "LEFT", -S.rowGap, 0)
 end
 
 local function pingLeave()
@@ -460,9 +475,9 @@ local function pingButton(i)
   return b
 end
 
--- Screen rect of a row's hit area: crosshair + gap + name, to the row's right edge.
+-- Screen rect of a row's hit area: crosshair + gap + the row's pieces, to its right edge.
 local function placePing(b, row)
-  local nl, rr, top, bottom = row.name:GetLeft(), row:GetRight(), row:GetTop(), row:GetBottom()
+  local nl, rr, top, bottom = (row.lead or row.name):GetLeft(), row:GetRight(), row:GetTop(), row:GetBottom()
   if not (nl and rr and top and bottom) then return false end
   local k = row:GetEffectiveScale() / UIParent:GetEffectiveScale()
   local left = nl - S.pingIcon - S.rowGap
@@ -777,6 +792,7 @@ local function renderFull(v)
       r.h = chainBaseline(r, pieces, S.rowGap)
     end
     if b.alive then liveRows[b.name] = r end
+    placeMira(r, pieces)
     r.mira:SetShown(b.alive and hoverName == b.name)
     r:ClearAllPoints()
     r:SetPoint("TOPRIGHT", W.frame, "TOPRIGHT", 0, -y)
@@ -1104,6 +1120,11 @@ function UI:Kit()
     Craft = Craft, ctx = ctx, newText = newText, setText = setText, setColor = setColor,
     newBorder = newBorder, colorBorder = colorBorder, newTag = newTag, setTag = setTag,
     moneyText = moneyText,
+    -- Re-points a kit FontString at another Style.FONT entry (kept on theme changes).
+    applyFontOf = function(fs, font)
+      fontOf[fs] = font
+      applyFont(fs)
+    end,
   }
 end
 

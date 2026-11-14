@@ -170,6 +170,7 @@ Style.FONT = {
   -- Alerts and toast: solid panels, so no outline and no shadow (like the compact panel).
   alertTitle  = { size = 14, weight = "semibold", flags = "" },
   alertBody   = { size = 12, weight = "medium", flags = "" },
+  alertBodyBold = { size = 12, weight = "bold", flags = "" },  -- the time inside the 10/10 alert
   alertSmall  = { size = 11, weight = "medium", flags = "" },
   toastClock  = { size = 34, weight = "bold", flags = "" },
   toastDelta  = { size = 14, weight = "medium", flags = "" },

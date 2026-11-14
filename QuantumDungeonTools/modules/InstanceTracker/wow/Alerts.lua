@@ -145,6 +145,99 @@ end
 ------------------------------------------------------------------------------
 -- 10/10 alert and 8/10 strip
 ------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Rich text: one wrapped paragraph whose pieces may differ in font and color (a FontString
+-- has a single weight; the design's "<b>12:40</b>" needs its own). Wraps word by word,
+-- measuring each word in its own font, into one FontString per run of a line.
+--   rich:Set({ { text, font, color }, ... }) -> height
+------------------------------------------------------------------------------
+local function newRich(parent, width)
+  local box = CreateFrame("Frame", nil, parent)
+  box:SetSize(width, 1)
+  local pool, probes = {}, {}
+
+  local function probe(font)
+    local p = probes[font]
+    if not p then
+      p = text(box, font)
+      p:Hide()
+      probes[font] = p
+    end
+    return p
+  end
+
+  local function measure(font, s)
+    local p = probe(font)
+    p:SetText(s)
+    return p:GetStringWidth()
+  end
+
+  local function spaceOf(font)   -- trailing spaces are not measured: "x x" - "xx"
+    return measure(font, "x x") - measure(font, "xx")
+  end
+
+  function box:Set(segments)
+    local lines, line, x = {}, {}, 0
+    lines[1] = line
+    for _, seg in ipairs(segments) do
+      local sp = spaceOf(seg[2])
+      for word, gap in seg[1]:gmatch("(%S+)(%s*)") do
+        local w = measure(seg[2], word)
+        if x > 0 and x + w > width then
+          line = {}
+          lines[#lines + 1] = line
+          x = 0
+        end
+        local run = line[#line]
+        if not run or run.seg ~= seg then
+          run = { seg = seg, x = x, text = "" }
+          line[#line + 1] = run
+        end
+        run.text = run.text .. word
+        x = x + w
+        if gap ~= "" then
+          run.text = run.text .. " "
+          x = x + sp
+        end
+      end
+    end
+    local lineH = 0
+    for _, seg in ipairs(segments) do
+      local p = probe(seg[2])
+      p:SetText("Xg")
+      lineH = math.max(lineH, p:GetStringHeight())
+    end
+    local n = 0
+    for li, l in ipairs(lines) do
+      for _, run in ipairs(l) do
+        n = n + 1
+        local fs = pool[n]
+        if not fs then
+          fs = text(box, FONT.alertBody)
+          pool[n] = fs
+        end
+        kit.applyFontOf(fs, run.seg[2])
+        kit.setText(fs, run.text, run.seg[3])
+        fs:ClearAllPoints()
+        fs:SetPoint("TOPLEFT", box, "TOPLEFT", run.x, -(li - 1) * lineH)
+        fs:Show()
+      end
+    end
+    for i = n + 1, #pool do pool[i]:Hide() end
+    local h = #lines * lineH
+    box:SetHeight(math.max(1, h))
+    return h
+  end
+
+  return box
+end
+
+-- Splits a localized "...%s..." around its %s: the time goes in bold, the rest stays as is.
+local function around(fmt)
+  local pre, post = fmt:match("^(.-)%%s(.*)$")
+  return pre or fmt, post or ""
+end
+
 local function buildCap()
   cap = panel(C.alertBg, C.red)
   cap.icon = cap:CreateTexture(nil, "OVERLAY")
@@ -153,12 +246,10 @@ local function buildCap()
   cap.icon:SetPoint("TOPLEFT", cap, "TOPLEFT", S.alertPadX, -S.alertPadY)
   cap.title = text(cap, FONT.alertTitle, C.red)
   cap.title:SetPoint("LEFT", cap.icon, "RIGHT", S.alertIconGap, 0)
-  cap.body = text(cap, FONT.alertBody, C.sand)
+  cap.body = newRich(cap, S.alertW - 2 * S.alertPadX)
   cap.note = text(cap, FONT.alertSmall, C.muted)
-  for _, fs in ipairs({ cap.body, cap.note }) do
-    fs:SetWidth(S.alertW - 2 * S.alertPadX)
-    fs:SetWordWrap(true)
-  end
+  cap.note:SetWidth(S.alertW - 2 * S.alertPadX)
+  cap.note:SetWordWrap(true)
   cap.body:SetPoint("TOPLEFT", cap.icon, "BOTTOMLEFT", 0, -S.alertGap)
   cap.note:SetPoint("TOPLEFT", cap.body, "BOTTOMLEFT", 0, -S.alertGap)
 end
@@ -178,14 +269,17 @@ function A:ShowHour(notice)
     if not cap then buildCap() end
     dismiss(strip)
     kit.setText(cap.title, L.IT_A_CAP_TITLE:format(notice.count, notice.limit))
+    local bodyH
     if notice.freeIn and notice.freeIn > 0 then
-      kit.setText(cap.body, L.IT_A_CAP_BODY:format(Style.code("text") .. Format.clock(notice.freeIn) .. "|r"))
+      local pre, post = around(L.IT_A_CAP_BODY)   -- design: the time in bold cream
+      bodyH = cap.body:Set({ { pre, FONT.alertBody, C.sand },
+        { Format.clock(notice.freeIn), FONT.alertBodyBold, C.cream }, { post, FONT.alertBody, C.sand } })
     else
-      kit.setText(cap.body, L.IT_A_CAP_BODY_NOW)
+      bodyH = cap.body:Set({ { L.IT_A_CAP_BODY_NOW, FONT.alertBody, C.sand } })
     end
     kit.setText(cap.note, L.IT_A_CAP_NOTE)
     cap:SetHeight(S.alertPadY * 2 + math.max(S.alertIcon, cap.title:GetStringHeight()) + S.alertGap
-      + cap.body:GetStringHeight() + S.alertGap + cap.note:GetStringHeight())
+      + bodyH + S.alertGap + cap.note:GetStringHeight())
     showFor(cap, CAP_SECONDS)
   else
     if not strip then buildStrip() end
