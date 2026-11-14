@@ -255,6 +255,25 @@ describe("InstanceRun con la tabla de mazmorras (resolver)", function()
     local again = Run.fromTable(loaded:toTable(), { now = clock().now })
     assert_true(again.bosses[5].rare, "order/rare se persisten")
   end)
+
+  it("jefe de quest sin kill: la run termina igual y conserva su etiqueta", function()
+    local res = function(_, name)
+      if name == "Highland Horror" then return { order = 3, rare = true, kind = "quest" } end
+      return ({ Saltspine = { order = 1 }, Shadetooth = { order = 2 }, ["Relic Guardian"] = { order = 4 } })[name]
+    end
+    local c = clock()
+    local r = Run.new({ name = "Excavation Site: Wetlands", instanceID = 2998 }, { now = c.now, resolve = res })
+    r:setBosses({ { name = "Saltspine", killed = false }, { name = "Shadetooth", killed = false },
+      { name = "Highland Horror", killed = false }, { name = "Relic Guardian", killed = false } })
+    for _, b in ipairs({ "Saltspine", "Shadetooth", "Relic Guardian" }) do
+      c.t = c.t + 60
+      r:markKilled(b)
+    end
+    assert_eq(r:total(), 3)
+    assert_true(r:isFinished(), "Highland Horror vivo no bloquea el fin")
+    local again = Run.fromTable(r:toTable(), { now = c.now })
+    assert_eq(again.bosses[4].kind, "quest")
+  end)
   it("copia: adopta la primera, reconoce la misma y avisa de otra", function()
     local r = Run.new(INFO, { now = clock().now })
     assert_eq(r:observeCopy("5"), "first")

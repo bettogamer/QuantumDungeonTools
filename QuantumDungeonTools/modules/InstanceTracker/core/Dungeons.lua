@@ -21,21 +21,25 @@ local function build()
       byInstance[d.instance] = list
     end
     for order, b in ipairs(d.bosses) do
-      local info = { dungeon = d.key, order = order, rare = b.rare == true, names = b.names }
+      -- rare = "does not count" (rares, optionals and quest bosses alike, docs/16); kind tells
+      -- the badge apart: nil for a real rare, "optional" or "quest".
+      local kind = (b.optional and "optional") or (b.quest and "quest") or nil
+      local info = { dungeon = d.key, order = order, rare = (b.rare or kind) and true or false,
+        kind = kind, names = b.names }
       list[#list + 1] = info
       for _, id in ipairs(b.ids) do byEncounter[id] = info end
     end
   end
 end
 
--- forEncounter(id) -> { dungeon, order, rare, names } | nil
+-- forEncounter(id) -> { dungeon, order, rare, kind, names } | nil
 function Dungeons.forEncounter(id)
   if not byEncounter then build() end
   if type(id) ~= "number" then return nil end
   return byEncounter[id]
 end
 
--- find(instanceID, name, learned) -> { dungeon, order, rare, names } | nil
+-- find(instanceID, name, learned) -> { dungeon, order, rare, kind, names } | nil
 -- A learned encounterID wins over the English names of the data.
 function Dungeons.find(instanceID, name, learned)
   if not byEncounter then build() end

@@ -22,6 +22,17 @@ describe("InstanceDungeons (datos generados)", function()
     assert_eq(Dungeons.find(2999, "Lordaeron Captain").rare, true)
   end)
 
+  it("jefes de quest y opcionales no cuentan, con su etiqueta (docs/16)", function()
+    local hh = Dungeons.forEncounter(3644)   -- Highland Horror, sin ENCOUNTER_END
+    assert_eq(hh.rare, true)
+    assert_eq(hh.kind, "quest")
+    local moira = Dungeons.forEncounter(2789)
+    assert_eq(moira.rare, true)
+    assert_eq(moira.kind, "optional")
+    assert_eq(Dungeons.forEncounter(3408).kind, nil)   -- rare de verdad: sin kind
+    assert_eq(Dungeons.forEncounter(3480).rare, false) -- Saltspine cuenta
+  end)
+
   it("encuentra por el nombre medido en el juego (The Butcher, no The Baron)", function()
     assert_eq(Dungeons.find(2999, "The Butcher").order, 2)
     assert_eq(Dungeons.find(2999, "The Baron").order, 2)

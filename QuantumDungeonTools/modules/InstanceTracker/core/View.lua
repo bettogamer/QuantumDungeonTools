@@ -43,6 +43,7 @@ local function bossRows(run, pb)
   for i, b in ipairs(run.bosses) do
     -- Rares: listed (owner, doc 11) but muted while alive, gold when killed, never a delta.
     local row = { name = b.name, tone = b.rare and "muted" or "text", time = "", rare = b.rare or nil,
+      kind = b.rare and b.kind or nil,   -- badge: nil RARE, "optional", "quest" (docs/16)
       alive = not b.killed }   -- alive rows answer the mouse with the ping (plan M1 point 7)
     if b.killed then
       if b.preKilled or not num(b.killedAt) then

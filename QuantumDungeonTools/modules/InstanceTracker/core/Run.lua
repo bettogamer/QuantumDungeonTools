@@ -42,7 +42,8 @@ function Run.new(info, deps)
   self.startedAt = self._now()
   self.finishedAt = nil
   self.bosses = {}        -- ordered: { name, killed, killedAt (split, seconds) | nil, preKilled,
-                          --            order | nil, rare | nil, seq }
+                          --            order | nil, rare | nil, kind | nil, seq }
+                          -- rare = does not count; kind = "optional" | "quest" | nil (docs/16)
   self.listKnown = false  -- true once the full boss list came from the lockout
   self.xp = 0
   self.levels = 0         -- levels gained during the run (artboard Completada: "· 1 nivel")
@@ -116,6 +117,7 @@ function Run:_classify(b)
   if not ok or type(info) ~= "table" or type(info.order) ~= "number" then return false end
   b.order = info.order
   b.rare = info.rare == true or nil
+  b.kind = info.kind
   return true
 end
 
@@ -397,7 +399,7 @@ local function copyBosses(src)
   local out = {}
   for i, b in ipairs(src or {}) do
     out[i] = { name = b.name, killed = b.killed, killedAt = b.killedAt, preKilled = b.preKilled,
-               order = b.order, rare = b.rare, seq = b.seq or i }
+               order = b.order, rare = b.rare, kind = b.kind, seq = b.seq or i }
   end
   return out
 end

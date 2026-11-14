@@ -516,6 +516,11 @@ end
 
 -- Rare row (owner, 2026-11-13): "RARE [6:10] Name", smaller, the tag before the time so the
 -- "[time] name" pair reads like a boss row.
+-- Badge of a boss that does not count: RARE, OPTIONAL or QUEST (same look, docs/16).
+local function tagLabel(kind)
+  return (kind == "quest" and L.IT_QUEST) or (kind == "optional" and L.IT_OPTIONAL) or L.IT_RARE
+end
+
 local function rareRow(i)
   local r = W.rares[i]
   if r then return r end
@@ -753,7 +758,7 @@ local function renderFull(v)
       setText(r.name, b.name, tone)
       setText(r.time, b.time, tone)
       r.time:SetShown(b.time ~= "")
-      setTag(r.tag, L.IT_RARE, C.muted, C.mutedHalf)
+      setTag(r.tag, tagLabel(b.kind), C.muted, C.mutedHalf)
       pieces = { r.name, r.time, r.tag }
       fitText(r.name, { r.time, r.tag }, S.rowGap)
       chain(r, pieces, "", S.rowGap)
@@ -813,7 +818,7 @@ local function panelSpec(v)
     local tone = Style.tone(b.tone)
     local time = b.time ~= "" and (b.time:gsub("[%[%]]", "")) or "\226\128\148"   -- U+2014
     spec[#spec + 1] = { b.name, time, font = b.rare and FONT.panelSm or FONT.panel,
-      leftColor = tone, rightColor = tone, rare = b.rare }
+      leftColor = tone, rightColor = tone, rare = b.rare, kind = b.kind }
   end
   if v.ref.kind == "pb" then
     local ref = v.ref.text .. (v.ref.age and (" · " .. recordAge(v.ref.age)) or "")
@@ -879,7 +884,7 @@ local function renderPanel()
       p.right:SetShown(e[2] ~= nil)
       if e[2] then setText(p.right, e[2], e.rightColor) end
       p.tag:SetShown(e.rare == true)
-      if e.rare then setTag(p.tag, L.IT_RARE, C.muted, C.mutedHalf) end
+      if e.rare then setTag(p.tag, tagLabel(e.kind), C.muted, C.mutedHalf) end
       -- The cut always falls on the left text, never on the time or the badge.
       local room = inner
       if e[2] then room = room - math.ceil(p.right:GetStringWidth()) - S.panelColGap end
