@@ -45,5 +45,17 @@
 - **Cómo se comprueba:** `grep -n "{ left =" QuantumDungeonTools/` no debe encontrar nada.
 - **Origen:** M1 F4b (tooltip Detalle); el tooltip del modo compacto tenía el mismo fallo desde F2.
 
+## texturas-dentro-de-fontstring-anclado
+
+- **Síntoma:** una línea anclada a la derecha se sale ~11 px del borde del widget.
+- **Causa:** con texturas inline (`|T...|t`, p. ej. espaciadores) en mitad del texto,
+  `GetStringWidth` (y el ancho automático del FontString) sale corto; el ancla RIGHT se respeta
+  pero el texto pintado desborda.
+- **Patrón correcto:** separar en FontStrings sueltos encadenados con `chain` y un gap del token
+  (`S.infoSep`); texturas inline solo donde ya se compensa la medida (monedas: tamaño fijo +
+  espacio de cierre).
+- **Cómo se comprueba:** captura in-game; el borde derecho de cada fila debe coincidir con el del reloj.
+- **Origen:** M1, cotejo docs/15 (separador `·` de la línea de info), 2026-11-13.
+
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)
      también viven aquí, con motivo y con lo que se hace en su lugar. -->
