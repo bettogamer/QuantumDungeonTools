@@ -4,6 +4,12 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ## [Unreleased]
 
+### Cambiado
+
+- **Barras con la textura BettoBar** (Craft v2.50.0, re-vendoreada): el relleno de la barra de tiempo,
+  los segmentos de jefe y las capas de la barra de XP usan la textura teñida con su color de la paleta,
+  y va dentro del borde de 1px, como en el diseño (antes lo tapaba).
+
 ### Añadido
 
 - **Avisos de instancias y toast de fin de run** (hito M1 F5b/F5c): aviso rojo «Límite de

@@ -45,6 +45,28 @@ local DESCENT = 192 / 932
 ------------------------------------------------------------------------------
 local function setColor(tex, c) tex:SetColorTexture(c.r, c.g, c.b, c.a or 1) end
 
+-- Bar fills use Craft's "BettoBar" texture (FR-151, Craft 2.50.0) tinted with the palette role;
+-- a flat color if this Craft build does not ship it.
+-- Resolved on first use: Craft is only known after Init.
+local BAR_TEXTURE
+local function barTexture()
+  if BAR_TEXTURE == nil then
+    BAR_TEXTURE = false
+    local get = Craft and Craft.Theme.getStatusBarTextures
+    for _, t in ipairs(get and get() or {}) do
+      if t.name == "BettoBar" then BAR_TEXTURE = t.path end
+    end
+  end
+  return BAR_TEXTURE
+end
+
+local function setBarColor(tex, c)
+  local path = barTexture()
+  if not path then return setColor(tex, c) end
+  tex:SetTexture(path)
+  tex:SetVertexColor(c.r, c.g, c.b, c.a or 1)
+end
+
 local function applyFont(fs)
   local f = fontOf[fs]
   local weight = f.weight ~= "regular" and f.weight or nil
@@ -590,7 +612,7 @@ local function paintTimeBar(bar)
   local edge = W.barBorder[3]:GetWidth() or 0
   if bar.fill > 0 then
     W.barFill:SetWidth(width * bar.fill)
-    setColor(W.barFill, C.gold)
+    setBarColor(W.barFill, C.gold)
     W.barFill:Show()
   else
     W.barFill:Hide()
@@ -613,7 +635,7 @@ local function paintSegments(bar)
     s:ClearAllPoints()
     s:SetPoint("TOPLEFT", W.segRow, "TOPLEFT", (i - 1) * (w + S.segGap), 0)
     s:SetSize(w, S.segH)
-    setColor(s.fill, Style.tone(tone))
+    setBarColor(s.fill, Style.tone(tone))
     s:Show()
   end
   for i = n + 1, #W.segs do W.segs[i]:Hide() end
@@ -626,7 +648,7 @@ local function paintXP(xp)
   local function seg(tex, frac, color)
     if frac and frac > 0 then
       tex:SetWidth(width * frac)
-      setColor(tex, color)
+      setBarColor(tex, color)
       tex:Show()
     else
       tex:Hide()
