@@ -113,9 +113,6 @@ Style.SIZE = {
   detailSecGap = 10, -- between sections (no hairline)
   infoSep     = 10, -- each side of the "·" in the info row (design gap 10)
   pingIcon    = 13, -- crosshair left of a live boss name on hover (artboard Ping, variant B)
-  pingPadX    = 12, -- its small tooltip: padding 8x12, 4 px between the two lines
-  pingPadY    = 8,
-  pingGap     = 4,
 }
 
 -- The numbers above and the font sizes below are the CSS px of the design canvas. WoW sizes
@@ -152,8 +149,6 @@ Style.FONT = {
   panelSm   = { size = 11, weight = "medium", flags = "" },
   detail      = { size = 12, weight = "medium" },     -- detail tooltip rows
   detailTitle = { size = 11, weight = "semibold" },   -- its section titles (Craft: the medium file)
-  pingName    = { size = 12, weight = "medium" },     -- ping tooltip: boss name (cream)
-  pingHint    = { size = 11, weight = "medium" },     -- ping tooltip: "Click: attack ping" (muted)
 }
 
 return Style

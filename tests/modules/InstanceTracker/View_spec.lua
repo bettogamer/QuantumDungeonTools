@@ -226,6 +226,23 @@ describe("InstanceTrackerView: ping al jefe (punto 7)", function()
     assert_eq(View.pingMacro("Rath'mael"):match("\n/targetexact (.-)\n"), "Rath'mael")
   end)
 
+  it("clic derecho: marca configurada (calavera = 8) con el mismo baile de objetivo", function()
+    assert_eq(View.markMacro("Sneed", 8),
+      "/cleartarget\n/targetexact Sneed\n/tm [@target,exists,harm,nodead] 8\n/targetlasttarget")
+    assert_eq(View.markMacro("Sneed", 0), nil)
+    assert_eq(View.markMacro("Sneed", 9), nil)
+    assert_eq(View.markMacro("Sneed", nil), nil)
+  end)
+
+  it("nombre de marca -> índice del juego", function()
+    assert_eq(View.markerIndex("skull"), 8)
+    assert_eq(View.markerIndex("Calavera"), 8)
+    assert_eq(View.markerIndex("círculo"), 2)
+    assert_eq(View.markerIndex("3"), 3)
+    assert_eq(View.markerIndex("9"), nil)
+    assert_eq(View.markerIndex("pato"), nil)
+  end)
+
   it("sin macro para nombres que no caben en una línea", function()
     assert_eq(View.pingMacro(""), nil)
     assert_eq(View.pingMacro(nil), nil)

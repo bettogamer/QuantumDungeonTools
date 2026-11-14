@@ -15,6 +15,7 @@ L.HELP_LINES   = {
   "/qdt it -- show/hide the Instance Tracker widget",
   "/qdt it compact -- one-line widget, bosses on hover (on/off)",
   "/qdt it demo <live | done | first | compact | off> -- preview a state of the widget",
+  "/qdt it mark <marker> -- raid marker of the right click on a boss (default: skull)",
   "/qdt new -- forget the current run and start a new one",
   "/qdt history -- last runs (time, bosses, XP)",
   "/qdt auto -- open the window automatically inside dungeons (on/off)",
@@ -40,7 +41,8 @@ L.IT_BOSSES         = "Bosses %s"
 L.IT_VS_PB          = "vs. record %s"
 L.IT_FIRST_TAG      = "FIRST TIME"
 L.IT_RARE           = "RARE"
-L.IT_PING_HINT      = "Click: attack ping"
+L.IT_MARK           = "right click on a boss puts %s on it."
+L.IT_MARK_USAGE     = "usage: /qdt it mark <1-8 | star | circle | diamond | triangle | moon | square | cross | skull>"
 L.IT_FIRST_HINT     = "this run will set your record"
 L.IT_NEW_RECORD     = "NEW RECORD %s"
 L.IT_DEATH          = "%d death"
@@ -101,6 +103,7 @@ if locale == "esES" or locale == "esMX" then
     "/qdt it -- mostrar/ocultar el widget del Instance Tracker",
     "/qdt it compact -- widget en una línea, jefes al pasar el mouse (sí/no)",
     "/qdt it demo <live | done | first | compact | off> -- ver un estado del widget",
+    "/qdt it mark <marca> -- marca del clic derecho en un jefe (por defecto: calavera)",
     "/qdt new -- olvidar la run actual y empezar otra",
     "/qdt history -- últimas runs (tiempo, jefes, XP)",
     "/qdt auto -- abrir la ventana sola al entrar en mazmorras (sí/no)",
@@ -124,7 +127,9 @@ if locale == "esES" or locale == "esMX" then
   L.IT_VS_PB          = "vs. récord %s"
   L.IT_FIRST_TAG      = "PRIMERA VEZ"
   L.IT_RARE           = "RARO"
-  L.IT_PING_HINT      = "Clic: ping de ataque"
+  L.IT_MARK           = "clic derecho en un jefe le pone %s."
+  L.IT_MARK_USAGE     = "uso: /qdt it mark <1-8 | estrella | circulo | diamante | triangulo | luna | cuadrado"
+    .. " | cruz | calavera>"
   L.IT_FIRST_HINT     = "esta run fijará tu récord"
   L.IT_NEW_RECORD     = "NUEVO RÉCORD %s"
   L.IT_DEATH          = "%d muerte"

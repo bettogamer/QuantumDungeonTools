@@ -404,9 +404,9 @@ end
 ------------------------------------------------------------------------------
 -- Boss ping (plan M1 point 7, artboard «Ping» variant B)
 ------------------------------------------------------------------------------
--- Clicking the name of a LIVE boss or rare runs `/target <name>`, `/ping [@target] attack`,
--- `/targetlasttarget` (macro tested in-game by the owner). Hover: turquoise crosshair left of
--- the name, sword cursor and a small "name / Click: attack ping" tooltip; dead rows do nothing.
+-- On the name of a LIVE boss or rare: left click = attack ping, right click = the configured
+-- raid marker (View.pingMacro / markMacro). Hover: turquoise crosshair left of the name and
+-- the sword cursor; no tooltip (owner, 2026-11-13: it got in the way). Dead rows do nothing.
 -- A macro needs a SECURE button. Ours are parented to UIParent and placed by screen coordinates,
 -- never anchored to the rows: a secure frame anchored to them makes the rows implicitly
 -- protected, and their SetPoint in combat would be ADDON_ACTION_BLOCKED. Attributes, position
@@ -428,12 +428,11 @@ local function newMira(row)
   return t
 end
 
-local function pingLeave(btn)
+local function pingLeave()
   local row = hoverName and liveRows[hoverName]
   if row then row.mira:Hide() end
   hoverName = nil
   ResetCursor()
-  if btn and Craft.Tooltip.GetOwner() == btn then Craft.Tooltip.Hide() end
 end
 
 local function pingEnter(btn)
@@ -443,14 +442,6 @@ local function pingEnter(btn)
   hoverName = name
   row.mira:Show()
   SetCursor(ATTACK_CURSOR)
-  Craft.Tooltip.Show(btn, {
-    lines = {
-      { name, leftColor = C.cream, size = FONT.pingName.size },
-      { L.IT_PING_HINT, leftColor = C.muted, size = FONT.pingHint.size },
-    },
-    fontFlags = "", side = "left", fontWeight = FONT.pingName.weight,
-    padding = { x = S.pingPadX, y = S.pingPadY }, rowGap = S.pingGap,
-  })
 end
 
 local function pingButton(i)
@@ -459,11 +450,11 @@ local function pingButton(i)
   b = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
   b:SetFrameStrata(root:GetFrameStrata())
   b:SetFrameLevel(root:GetFrameLevel() + 20)
-  b:RegisterForClicks("LeftButtonUp", "LeftButtonDown")   -- the template fires once, per ActionButtonUseKeyDown
-  b:SetAttribute("type", "macro")
+  -- Up and Down: the template fires once, per ActionButtonUseKeyDown.
+  b:RegisterForClicks("LeftButtonUp", "LeftButtonDown", "RightButtonUp", "RightButtonDown")
+  b:SetAttribute("type", "macro")   -- macrotext = left button, macrotext2 = right button
   b:SetScript("OnEnter", pingEnter)
   b:SetScript("OnLeave", pingLeave)
-  Craft.Theme.resolve(nil, { theme = ctx }, b)   -- the tooltip takes our theme (fonts, panel)
   pings[i] = b
   return b
 end
@@ -487,6 +478,7 @@ function UI:SyncPings()
   end
   pingDirty = false
   local n = 0
+  local marker = db().pingMarker
   if root and root:IsShown() and W.frame and W.frame:IsShown() then
     for name, row in pairs(liveRows) do
       local macro = not issecretvalue(name) and View.pingMacro(name)
@@ -494,9 +486,10 @@ function UI:SyncPings()
         local b = pingButton(n + 1)
         if placePing(b, row) then
           n = n + 1
-          if b.boss ~= name then
+          if b.boss ~= name or b.marker ~= marker then
             b:SetAttribute("macrotext", macro)
-            b.boss = name
+            b:SetAttribute("macrotext2", View.markMacro(name, marker))   -- nil: right click does nothing
+            b.boss, b.marker = name, marker
           end
           b:Show()
         end
@@ -504,7 +497,7 @@ function UI:SyncPings()
     end
   end
   for i = n + 1, #pings do
-    if pings[i]:IsMouseOver() then pingLeave(pings[i]) end
+    if pings[i]:IsMouseOver() then pingLeave() end
     pings[i]:Hide()
   end
 end

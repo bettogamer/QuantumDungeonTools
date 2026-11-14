@@ -203,9 +203,39 @@ end
 -- partial name never picks another unit; the ping only on a live hostile target. The cleared
 -- target is the "last target", so /targetlasttarget gives it back in both cases.
 -- nil when the name cannot go into a macro line (empty, or a line break would split it).
-function View.pingMacro(name)
+local function onBoss(name, action)
   if type(name) ~= "string" or name == "" or name:find("[\r\n]") then return nil end
-  return "/cleartarget\n/targetexact " .. name .. "\n/ping [@target,exists,harm,nodead] attack\n/targetlasttarget"
+  return "/cleartarget\n/targetexact " .. name .. "\n" .. action .. "\n/targetlasttarget"
+end
+
+function View.pingMacro(name)
+  return onBoss(name, "/ping [@target,exists,harm,nodead] attack")
+end
+
+-- Right click (owner, 2026-11-13): the configured raid marker (8 = skull) on the boss, same
+-- target dance. /tm toggles: on a boss that already wears that marker it takes it off.
+function View.markMacro(name, marker)
+  marker = tonumber(marker)
+  if not marker or marker < 1 or marker > 8 or marker % 1 ~= 0 then return nil end
+  return onBoss(name, "/tm [@target,exists,harm,nodead] " .. marker)
+end
+
+-- Raid markers by game index (1 star .. 8 skull), English and Spanish names for /qdt it mark.
+View.MARKERS = {
+  { "star", "estrella" }, { "circle", "circulo" }, { "diamond", "diamante" }, { "triangle", "triangulo" },
+  { "moon", "luna" }, { "square", "cuadrado" }, { "cross", "cruz" }, { "skull", "calavera" },
+}
+
+-- "8", "skull", "calavera", "círculo"... -> 1..8, or nil.
+function View.markerIndex(text)
+  if type(text) ~= "string" then return nil end
+  text = text:lower():gsub("\195\173", "i")   -- "í" (círculo, triángulo)
+  local n = tonumber(text)
+  if n then return (n >= 1 and n <= 8 and n % 1 == 0) and n or nil end
+  for i, names in ipairs(View.MARKERS) do
+    if text == names[1] or text == names[2] then return i end
+  end
+  return nil
 end
 
 return View

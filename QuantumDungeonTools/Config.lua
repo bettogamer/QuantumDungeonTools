@@ -50,6 +50,15 @@ SlashCmdList.QDT = function(msg)
     ns.InstanceTrackerUI:Update()
   elseif msg == "it compact" then
     say(L.IT_COMPACT:format(ns.InstanceTrackerUI:ToggleCompact() and L.MSG_ON or L.MSG_OFF))
+  elseif msg == "it mark" or msg:find("^it mark ") then
+    local idx = ns.InstanceTrackerView.markerIndex((msg:gsub("^it mark%s*", "")))
+    if idx then
+      ns.db.instanceTracker.pingMarker = idx
+      ns.InstanceTrackerUI:SyncPings()   -- out of combat now, or when it ends
+      say(L.IT_MARK:format("|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_" .. idx .. ":0|t"))
+    else
+      say(L.IT_MARK_USAGE)
+    end
   elseif msg == "it demo" or msg:find("^it demo ") then
     local name = msg:gsub("^it demo%s*", "")
     if ns.InstanceTrackerUI:Demo(name) then

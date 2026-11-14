@@ -38,6 +38,7 @@ function ns.InitDB()
   if it.compact == nil then it.compact = false end   -- F2: one-line widget (additive field, no migration)
   it.history = it.history or {}
   it.records = it.records or {}     -- F3: PB per dungeon + difficulty (additive, no migration)
+  if it.pingMarker == nil then it.pingMarker = 8 end   -- right click on a boss: skull (additive)
 
   ns.db = db
 end
