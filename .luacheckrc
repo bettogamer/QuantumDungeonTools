@@ -70,6 +70,8 @@ files = {
             -- F2 widget on Craft (UI.lua, Tracker:XPSnapshot, CheckF2.lua, v0.2)
             "LibStub", "GetXPExhaustion", "GetMaxLevelForPlayerExpansion", "GetMaxPlayerLevel",
             "IsXPUserDisabled", "GetLocale",
+            -- Boss ping (UI.lua, plan M1 point 7): secure buttons + attack cursor
+            "InCombatLockdown", "SetCursor", "ResetCursor", "wipe",
         },
     },
 

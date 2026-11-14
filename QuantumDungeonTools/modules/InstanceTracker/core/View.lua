@@ -42,7 +42,8 @@ local function bossRows(run, pb)
   local rows = {}
   for i, b in ipairs(run.bosses) do
     -- Rares: listed (owner, doc 11) but muted while alive, gold when killed, never a delta.
-    local row = { name = b.name, tone = b.rare and "muted" or "text", time = "", rare = b.rare or nil }
+    local row = { name = b.name, tone = b.rare and "muted" or "text", time = "", rare = b.rare or nil,
+      alive = not b.killed }   -- alive rows answer the mouse with the ping (plan M1 point 7)
     if b.killed then
       if b.preKilled or not num(b.killedAt) then
         row.tone, row.time = "pre", "--"
@@ -194,6 +195,14 @@ function View.build(run, opts)
     v.bar = total > 0 and segmentBar(run) or nil
   end
   return v
+end
+
+-- Macro of the boss ping (plan M1 point 7, tested in-game by the owner 2026-11-13): target the
+-- boss by name, attack ping on it, give the previous target back. nil when the name cannot go
+-- into a macro line (empty, or a line break would split it into another command).
+function View.pingMacro(name)
+  if type(name) ~= "string" or name == "" or name:find("[\r\n]") then return nil end
+  return "/target " .. name .. "\n/ping [@target] attack\n/targetlasttarget"
 end
 
 return View

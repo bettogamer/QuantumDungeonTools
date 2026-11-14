@@ -10,7 +10,8 @@
 -- WHAT to paint comes from core/View.lua (pure, tested); colors and sizes ONLY from
 -- core/Style.lua. Craft gives the theme context (own one, so Coffer & co. are untouched), the
 -- BettoGeo fonts (applyFont arms the async font probes), the pixel-perfect border and the tooltip.
--- Only the header row (or the compact panel) takes the mouse: the rest is click-through.
+-- Only the header row (or the compact panel) takes the mouse: the rest is click-through, except
+-- the live boss names, covered by the secure ping buttons (Boss ping, below).
 local _, ns = ...
 local L, T = ns.L, ns.InstanceTracker
 local View, Style, Demo = ns.InstanceTrackerView, ns.InstanceTrackerStyle, ns.InstanceTrackerDemo
@@ -238,6 +239,7 @@ local function makeHandle(frame)
   frame:SetScript("OnDragStop", function()
     root:StopMovingOrSizing()
     savePosition()
+    UI:SyncPings()   -- the ping buttons sit by screen coordinates (see Boss ping)
   end)
   frame:SetScript("OnMouseUp", function(_, button)
     if button == "RightButton" then UI:Hide() end
@@ -399,6 +401,114 @@ local function buildFull()
   attachDetail(W.head, false)   -- the header grabs the mouse (drag): it shows the detail too
 end
 
+------------------------------------------------------------------------------
+-- Boss ping (plan M1 point 7, artboard «Ping» variant B)
+------------------------------------------------------------------------------
+-- Clicking the name of a LIVE boss or rare runs `/target <name>`, `/ping [@target] attack`,
+-- `/targetlasttarget` (macro tested in-game by the owner). Hover: turquoise crosshair left of
+-- the name, sword cursor and a small "name / Click: attack ping" tooltip; dead rows do nothing.
+-- A macro needs a SECURE button. Ours are parented to UIParent and placed by screen coordinates,
+-- never anchored to the rows: a secure frame anchored to them makes the rows implicitly
+-- protected, and their SetPoint in combat would be ADDON_ACTION_BLOCKED. Attributes, position
+-- and visibility change ONLY out of combat; in combat the buttons keep their last place and
+-- the sync waits for PLAYER_REGEN_ENABLED.
+local ATTACK_CURSOR = [[Interface\Cursor\Attack]]
+local issecretvalue = ns.issecretvalue   -- shim from wow/Bootstrap.lua
+local pings = {}       -- pool of secure buttons (btn.boss = the name its macro targets)
+local liveRows = {}    -- name -> row of a live boss/rare in the last full render
+local hoverName        -- the name under the cursor (its crosshair is shown)
+local pingDirty        -- a sync was skipped in combat
+
+local function newMira(row)
+  local t = row:CreateTexture(nil, "OVERLAY")
+  Craft.Icons.Apply(t, "crosshair", S.pingIcon)
+  t:SetVertexColor(C.turquoise.r, C.turquoise.g, C.turquoise.b, 1)
+  t:SetPoint("RIGHT", row.name, "LEFT", -S.rowGap, 0)
+  t:Hide()
+  return t
+end
+
+local function pingLeave(btn)
+  local row = hoverName and liveRows[hoverName]
+  if row then row.mira:Hide() end
+  hoverName = nil
+  ResetCursor()
+  if btn and Craft.Tooltip.GetOwner() == btn then Craft.Tooltip.Hide() end
+end
+
+local function pingEnter(btn)
+  local name = btn.boss
+  local row = name and liveRows[name]
+  if not row or not row:IsVisible() then return end   -- died (or compact) since the last sync
+  hoverName = name
+  row.mira:Show()
+  SetCursor(ATTACK_CURSOR)
+  Craft.Tooltip.Show(btn, {
+    lines = {
+      { name, leftColor = C.cream, size = FONT.pingName.size },
+      { L.IT_PING_HINT, leftColor = C.muted, size = FONT.pingHint.size },
+    },
+    fontFlags = "", side = "left", fontWeight = FONT.pingName.weight,
+    padding = { x = S.pingPadX, y = S.pingPadY }, rowGap = S.pingGap,
+  })
+end
+
+local function pingButton(i)
+  local b = pings[i]
+  if b then return b end
+  b = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
+  b:SetFrameStrata(root:GetFrameStrata())
+  b:SetFrameLevel(root:GetFrameLevel() + 20)
+  b:RegisterForClicks("LeftButtonUp", "LeftButtonDown")   -- the template fires once, per ActionButtonUseKeyDown
+  b:SetAttribute("type", "macro")
+  b:SetScript("OnEnter", pingEnter)
+  b:SetScript("OnLeave", pingLeave)
+  Craft.Theme.resolve(nil, { theme = ctx }, b)   -- the tooltip takes our theme (fonts, panel)
+  pings[i] = b
+  return b
+end
+
+-- Screen rect of a row's hit area: crosshair + gap + name, to the row's right edge.
+local function placePing(b, row)
+  local nl, rr, top, bottom = row.name:GetLeft(), row:GetRight(), row:GetTop(), row:GetBottom()
+  if not (nl and rr and top and bottom) then return false end
+  local k = row:GetEffectiveScale() / UIParent:GetEffectiveScale()
+  local left = nl - S.pingIcon - S.rowGap
+  b:ClearAllPoints()
+  b:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left * k, bottom * k)
+  b:SetSize((rr - left) * k, (top - bottom) * k)
+  return true
+end
+
+function UI:SyncPings()
+  if InCombatLockdown() then
+    pingDirty = true
+    return
+  end
+  pingDirty = false
+  local n = 0
+  if root and root:IsShown() and W.frame and W.frame:IsShown() then
+    for name, row in pairs(liveRows) do
+      local macro = not issecretvalue(name) and View.pingMacro(name)
+      if macro then
+        local b = pingButton(n + 1)
+        if placePing(b, row) then
+          n = n + 1
+          if b.boss ~= name then
+            b:SetAttribute("macrotext", macro)
+            b.boss = name
+          end
+          b:Show()
+        end
+      end
+    end
+  end
+  for i = n + 1, #pings do
+    if pings[i]:IsMouseOver() then pingLeave(pings[i]) end
+    pings[i]:Hide()
+  end
+end
+
 local function bossRow(i)
   local r = W.bosses[i]
   if r then return r end
@@ -406,6 +516,7 @@ local function bossRow(i)
   r.name = newText(r, FONT.bossName)
   r.time = newText(r, FONT.bossTime)
   r.delta = newText(r, FONT.bossDelta)
+  r.mira = newMira(r)
   W.bosses[i] = r
   return r
 end
@@ -419,6 +530,7 @@ local function rareRow(i)
   r.name = newText(r, FONT.rareName)
   r.time = newText(r, FONT.rareTime)
   r.tag = newTag(r, FONT.rareTag, S.rareTagPadX, S.rareTagPadY)
+  r.mira = newMira(r)
   W.rares[i] = r
   return r
 end
@@ -637,6 +749,7 @@ local function renderFull(v)
   -- Bosses
   y = y + S.bossTop - S.gap
   local nb, nr = 0, 0
+  wipe(liveRows)
   for _, b in ipairs(v.bosses) do
     local r, pieces
     local tone = Style.tone(b.tone)
@@ -664,6 +777,8 @@ local function renderFull(v)
       fitText(r.name, { r.time, r.delta }, S.rowGap)
       r.h = chainBaseline(r, pieces, S.rowGap)
     end
+    if b.alive then liveRows[b.name] = r end
+    r.mira:SetShown(b.alive and hoverName == b.name)
     r:ClearAllPoints()
     r:SetPoint("TOPRIGHT", W.frame, "TOPRIGHT", 0, -y)
     r:SetHeight(r.h or heightOf(pieces))
@@ -672,6 +787,7 @@ local function renderFull(v)
   end
   for i = nb + 1, #W.bosses do W.bosses[i]:Hide() end
   for i = nr + 1, #W.rares do W.rares[i]:Hide() end
+  if hoverName and not liveRows[hoverName] then pingLeave() end   -- killed under the cursor
 
   W.frame:SetHeight(math.max(1, y))
   return S.width, y
@@ -889,6 +1005,13 @@ local function build()
     if v and (not lastView or v.clock ~= lastView.clock) then UI:Render() end
   end)
 
+  -- Ping buttons skipped in combat: place them as soon as it ends.
+  local regen = CreateFrame("Frame")
+  regen:RegisterEvent("PLAYER_REGEN_ENABLED")
+  regen:SetScript("OnEvent", function()
+    if pingDirty then UI:SyncPings() end
+  end)
+
   -- Theme or font metrics changed (first-ever BettoGeo load is async): re-font and repaint.
   ctx:register(function()
     for fs in pairs(fontOf) do applyFont(fs) end
@@ -904,6 +1027,7 @@ function UI:Render()
   if not v then
     W.frame:Hide()
     K.frame:Hide()
+    self:SyncPings()
     return
   end
   local w, h
@@ -917,6 +1041,7 @@ function UI:Render()
     w, h = renderFull(v)
   end
   root:SetSize(w, math.max(1, h))
+  self:SyncPings()
 end
 
 function UI:Update(reason)
@@ -937,6 +1062,7 @@ function UI:Update(reason)
     root:Show()
   else
     root:Hide()
+    self:SyncPings()
   end
 end
 

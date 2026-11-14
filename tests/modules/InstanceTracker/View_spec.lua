@@ -209,3 +209,25 @@ describe("InstanceTrackerStyle", function()
     end
   end)
 end)
+
+describe("InstanceTrackerView: ping al jefe (punto 7)", function()
+  local v = View.build(Demo.get("live"))
+
+  it("solo los vivos (jefes y raros) responden al ratón", function()
+    assert_false(v.bosses[1].alive)   -- muerto con split
+    assert_true(v.bosses[4].alive)    -- The Abandoned, sin matar
+    assert_true(v.bosses[7].alive)    -- el raro vivo también
+  end)
+
+  it("macro: /target, ping de ataque y devuelve el objetivo", function()
+    assert_eq(View.pingMacro("The Abandoned"),
+      "/target The Abandoned\n/ping [@target] attack\n/targetlasttarget")
+    assert_eq(View.pingMacro("Rath'mael"):match("^/target (.-)\n"), "Rath'mael")
+  end)
+
+  it("sin macro para nombres que no caben en una línea", function()
+    assert_eq(View.pingMacro(""), nil)
+    assert_eq(View.pingMacro(nil), nil)
+    assert_eq(View.pingMacro("A\n/run x()"), nil)
+  end)
+end)
