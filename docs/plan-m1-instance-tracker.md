@@ -324,7 +324,7 @@ Pendiente, en este orden:
    c. Completada: «· N nivel(es)» en `IT_XP_RUN` (View necesita el nivel de inicio de la run).
    d. Detalle: medidas del panel (300 px, padding 12, gap 10/4) también requieren panel propio o un FR
       a Craft.Tooltip. `≈` NO está en BettoGeo: se queda `~` hasta que el owner añada el glifo. La línea
-      «Pasa el ratón para ver el detalle» del artboard: preguntar si es nota del lienzo o va en el widget.
+      «Pasa el ratón para ver el detalle» es nota del lienzo (owner): NO va en el widget.
    e. El letter-spacing del diseño no se puede hacer con FontStrings: queda fuera.
 3. F5 (abajo).
 
