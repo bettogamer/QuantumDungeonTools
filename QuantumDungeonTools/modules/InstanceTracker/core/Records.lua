@@ -74,4 +74,18 @@ function Records.consider(store, run)
   return true
 end
 
+-- learnTrash(store, run) -> true if the dungeon's trash total grew (F4c). FDJ ships no totals: it
+-- learns them as max(total, kills) from completed runs (RunLog.lua:498-503); we do the same, but
+-- only from CLEAN runs (Records.eligible), keyed by instanceID: trash does not change with the
+-- difficulty. store = db.instanceTracker.trash.
+function Records.learnTrash(store, run)
+  if type(store) ~= "table" or not Records.eligible(run) then return false end
+  local id, n = run.instanceID, run.trash
+  if not num(id) or not num(n) or n <= 0 then return false end
+  local old = store[id]
+  if num(old) and old >= n then return false end
+  store[id] = n
+  return true
+end
+
 return Records

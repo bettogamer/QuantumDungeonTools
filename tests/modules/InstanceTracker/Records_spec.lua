@@ -112,4 +112,28 @@ describe("InstanceRun: muertes y récord de referencia", function()
     assert_eq(back.pb.total, 300)
     assert_eq(back.pb.splits.Witherfang, 100)
   end)
+
+  it("learnTrash: aprende el máximo de las runs limpias, por instanceID", function()
+    local store = {}
+    local r = cleanRun(60)
+    r.trash = 40
+    assert_true(Records.learnTrash(store, r))
+    assert_eq(store[INFO.instanceID], 40)
+    r.trash = 35
+    assert_false(Records.learnTrash(store, r), "menos que el total: no baja")
+    r.trash = 52
+    assert_true(Records.learnTrash(store, r))
+    assert_eq(store[INFO.instanceID], 52)
+  end)
+
+  it("learnTrash: una run sin terminar o con jefes ya muertos no enseña", function()
+    local store = {}
+    local open = Run.new(INFO, { now = clock().now })
+    open:setBosses(list()); open.trash = 30
+    assert_false(Records.learnTrash(store, open))
+    local late = Run.new(INFO, { now = clock().now })
+    late:setBosses(list(true)); late.trash = 30
+    assert_false(Records.learnTrash(store, late))
+    assert_eq(store[INFO.instanceID], nil)
+  end)
 end)

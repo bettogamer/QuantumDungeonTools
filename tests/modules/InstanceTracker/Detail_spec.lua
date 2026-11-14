@@ -118,4 +118,26 @@ describe("InstanceTrackerDetail: lo que falta se oculta", function()
     assert_eq(r.level, 56)
     assert_eq(r.runs, 2)   -- 58080 left, 41220 per run
   end)
+
+  it("trash y tiempo fuera (F4c): % con total aprendido, «N bichos» sin él", function()
+    local run, opts = Demo.get("live")
+    local pace = section(Detail.build(run, opts), "pace")
+    local t = row(pace, "trash")
+    assert_eq(t.kills, 34); assert_eq(t.total, 52); assert_eq(t.pct, 65)
+    assert_eq(row(pace, "away").text, "3:12")
+    assert_eq(row(pace, "away").tone, "muted")
+    opts.trashTotal = nil
+    t = row(section(Detail.build(run, opts), "pace"), "trash")
+    assert_eq(t.total, nil); assert_eq(t.pct, nil)
+    run.trash, run.pausedTotal = 0, 0
+    pace = section(Detail.build(run, opts), "pace")
+    assert_eq(row(pace, "trash"), nil)
+    assert_eq(row(pace, "away"), nil)
+  end)
+
+  it("trash: más kills que el total aprendido no pasa del 100 %", function()
+    local run, opts = Demo.get("live")
+    run.trash, opts.trashTotal = 60, 52
+    assert_eq(row(section(Detail.build(run, opts), "pace"), "trash").pct, 100)
+  end)
 end)

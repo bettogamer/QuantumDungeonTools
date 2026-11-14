@@ -26,7 +26,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 | **F3** | Modelo v2: récord, pausa/retomada, muertes | 🔨 EN CURSO (código hecho 2026-11-13, falta la prueba in-game) | `core/Records.lua` + `Run.deaths`/`Run.pb`; DB aditiva (`records`), sin migración |
 | **F4** | Oro, reputación, ritmo + tooltip Detalle | ✅ HECHA en código (2026-11-13: F4a fila de totales, F4b tooltip Detalle); falta prueba in-game | nivel 3 (hover) |
 | **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ✅ HECHA en código (2026-11-14: F5a contador + Detalle, F5b avisos, F5c toast); falta prueba in-game | nivel 4 (avisos) |
-| **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ⬜ PENDIENTE (tras F5) | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run **Hallazgo 2026-11-14:** FDJ NO trae totales de trash: los APRENDE por cuenta al completar runs (`RunLog.lua:498-503`, `max(seenN, kills)` → `runLogTrashTotal`), y el SavedVariables del owner no tiene ninguno. QDT tampoco cuenta kills de trash hoy. El tiempo fuera ya existe (`Run.pausedTotal`). **Decidido (owner, 2026-11-14):** (c) aprender como FDJ: contar `PARTY_KILL` anónimos menos los jefes detectados y guardar por mazmorra `max(total, kills)` al terminar una run limpia; el % sale desde que haya total, si no «N bichos». (d) fila «Fuera de la mazmorra m:ss» en RITMO del Detalle, solo si > 0. Diseño primero (artboard Detalle). |
+| **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ✅ HECHA en código (2026-11-14, lienzo v47); falta prueba in-game | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run **Hallazgo 2026-11-14:** FDJ NO trae totales de trash: los APRENDE por cuenta al completar runs (`RunLog.lua:498-503`, `max(seenN, kills)` → `runLogTrashTotal`), y el SavedVariables del owner no tiene ninguno. QDT tampoco cuenta kills de trash hoy. El tiempo fuera ya existe (`Run.pausedTotal`). **Decidido (owner, 2026-11-14):** (c) aprender como FDJ: contar `PARTY_KILL` anónimos menos los jefes detectados y guardar por mazmorra `max(total, kills)` al terminar una run limpia; el % sale desde que haya total, si no «N bichos». (d) fila «Fuera de la mazmorra m:ss» en RITMO del Detalle, solo si > 0. Diseño primero (artboard Detalle). |
 | **F6** | Ventana Historial + ajustes por línea | ⬜ PENDIENTE | nivel 4 (Historial), líneas desactivables |
 
 > Fuera de este hito por decisión previa: **Minimap Lens** (módulo futuro, hito propio);
@@ -314,6 +314,13 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
   turquesa, Muertes 3 (rojo), XP +41,220, Oro con monedas, Rep. +875, botón «Compartir en grupo».
   En grupo: Compartir → en el chat del grupo «QDT: … 29:51 · nuevo récord -1:49 · 3 muertes · …».
   Solo: «no estás en grupo». Al matar el último jefe de una run real sale solo.
+- [ ] **Trash (F4c)**: primera run limpia de una mazmorra → Detalle «Trash · N bichos» (sin %); al
+  terminarla se aprende el total; la siguiente run de esa mazmorra → «N/T · P %». Cotejar a ojo que
+  N ≈ bichos matados y que los jefes NO suman (la kill del jefe se fusiona con su ENCOUNTER_END en
+  3 s). Verificar que `PARTY_KILL` llega en Forever también cuando el golpe final es de otro del grupo.
+  `/qdt it demo live` → «Trash 34/52 · 65 %».
+- [ ] **Tiempo fuera (F4c)**: morir, correr al cadáver y volver → Detalle «Fuera de la mazmorra m:ss»
+  en atenuado; sin salir, la fila no aparece. Demo live → «3:12».
 - [ ] **encounterID (punto 8e)**: **sin run dedicada: solo cuando toque esa mazmorra.** Ya medido en las runs del 2026-11-13: Deadmines emite los IDs nuevos 2741-2747 (no los clásicos 161-167 de FDJ) y Excavation Site 3480-3482; Miner Johnson no salió. Anotar qué ID llega en `ENCOUNTER_END` en Gnomeregan, Thaurissan, Thalnos, Lorgus Jett y Rend (el de NF o el alternativo de FDJ), y si los jefes de Dire Maul (Pusillin, Tsu'zee, Hel'nurath), Miner Johnson, Skul, Stonespine y Atal'alarion emiten alguno.
 
 ## Siguiente (handoff 2026-11-13, sesión F4b)

@@ -25,8 +25,12 @@ local function never() return false end
 local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
-  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper", "group", "levels",
+  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper", "group", "levels", "trash",
 }
+
+-- A kill (PARTY_KILL) and a boss event this close are the same death (ForeverDungeonJournal
+-- merges its kill sources in the same window, RunLog.lua MERGE_WINDOW).
+Run.MERGE_WINDOW = 3
 
 -- info = { instanceID = number, name = string, difficulty = string }
 function Run.new(info, deps)
@@ -58,6 +62,7 @@ function Run.new(info, deps)
   self.copper = 0         -- money the player looted during the run (F4)
   self.rep = {}           -- reputation gained during the run: { [factionName] = amount } (F4)
   self.group = nil        -- signature of the party (Detail.groupKey), last seen while live (F4b)
+  self.trash = 0          -- non-boss kills of the group during the run (F4c, PARTY_KILL)
   return self
 end
 
@@ -315,6 +320,46 @@ function Run:repList()
     return a.name < b.name
   end)
   return list
+end
+
+-- Trash (F4c). Inside a dungeon PARTY_KILL does not say WHO died (secret GUID), so every kill of
+-- the group counts, minus the ones a boss event claims within MERGE_WINDOW (either order). The
+-- pairing state lives only in memory: a /reload in the middle of a pull may miscount one kill.
+function Run:addKill()
+  if self.finishedAt or self.endedAt or self.pausedAt or self.closed then return false end
+  local now = self._now()
+  if self._bossAt and now - self._bossAt <= Run.MERGE_WINDOW and not self._bossPaired then
+    self._bossPaired = true   -- the killing blow of the boss that just died
+    return false
+  end
+  self.trash = (self.trash or 0) + 1
+  self._killAt = now
+  return true
+end
+
+-- noteBossDeath(): a boss event (ENCOUNTER_END / BOSS_KILL) arrived. Call it BEFORE markKilled
+-- (the last boss finishes the run). Two events of the same death count once.
+function Run:noteBossDeath()
+  if self.endedAt or self.closed then return false end
+  local now = self._now()
+  if self._bossAt and now - self._bossAt <= Run.MERGE_WINDOW then return false end
+  self._bossAt, self._bossPaired = now, false
+  if self._killAt and now - self._killAt <= Run.MERGE_WINDOW and (self.trash or 0) > 0 then
+    self.trash = self.trash - 1
+    self._killAt, self._bossPaired = nil, true
+    return true
+  end
+  return false
+end
+
+-- Seconds spent outside the instance during the run (corpse runs, a step outside, logged out):
+-- the closed pauses plus the open one, if the run is still running.
+function Run:awayTime()
+  local t = self.pausedTotal or 0
+  if self.pausedAt and not self.finishedAt and not self.endedAt then
+    t = t + math.max(0, self._now() - self.pausedAt)
+  end
+  return t
 end
 
 function Run:isPaused() return self.pausedAt ~= nil end

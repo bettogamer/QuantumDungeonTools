@@ -415,4 +415,56 @@ describe("InstanceRun con la tabla de mazmorras (resolver)", function()
     c.t = c.t + 2 * 60
     assert_false(done:canResume(INFO, 90 * 60, 20 * 60), "completada: más de 20 min, run nueva")
   end)
+
+  it("trash: cada PARTY_KILL suma; la kill del jefe (antes o después del evento) no", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    r:setBosses(lockout())
+    assert_true(r:addKill()); assert_true(r:addKill())
+    c.t = c.t + 30
+    assert_true(r:addKill())               -- killing blow of Witherfang...
+    c.t = c.t + 1
+    r:noteBossDeath(); r:markKilled("Witherfang")   -- ...its event a second later
+    assert_eq(r.trash, 2)
+    c.t = c.t + 60
+    r:noteBossDeath(); r:markKilled("The Abandoned")   -- event first...
+    assert_false(r:addKill())              -- ...then its killing blow
+    assert_true(r:addKill(), "la siguiente kill ya es trash")
+    assert_eq(r.trash, 3)
+  end)
+
+  it("trash: ENCOUNTER_END y BOSS_KILL del mismo jefe descuentan una sola kill", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    r:addKill(); r:addKill()
+    c.t = c.t + 1
+    r:noteBossDeath(); r:noteBossDeath()
+    assert_eq(r.trash, 1)
+  end)
+
+  it("trash: no cuenta en pausa ni con la run terminada, y se persiste", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    r:setBosses(lockout())
+    r:addKill()
+    r:pause()
+    assert_false(r:addKill())
+    r:resume()
+    for _, n in ipairs({ "Witherfang", "The Abandoned", "The Butcher" }) do
+      c.t = c.t + 10
+      r:noteBossDeath(); r:markKilled(n)
+    end
+    c.t = c.t + 10
+    assert_false(r:addKill(), "terminada")
+    assert_eq(Run.fromTable(r:toTable()).trash, 1)
+  end)
+
+  it("tiempo fuera: pausas cerradas más la abierta", function()
+    local c = clock()
+    local r = Run.new(INFO, { now = c.now })
+    assert_eq(r:awayTime(), 0)
+    r:pause(); c.t = c.t + 100; r:resume()
+    r:pause(); c.t = c.t + 20
+    assert_eq(r:awayTime(), 120)
+  end)
 end)

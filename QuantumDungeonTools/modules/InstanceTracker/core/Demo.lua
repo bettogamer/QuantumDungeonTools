@@ -67,7 +67,11 @@ end
 local SCENARIOS = {
   -- Main: 16:22 with 3/6, record 31:40, ahead by 0:17.
   live = function()
-    return withLoot(makeRun(LIVE_KILLS, 982, false, 18450), 41200, { Undercity = 350 }), {
+    local run = withLoot(makeRun(LIVE_KILLS, 982, false, 18450), 41200, { Undercity = 350 })
+    -- F4c (artboard Detalle): 34/52 trash and 3:12 outside (the start moves back so the clock stays).
+    run.trash, run.pausedTotal, run.startedAt = 34, 192, run.startedAt - 192
+    return run, {
+      trashTotal = 52,
       pb = PB, deaths = 2, now = START + 982,
       instances = { count = 8, limit = 10, freeIn = 760, slots = { 760, 1275 } },
       xp = { level = 54, xp = 54560, max = XP_MAX, rested = 15840 },

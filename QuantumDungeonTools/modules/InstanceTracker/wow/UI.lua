@@ -293,7 +293,7 @@ local function detailSource()
   if not run then return nil end
   return run, {
     xp = T:XPSnapshot(), history = T:History(), record = Records.get(db().records, run),
-    group = T:GroupKey(), instances = T:HourSnapshot(),
+    group = T:GroupKey(), instances = T:HourSnapshot(), trashTotal = db().trash[run.instanceID],
   }
 end
 
@@ -307,6 +307,15 @@ local function detailRow(r)
     left, right = L.IT_D_GOLD_HOUR, moneyText(r.copper):sub(2)   -- a rate: no "+"
   elseif r.id == "toLevel" then
     left, right = L.IT_D_TO_LEVEL:format(r.level), (r.runs == 1 and L.IT_D_RUN or L.IT_D_RUNS):format(r.runs)
+  elseif r.id == "trash" then
+    left = L.IT_D_TRASH
+    if r.total then
+      right = L.IT_D_TRASH_PCT:format(r.kills, r.total, r.pct)
+    else
+      right = (r.kills == 1 and L.IT_D_TRASH_ONE or L.IT_D_TRASH_N):format(r.kills)
+    end
+  elseif r.id == "away" then
+    left, right = L.IT_D_AWAY, r.text
   elseif r.id == "faction" then
     left, right = r.name, (r.amount > 0 and "+" or "") .. r.amount
   elseif r.id == "personal" then

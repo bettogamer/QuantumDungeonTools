@@ -168,6 +168,7 @@ function T:_notify(reason)
   if run and run:isFinished() and not run.archived then
     run.archived = true
     if Records.consider(db().records, run) then run.newRecord = true end
+    Records.learnTrash(db().trash, run)
     self:_pushHistory(run)
     for _, fn in ipairs(self.finishListeners) do
       local ok, err = pcall(fn, run)
@@ -367,7 +368,9 @@ end
 
 local function bossDied(name)
   local run = T.run
-  if run and T.inInstance and run:markKilled(safeStr(name)) then T:_notify("data") end
+  local changed = run and T.inInstance and run:noteBossDeath()   -- before markKilled: the last boss ends the run
+  if run and T.inInstance and run:markKilled(safeStr(name)) then changed = true end
+  if changed then T:_notify("data") end
   C_Timer.After(REFRESH_DELAY, function()
     requestLockout()
     T:Refresh()
@@ -431,6 +434,13 @@ function T:CHAT_MSG_COMBAT_FACTION_CHANGE(text)
   chatLine(self, text, function(run, t) return run:addRep(ChatParse.rep(t, _G)) end)
 end
 
+-- PARTY_KILL: attackerGUID, targetGUID. Inside a dungeon of Forever the target is SECRET (docs/16
+-- §FDJ): the event is only "the group landed a killing blow". Neither arg is touched; the boss
+-- deaths are taken out by Run:noteBossDeath (F4c).
+function T:PARTY_KILL()
+  if self.run and self.inInstance and not self.copyPending and self.run:addKill() then self:_notify("data") end
+end
+
 -- UNIT_SPELLCAST_SENT: unit, target, castGUID, spellID (only fires for the player)
 function T:UNIT_SPELLCAST_SENT(unit, _, castGUID)
   if issecretvalue(unit) or unit ~= "player" then return end
@@ -465,7 +475,7 @@ local EVENTS = {
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
   "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
   "CHAT_MSG_SYSTEM", "PLAYER_LOGOUT", "PLAYER_DEAD",
-  "CHAT_MSG_MONEY", "CHAT_MSG_COMBAT_FACTION_CHANGE", "GROUP_ROSTER_UPDATE",
+  "CHAT_MSG_MONEY", "CHAT_MSG_COMBAT_FACTION_CHANGE", "GROUP_ROSTER_UPDATE", "PARTY_KILL",
 }
 
 local frame

@@ -11,6 +11,7 @@
 --   opts.record    = nil | the CURRENT record of this dungeon (Records.get), else opts.pb / run.pb
 --   opts.group     = nil | Detail.groupKey of the current group (nil = solo)
 --   opts.instances = nil | { count, limit, slots = { sec until each slot frees, ... } }  (F5)
+--   opts.trashTotal = nil | trash this dungeon has, learned from clean runs (Records.learnTrash, F4c)
 local _, ns = ...
 local Format = ns.Format
 local Records = ns.InstanceRecords
@@ -82,6 +83,16 @@ local function pace(run, opts, past)
       local runs = math.ceil((xp.max - xp.xp) / per)
       rows[#rows + 1] = { id = "toLevel", level = xp.level + 1, runs = runs, tone = "text" }
     end
+  end
+  -- F4c: trash with its % once the dungeon's total is known; time outside, only if any.
+  if num(run.trash) and run.trash > 0 then
+    local total = num(opts.trashTotal) and opts.trashTotal > 0 and opts.trashTotal or nil
+    local pct = total and math.min(100, math.floor(run.trash / total * 100 + 0.5)) or nil
+    rows[#rows + 1] = { id = "trash", kills = run.trash, total = total, pct = pct, tone = "text" }
+  end
+  local away = run.awayTime and run:awayTime() or 0
+  if num(away) and away >= 1 then
+    rows[#rows + 1] = { id = "away", text = Format.clock(away), tone = "muted" }
   end
   return rows
 end
