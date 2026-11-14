@@ -79,6 +79,20 @@ local function colorBorder(b, c)
   for i = 1, 4 do setColor(b[i], c) end
 end
 
+-- A bar fill sits INSIDE the 1px border, as in the design (CSS: the absolute fill lives in the
+-- padding box). Anchored to the left border strip itself so the inset matches its pixel-perfect
+-- thickness; a fill anchored to the frame was drawn over the border (ARTWORK > BORDER) and the
+-- border only showed on the empty part of the track, where it barely reads.
+local function insetFill(tex, border)
+  tex:SetPoint("TOPLEFT", border[3], "TOPRIGHT", 0, 0)
+  tex:SetPoint("BOTTOMLEFT", border[3], "BOTTOMRIGHT", 0, 0)
+end
+
+-- Width inside the border (fills and ticks measure from it): the outer width minus both strips.
+local function innerWidth(border)
+  return S.width - 2 * (border[3]:GetWidth() or 0)
+end
+
 -- Tag = text with a 1px border and no fill (design: "tags = only border"): a Craft.Badge
 -- `outline` with per-instance font, padding and colors (FR-140, Craft 2.48.0). It sizes itself
 -- (whole pixels, CSS-centered caps, re-measured next frame) and inherits our theme context.
@@ -356,8 +370,7 @@ local function buildFull()
   W.barTrack:SetAllPoints()
   W.barBorder = newBorder(W.bar)
   W.barFill = W.bar:CreateTexture(nil, "ARTWORK")
-  W.barFill:SetPoint("TOPLEFT", W.bar, "TOPLEFT", 0, 0)
-  W.barFill:SetPoint("BOTTOMLEFT", W.bar, "BOTTOMLEFT", 0, 0)
+  insetFill(W.barFill, W.barBorder)
   W.ticks = {}
   W.segRow = newRow(full)
   W.segRow:SetHeight(S.segH)
@@ -376,8 +389,7 @@ local function buildFull()
   W.xpCur = W.xpBar:CreateTexture(nil, "ARTWORK", nil, 2)
   W.xpBase = W.xpBar:CreateTexture(nil, "ARTWORK", nil, 3)
   for _, tex in ipairs({ W.xpRested, W.xpCur, W.xpBase }) do
-    tex:SetPoint("TOPLEFT", W.xpBar, "TOPLEFT", 0, 0)
-    tex:SetPoint("BOTTOMLEFT", W.xpBar, "BOTTOMLEFT", 0, 0)
+    insetFill(tex, W.xpBorder)
   end
   W.xpLeft = newText(W.xp, FONT.small)
   W.xpLeft:SetJustifyH("LEFT")
@@ -574,7 +586,8 @@ end
 local function paintTimeBar(bar)
   setColor(W.barTrack, C.track)
   colorBorder(W.barBorder, C.hairline)
-  local width = S.width
+  local width = innerWidth(W.barBorder)
+  local edge = W.barBorder[3]:GetWidth() or 0
   if bar.fill > 0 then
     W.barFill:SetWidth(width * bar.fill)
     setColor(W.barFill, C.gold)
@@ -585,7 +598,7 @@ local function paintTimeBar(bar)
   for i, t in ipairs(bar.ticks) do
     local tx = tick(i)
     tx:ClearAllPoints()
-    tx:SetPoint("CENTER", W.bar, "LEFT", width * t.pos, 0)
+    tx:SetPoint("CENTER", W.bar, "LEFT", edge + width * t.pos, 0)
     setColor(tx, Style.tone(t.tone))
     tx:Show()
   end
@@ -607,7 +620,7 @@ local function paintSegments(bar)
 end
 
 local function paintXP(xp)
-  local width = S.width
+  local width = innerWidth(W.xpBorder)
   setColor(W.xpTrack, C.track)
   colorBorder(W.xpBorder, C.hairline)
   local function seg(tex, frac, color)
