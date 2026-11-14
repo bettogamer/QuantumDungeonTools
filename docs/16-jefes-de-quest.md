@@ -81,3 +81,36 @@ descartados. Tampoco sirve el lockout, que en Normal no marca muertos.
   las pruebas (a)–(d) de arriba.
 - Las runs ya guardadas conservan su clasificación anterior: un jefe ya colocado en la ruta no se
   reclasifica.
+
+## ForeverDungeonJournal (FDJ, competencia) — 2026-11-13
+
+Lectura parcial de `AddOns/ForeverDungeonJournal/Systems/RunLog.lua`, `Core/Journal.lua` y `Data/*` (addon-scout).
+
+- Tiene **tracker de runs** (`Systems/RunLog.lua`):
+  - registra kills de trash y de jefes con XP, rolls de Need, tiempo desde la primera kill hasta
+    el último jefe, muertes y % de trash;
+  - la run sigue siendo la misma si vuelves antes de 90 min (20 min si el jefe final ya murió),
+    `:22-23`.
+- **Misma decisión que la nuestra:** `AllBossesDown` (`:595`) excluye de la completitud a
+  `rare`, `optional`, `spawnQuest` y `summonItem`.
+  - Highland Horror figura como «questmob» `npcID 260808, quest 95646` (`Core/Journal.lua:467-476`).
+- **Tampoco detecta la muerte de Highland Horror.** Sin ENCOUNTER_END, las vías posibles son:
+  - `PARTY_KILL`: dentro de la mazmorra el objetivo llega secreto, así que solo da una kill
+    anónima de grupo, sin nombre (`:2077-2089`);
+  - `UNIT_DIED`: solo con GUID público (`:2090-2094`);
+  - la línea de chat «X dies» (`:2126-2132`), aunque su propio comentario dice que Forever no la
+    emite dentro de la mazmorra (`:2079-2081`);
+  - un cadáver visto con GUID legible (`:1452-1454`).
+
+  Las kills que llegan por varios canales se fusionan en una ventana de 3 s (`:1083-1184`). No usa
+  C_QuestLog, QUEST_* ni el loot para identificar jefes.
+- **Secret values:** usa `Plain(v)`, que devuelve nil si `issecretvalue(v)` (`:27-30`), y `pcall`
+  en cada API de unidad. Cuando un valor sale secreto, degrada en lugar de descartar.
+- **Ideas que podemos aprovechar:**
+  - `db.bossEvents[id]` + `/dj bossids`: registro de qué jefes emiten ENCOUNTER_END en Forever.
+    Serviría para encontrar otros casos como Highland Horror.
+  - Usar `UnitIsBossMob` / `UnitClassification` + `UnitLevel` para reconocer jefes o rares
+    cuando el nombre llega secreto. Solo dice que el jefe está vivo, no que haya muerto.
+  - No tiene ping, ni marcas de banda, ni aviso al salir de la mazmorra.
+- Conclusión: el objetivo de la quest 95646 (señal 1) sigue siendo la única vía que identifica a
+  Highland Horror. `PARTY_KILL` anónimo + XP serviría como mucho de corroboración.
