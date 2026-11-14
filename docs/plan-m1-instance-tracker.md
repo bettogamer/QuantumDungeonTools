@@ -259,7 +259,7 @@ quita. `T:HourSnapshot()` → `opts.instances` del Detalle (se lee solo al pasar
 `CHAT_MSG_SYSTEM` o `UI_ERROR_MESSAGE`); franja ámbar **al entrar en la 8.ª y la 9.ª**, 8 s; botón
 **Historial oculto hasta F6**; «Compartir» = **una línea resumen** por INSTANCE_CHAT/RAID/PARTY
 (sin texturas, menos ASCII, `QDT:` sin color, troceada a 255, `pcall`). Elecciones del agente
-pendientes de OK del owner: el aviso y el toast van arriba al centro (`S.alertTop`, el lienzo no
+(✅ OK del owner in-game 2026-11-14, con las vistas previas animadas): el aviso y el toast van arriba al centro (`S.alertTop`, el lienzo no
 fija sitio), apilados; el aviso dura 15 s y el toast 30 s (se paran con el ratón encima; clic en el
 cuerpo = cerrar); el botón es el `Craft.Button` primario (oro con texto navy, el Primary elegido del
 tema), no el crema del artboard; del texto pequeño del aviso se quitó «Sale al entrar en el grupo o
@@ -307,10 +307,10 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 - [ ] **Instancias/hora (F5a)**: entrar en 2 mazmorras distintas → Detalle «INSTANCIAS EN LA ÚLTIMA
   HORA · 2/10», «Siguiente hueco en» ≈ 60 min menos lo pasado. Salir y volver a la MISMA copia (o
   `/reload` dentro) → sigue 2/10. Con un alt → la cuenta sigue sumando. Reset y volver a entrar → 3/10.
-- [ ] **Avisos (F5b)**: sin mazmorra, `/qdt it alert cap` y `/qdt it alert near` → cotejar con el
+- [ ] **Avisos (F5b)**: ✅ vistas previas OK in-game (2026-11-14, animadas, sin contorno). Falta solo la run real. Sin mazmorra, `/qdt it alert cap` y `/qdt it alert near` → cotejar con el
   artboard Avisos (borde rojo / ámbar, icono triángulo, «12:40» en crema). En la run real: al
   entrar en la 8.ª instancia de la hora sale la franja; en la 10.ª, el rojo.
-- [ ] **Toast (F5c)**: `/qdt it alert toast` → «Run completada» + NUEVO RÉCORD, 29:51 y −1:49 en
+- [ ] **Toast (F5c)**: ✅ vista previa OK in-game (2026-11-14). Falta: Compartir en grupo y que salga solo al acabar una run real. `/qdt it alert toast` → «Run completada» + NUEVO RÉCORD, 29:51 y −1:49 en
   turquesa, Muertes 3 (rojo), XP +41,220, Oro con monedas, Rep. +875, botón «Compartir en grupo».
   En grupo: Compartir → en el chat del grupo «QDT: … 29:51 · nuevo récord -1:49 · 3 muertes · …».
   Solo: «no estás en grupo». Al matar el último jefe de una run real sale solo.
@@ -319,8 +319,9 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 ## Siguiente (handoff 2026-11-13, sesión F4b)
 
 > **Sesión F5 (2026-11-14, cierre):** F5 hecha en código (`9b6e7a4`, `e35bb2a`) y desplegada.
-> Pendiente: el owner mira `/qdt it alert toast|cap|near` contra el artboard Avisos y da OK (o no) a
-> las elecciones del agente listadas en F5b+F5c (posición, duraciones, botón oro). Después: **F4c**
+> ✅ Vistas previas OK in-game (owner, 2026-11-14) tras dos ajustes: sin contorno en textos sobre fondo y
+> todo componente animado (Weave.tween, memoria `feedback-componentes-animados`). Pendiente menor: animar
+> también el panel hover del compacto. Después: **F4c**
 > (% de trash con los totales de FDJ + tiempo fuera) y luego **F6**. Nada a medias.
 
 > **Sesión FDJ (2026-11-13, cierre):** inventario de ForeverDungeonJournal y cotejo de encounterID en
