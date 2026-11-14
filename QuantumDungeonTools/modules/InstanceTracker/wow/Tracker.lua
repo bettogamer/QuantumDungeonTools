@@ -28,7 +28,9 @@ ns.InstanceTracker = T
 
 local HISTORY_MAX = 100
 local REFRESH_DELAY = 2   -- seconds after a kill before re-reading the lockout
-local RESUME_WINDOW = 30 * 60   -- away longer than this = a new copy (owner, plan M1 point 6)
+-- Away longer than this = a new run (owner, plan M1 points 6 and 8a; same values as FDJ).
+local RESUME_WINDOW = 90 * 60            -- run still open
+local RESUME_WINDOW_FINISHED = 20 * 60   -- every counted boss already dead
 
 local deps = {
   now = function() return time() end,
@@ -242,7 +244,7 @@ function T:CheckZone()
   self.inInstance = inst ~= nil
   local run = self.run
   if inst then
-    if not run or not run:canResume(inst, RESUME_WINDOW) then
+    if not run or not run:canResume(inst, RESUME_WINDOW, RESUME_WINDOW_FINISHED) then
       self:StartRun(inst)
     else
       fillDifficulty(run)

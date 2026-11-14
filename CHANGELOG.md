@@ -14,7 +14,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
   mazmorra; al volver a entrar empieza una nueva (también para runs guardadas sin copia).
 - **Pausa del reloj**: al salir de la mazmorra o desloguear la run se pausa y el tiempo fuera no
   cuenta (ni en el reloj ni en los splits). Al volver se retoma si es la misma mazmorra y
-  dificultad y estuviste fuera menos de 30 min; si no, empieza una run nueva.
+  dificultad y estuviste fuera menos de 90 min (20 min si ya habías matado a todos los jefes);
+  si no, empieza una run nueva.
 - **Widget nuevo del Instance Tracker sobre Craft** (hito M1 F2): HUD transparente con contorno,
   paleta Forever y fuente BettoGeo; nombre y dificultad, reloj grande, línea de jefes, barra de
   tiempo de 14 px (o segmentos por jefe si no hay récord), barra de XP con lo ganado en la run y

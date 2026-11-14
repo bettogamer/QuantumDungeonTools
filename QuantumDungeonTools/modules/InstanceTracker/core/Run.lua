@@ -337,19 +337,22 @@ function Run:resume()
   return true
 end
 
--- canResume(info, window): re-entering an instance with this run open, is it (most likely)
--- the same copy? Same instanceID and difficulty, still running, and paused for at most
--- `window` seconds (a 5-man copy does not outlive ~30 min empty). A finished run also
--- "resumes" (it keeps showing as completed: /reload, a step outside). The castGUID of the
--- first spell has the last word (wow/Tracker); a reset message closes the run before this.
+-- canResume(info, window, finishedWindow): re-entering an instance with this run open, is it
+-- (most likely) the same copy? Same instanceID and difficulty, still running, and paused for at
+-- most `window` seconds (`finishedWindow` instead once every counted boss is dead; owner plan M1
+-- point 8a: 90 / 20 min, as ForeverDungeonJournal). A finished run also "resumes" (it keeps
+-- showing as completed: /reload, a step outside). The window is generous on purpose: the
+-- castGUID of the first spell has the last word (wow/Tracker) and starts a new run if it is
+-- another copy; a reset message closes the run before this.
 -- An EMPTY difficulty on either side does not block: on the first PLAYER_ENTERING_WORLD of a
 -- dungeon GetInstanceInfo may not have it yet ("" in Deadmines, owner 2026-11-13), and after a
 -- /reload it says "Normal": comparing them started a new run and lost the kills.
-function Run:canResume(info, window)
+function Run:canResume(info, window, finishedWindow)
   if type(info) ~= "table" or self.endedAt then return false end
   if info.instanceID ~= self.instanceID then return false end
   local a, b = info.difficulty or "", self.difficulty or ""
   if a ~= "" and b ~= "" and a ~= b then return false end
+  if self.finishedAt and finishedWindow then window = finishedWindow end
   if self.pausedAt and window and self._now() - self.pausedAt > window then return false end
   return true
 end

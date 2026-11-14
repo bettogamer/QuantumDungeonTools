@@ -395,4 +395,24 @@ describe("InstanceRun con la tabla de mazmorras (resolver)", function()
     assert_eq(r:elapsed(), 200)
     assert_eq(r.pausedTotal, 0)
   end)
+
+  it("retomar: 90 min con la run abierta, 20 min si ya está completada (punto 8a)", function()
+    local c = clock()
+    local open = Run.new(INFO, { now = c.now })
+    open:pause()
+    c.t = c.t + 89 * 60
+    assert_true(open:canResume(INFO, 90 * 60, 20 * 60), "abierta: 89 min aún retoma")
+    c.t = c.t + 2 * 60
+    assert_false(open:canResume(INFO, 90 * 60, 20 * 60), "abierta: más de 90 min, run nueva")
+
+    local done = Run.new(INFO, { now = c.now })
+    done:setBosses(lockout())
+    done:markKilled("Witherfang"); done:markKilled("The Abandoned"); done:markKilled("The Butcher")
+    assert_true(done:isFinished())
+    done:pause()
+    c.t = c.t + 19 * 60
+    assert_true(done:canResume(INFO, 90 * 60, 20 * 60), "completada: 19 min aún retoma")
+    c.t = c.t + 2 * 60
+    assert_false(done:canResume(INFO, 90 * 60, 20 * 60), "completada: más de 20 min, run nueva")
+  end)
 end)
