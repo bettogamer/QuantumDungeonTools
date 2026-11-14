@@ -18,12 +18,13 @@ local Run = ns.InstanceRun
 local Records = ns.InstanceRecords
 local ChatParse = ns.InstanceChatParse
 local Guid = ns.InstanceGuid
+local Hourly = ns.InstanceHourly
 local issecretvalue = ns.issecretvalue
 
 -- copyPending: we re-entered the instance of an existing run and do not know yet whether it
 -- is the same copy; the lockout is not merged until the first cast tells us (it may belong
 -- to the leader's copy, not to this run).
-local T = { listeners = {}, inInstance = false, copyPending = false }
+local T = { listeners = {}, hourListeners = {}, inInstance = false, copyPending = false }
 ns.InstanceTracker = T
 
 local HISTORY_MAX = 100
@@ -239,6 +240,37 @@ function T:Refresh()
   self:_notify("data")
 end
 
+------------------------------------------------------------------------------
+-- Instances per hour (F5, core/Hourly.lua)
+------------------------------------------------------------------------------
+local function charName()
+  local ok, name, realm = pcall(UnitFullName, "player")
+  name = ok and safeStr(name) or nil
+  realm = ok and safeStr(realm) or nil
+  if name and realm then return name .. "-" .. realm end
+  return name
+end
+
+-- Walking into a copy that is new for us counts as one of the 10 per hour.
+function T:_noteEntry(inst, copy)
+  local e = Hourly.note(db().hourly, time(), {
+    instanceID = inst.instanceID, name = inst.name, char = charName(), copy = copy })
+  if e then
+    for _, fn in ipairs(self.hourListeners) do
+      local ok, err = pcall(fn, self:HourSnapshot())
+      if not ok then geterrorhandler()(err) end
+    end
+  end
+end
+
+-- Called after every entry that counted: fn(snapshot). The alerts (F5b) hang from here.
+function T:OnHourEntry(fn) self.hourListeners[#self.hourListeners + 1] = fn end
+
+-- { count, limit, slots, freeIn } (Hourly.snapshot): read on hover, not on the clock tick.
+function T:HourSnapshot()
+  return Hourly.snapshot(db().hourly, time())
+end
+
 function T:CheckZone()
   local inst = currentInstance()
   self.inInstance = inst ~= nil
@@ -246,6 +278,7 @@ function T:CheckZone()
   if inst then
     if not run or not run:canResume(inst, RESUME_WINDOW, RESUME_WINDOW_FINISHED) then
       self:StartRun(inst)
+      self:_noteEntry(inst)
     else
       fillDifficulty(run)
       -- Same dungeon again: resume the clock; same copy or not is confirmed by the first
@@ -286,9 +319,18 @@ function T:_onCast(castGUID)
   if seen == "other" then
     -- Another copy of this dungeon (the group leader's, or a reset): new run. The old one
     -- goes to the history only if it had kills (_close).
-    self:StartRun({ instanceID = run.instanceID, name = run.name, difficulty = run.difficulty }, g.zoneUID)
+    local inst = { instanceID = run.instanceID, name = run.name, difficulty = run.difficulty }
+    self:StartRun(inst, g.zoneUID)
+    self:_noteEntry(inst, g.zoneUID)
     requestLockout()
-  elseif seen ~= nil and self.copyPending then
+    return
+  end
+  if seen == "first" then
+    -- The copy of the entry noted when we walked in: a re-entry of a copy already counted
+    -- this hour stops counting here.
+    Hourly.bindCopy(db().hourly, time(), run.instanceID, g.zoneUID)
+  end
+  if seen ~= nil and self.copyPending then
     self.copyPending = false
     self:Refresh()
   elseif seen == "first" then

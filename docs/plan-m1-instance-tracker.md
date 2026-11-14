@@ -25,7 +25,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 | **F2** | Vendoreo de Craft + widget nuevo | 🔨 EN CURSO (código hecho, falta `/qdt check f2` + prueba in-game + `ui-critic`) | niveles 1-2 del diseño: En curso, Completada, Compacto, Primera vez; aquí se pasa por fin el checklist de doc 00 §6 |
 | **F3** | Modelo v2: récord, pausa/retomada, muertes | 🔨 EN CURSO (código hecho 2026-11-13, falta la prueba in-game) | `core/Records.lua` + `Run.deaths`/`Run.pb`; DB aditiva (`records`), sin migración |
 | **F4** | Oro, reputación, ritmo + tooltip Detalle | ✅ HECHA en código (2026-11-13: F4a fila de totales, F4b tooltip Detalle); falta prueba in-game | nivel 3 (hover) |
-| **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ⬜ PENDIENTE | nivel 4 (avisos) |
+| **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | 🔨 EN CURSO (F5a contador + Detalle hecho 2026-11-14; faltan F5b aviso y F5c toast) | nivel 4 (avisos) |
 | **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ⬜ PENDIENTE (tras F5) | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run |
 | **F6** | Ventana Historial + ajustes por línea | ⬜ PENDIENTE | nivel 4 (Historial), líneas desactivables |
 
@@ -244,6 +244,14 @@ botón para compartirla en el grupo (troceado a 255 caracteres y enviado con `pc
 
 **Entregado (v0.5).**
 
+**F5a hecha (2026-11-14):** `core/Hourly.lua` (puro): lista de cuenta `db.instanceTracker.hourly`
+(aditiva, sin migración) de `{ at, instanceID, name, char, copy }`. Regla portada de NF (solo la
+regla): cuenta al entrar en una copia nueva para nosotros (`CheckZone` → run nueva, o el primer
+hechizo dice «otra copia»); `/qdt new`, `/reload` y la retomada no cuentan. La copia llega con el
+primer hechizo (`Hourly.bindCopy`): si esa copia ya estaba contada en la hora, la entrada nueva se
+quita. `T:HourSnapshot()` → `opts.instances` del Detalle (se lee solo al pasar el ratón);
+`T:OnHourEntry(fn)` queda para el aviso de F5b. Specs: `Hourly_spec.lua`.
+
 ## F6 — Ventana Historial + ajustes
 
 **Alcance:** `Craft.Window` Historial (artboard Historial) con filtros por mazmorra, dificultad y
@@ -282,6 +290,9 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 - [ ] **Muertes (F3)**: morir dentro → «1 muerte» en rojo junto al reloj; morir fuera no suma.
 - [ ] Run completada: salir y volver a entrar (o `/reload` dentro) → sigue mostrándose Completada
   con su tiempo, no una run vacía.
+- [ ] **Instancias/hora (F5a)**: entrar en 2 mazmorras distintas → Detalle «INSTANCIAS EN LA ÚLTIMA
+  HORA · 2/10», «Siguiente hueco en» ≈ 60 min menos lo pasado. Salir y volver a la MISMA copia (o
+  `/reload` dentro) → sigue 2/10. Con un alt → la cuenta sigue sumando. Reset y volver a entrar → 3/10.
 - [ ] **encounterID (punto 8e)**: **sin run dedicada: solo cuando toque esa mazmorra.** Ya medido en las runs del 2026-11-13: Deadmines emite los IDs nuevos 2741-2747 (no los clásicos 161-167 de FDJ) y Excavation Site 3480-3482; Miner Johnson no salió. Anotar qué ID llega en `ENCOUNTER_END` en Gnomeregan, Thaurissan, Thalnos, Lorgus Jett y Rend (el de NF o el alternativo de FDJ), y si los jefes de Dire Maul (Pusillin, Tsu'zee, Hel'nurath), Miner Johnson, Skul, Stonespine y Atal'alarion emiten alguno.
 
 ## Siguiente (handoff 2026-11-13, sesión F4b)

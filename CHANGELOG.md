@@ -6,6 +6,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Añadido
 
+- **Instancias en la última hora** (hito M1 F5a): el tooltip Detalle enseña «INSTANCIAS EN LA
+  ÚLTIMA HORA · N/10» para toda la cuenta (todos los personajes) y cuándo se libera el siguiente
+  hueco. Cuenta al entrar en una copia nueva; volver a la misma copia dentro de la hora no suma.
 - **Más IDs de jefe**: el Instance Tracker reconoce también los encounterID alternativos que
   recoge ForeverDungeonJournal (46 jefes: Gnomeregan, Deadmines, BFD, Thaurissan, Thalnos…), por
   si Forever emite el ID clásico en vez del nuevo.

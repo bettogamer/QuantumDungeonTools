@@ -65,7 +65,7 @@ files = {
             "GetInstanceInfo", "INSTANCE_RESET_SUCCESS", "GetInstanceLockTimeRemaining", "GetInstanceLockTimeRemainingEncounter",
             "RequestRaidInfo", "UnitXP", "UnitXPMax", "UnitLevel",
             -- F1 probes (CheckF1.lua, v0.1.1)
-            "UnitGUID", "UnitExists", "UnitName", "GetBuildInfo",
+            "UnitGUID", "UnitExists", "UnitName", "UnitFullName", "GetBuildInfo",
             "GetNumSavedInstances", "GetSavedInstanceInfo", "print", "QuantumDungeonToolsDB",
             -- F2 widget on Craft (UI.lua, Tracker:XPSnapshot, CheckF2.lua, v0.2)
             "LibStub", "GetXPExhaustion", "GetMaxLevelForPlayerExpansion", "GetMaxPlayerLevel",

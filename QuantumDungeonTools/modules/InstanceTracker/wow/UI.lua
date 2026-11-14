@@ -256,7 +256,7 @@ local function detailSource()
   if not run then return nil end
   return run, {
     xp = T:XPSnapshot(), history = T:History(), record = Records.get(db().records, run),
-    group = T:GroupKey(),
+    group = T:GroupKey(), instances = T:HourSnapshot(),
   }
 end
 
