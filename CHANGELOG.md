@@ -6,6 +6,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Añadido
 
+- **Más IDs de jefe**: el Instance Tracker reconoce también los encounterID alternativos que
+  recoge ForeverDungeonJournal (46 jefes: Gnomeregan, Deadmines, BFD, Thaurissan, Thalnos…), por
+  si Forever emite el ID clásico en vez del nuevo.
 - **Instance Tracker distingue la COPIA de la mazmorra** por el zoneUID del castGUID de tus
   propios hechizos: si sales y entras en otra copia (te unes a un grupo y vas a la del líder, o
   hubo un reset), se cierra la run anterior y empieza una nueva; si es la misma, la run sigue. Al

@@ -8,9 +8,18 @@
 -- gives names). No code, texts, loot, models or NPC ids are copied. Bosses without an
 -- encounterID are skipped: they never appear in the lockout list nor fire ENCOUNTER_END.
 -- MEASURED holds names seen in game that differ from the source (they win over it).
-local dir = arg[1]
+--
+-- Optional 2nd argument: ForeverDungeonJournal's Data/RunLogEncounters.lua. Its encounterIDs
+-- (game data: DungeonEncounter.db2 build 1.60.1.70862 + DBM/LittleWigs, per its header) are
+-- appended as ALTERNATIVE ids of the boss with the same name, so ENCOUNTER_END matches either
+-- (owner, plan M1 point 8e, docs/16 §Cotejo). Only ids: no names, code or texts are copied.
+-- An id already used by another boss, or a name that matches several bosses, is skipped and
+-- reported.
+--   lua scripts/gen-dungeons.lua "<AddOns>/NaowhForever_DungeonJournal/Data/Dungeons" \
+--       "<AddOns>/ForeverDungeonJournal/Data/RunLogEncounters.lua"
+local dir, fdjFile = arg[1], arg[2]
 if not dir then
-  io.stderr:write("usage: lua scripts/gen-dungeons.lua <NF Data/Dungeons dir>\n")
+  io.stderr:write("usage: lua scripts/gen-dungeons.lua <NF Data/Dungeons dir> [FDJ RunLogEncounters.lua]\n")
   os.exit(1)
 end
 local OUT = "QuantumDungeonTools/modules/InstanceTracker/core/DungeonData.lua"
@@ -40,7 +49,8 @@ local out = {
   "--",
   "-- Game data only (owner, docs/11): instanceID, encounterIDs in route order, kind flag and",
   "-- English encounter names. Source: the data files of NaowhForever_DungeonJournal (generated",
-  "-- by its author from the game client) plus names measured in game by QDT.",
+  "-- by its author from the game client) plus names measured in game by QDT. Extra ids after the",
+  "-- first ones may come from ForeverDungeonJournal's encounter table (game data, docs/16 §Cotejo).",
   "-- rare / optional / quest (one per boss, NF priority): listed but never count for 'Bosses X/Y'",
   "-- nor for the end of the run (owner, 2026-11-13, docs/16).",
   "local _, ns = ...",
@@ -48,6 +58,7 @@ local out = {
   "ns.InstanceDungeonData = {",
 }
 local nDungeons, nBosses, nRares = 0, 0, 0
+local built = {}
 for _, e in ipairs(list) do
   local d = e.d
   local rows, seen = {}, {}
@@ -73,9 +84,59 @@ for _, e in ipairs(list) do
       end
     end
   end
-  if d.instance and #rows > 0 then
+  if d.instance and #rows > 0 then built[#built + 1] = { key = e.key, instance = d.instance, rows = rows } end
+end
+
+-- FDJ alternative ids (see header). Name match is normalized and global: boss names are unique
+-- across dungeons, and an ambiguous one is skipped rather than guessed.
+if fdjFile then
+  local ns = {}
+  assert(loadfile(fdjFile))(nil, ns)
+  local fdj = assert(ns.RUNLOG_ENCOUNTERS, "RUNLOG_ENCOUNTERS not found in " .. fdjFile)
+  local function norm(s) return (s:lower():gsub("^the ", ""):gsub("[^%w]", "")) end
+  local byName, usedId = {}, {}
+  for _, dd in ipairs(built) do
+    for _, r in ipairs(dd.rows) do
+      for _, id in ipairs(r.ids) do usedId[id] = r end
+      for _, n in ipairs(r.names) do
+        local k = norm(n)
+        if byName[k] and byName[k] ~= r then byName[k] = false else byName[k] = r end
+      end
+    end
+  end
+  local ids = {}
+  for id in pairs(fdj) do ids[#ids + 1] = id end
+  table.sort(ids)
+  local added, skipped = 0, {}
+  for _, id in ipairs(ids) do
+    local dungeon, boss = fdj[id][1], fdj[id][2]
+    local r = byName[norm(boss)]
+    if usedId[id] then
+      if r ~= usedId[id] then
+        skipped[#skipped + 1] = string.format("%d %s / %s: id already used by %s", id, dungeon, boss,
+          usedId[id].names[1])
+      end
+    elseif r == false then
+      skipped[#skipped + 1] = string.format("%d %s / %s: name matches several bosses", id, dungeon, boss)
+    elseif r == nil then
+      skipped[#skipped + 1] = string.format("%d %s / %s: no QDT boss with that name", id, dungeon, boss)
+    else
+      local copy = {}
+      for i, v in ipairs(r.ids) do copy[i] = v end
+      copy[#copy + 1] = id
+      r.ids, usedId[id] = copy, r
+      added = added + 1
+    end
+  end
+  print(string.format("FDJ: %d alternative ids added, %d skipped:", added, #skipped))
+  for _, s in ipairs(skipped) do print("  " .. s) end
+end
+
+for _, dd in ipairs(built) do
+  local rows = dd.rows
+  do
     nDungeons = nDungeons + 1
-    out[#out + 1] = string.format("  { key = %s, instance = %d, bosses = {", q(e.key), d.instance)
+    out[#out + 1] = string.format("  { key = %s, instance = %d, bosses = {", q(dd.key), dd.instance)
     for _, r in ipairs(rows) do
       local qn = {}
       for i, n in ipairs(r.names) do qn[i] = q(n) end

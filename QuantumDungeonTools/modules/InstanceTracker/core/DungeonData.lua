@@ -2,7 +2,8 @@
 --
 -- Game data only (owner, docs/11): instanceID, encounterIDs in route order, kind flag and
 -- English encounter names. Source: the data files of NaowhForever_DungeonJournal (generated
--- by its author from the game client) plus names measured in game by QDT.
+-- by its author from the game client) plus names measured in game by QDT. Extra ids after the
+-- first ones may come from ForeverDungeonJournal's encounter table (game data, docs/16 §Cotejo).
 -- rare / optional / quest (one per boss, NF priority): listed but never count for 'Bosses X/Y'
 -- nor for the end of the run (owner, 2026-11-13, docs/16).
 local _, ns = ...
@@ -16,13 +17,13 @@ ns.InstanceDungeonData = {
     { ids = { 3409 }, names = { "Blazeroar" } },
   } },
   { key = "BlackfathomDeeps", instance = 48, bosses = {
-    { ids = { 2916, 2761 }, names = { "Ghamoo-ra" } },
-    { ids = { 2915, 2762 }, names = { "Lady Sarevess" } },
-    { ids = { 2914, 2763 }, names = { "Gelihast" } },
-    { ids = { 2913, 2764 }, names = { "Lorgus Jett" } },
-    { ids = { 2911, 2766 }, names = { "Twilight Lord Kelris" } },
-    { ids = { 2912, 2765 }, names = { "Old Serra'kis" } },
-    { ids = { 2910, 2767 }, names = { "Aku'mai" } },
+    { ids = { 2916, 2761, 219 }, names = { "Ghamoo-ra" } },
+    { ids = { 2915, 2762, 220 }, names = { "Lady Sarevess" } },
+    { ids = { 2914, 2763, 221 }, names = { "Gelihast" } },
+    { ids = { 2913, 2764, 222 }, names = { "Lorgus Jett" } },
+    { ids = { 2911, 2766, 225 }, names = { "Twilight Lord Kelris" } },
+    { ids = { 2912, 2765, 224 }, names = { "Old Serra'kis" } },
+    { ids = { 2910, 2767, 226 }, names = { "Aku'mai" } },
   } },
   { key = "BlackmawHold", instance = 2974, bosses = {
     { ids = { 3315 }, names = { "Withermaw" } },
@@ -50,7 +51,7 @@ ns.InstanceDungeonData = {
     { ids = { 241 }, names = { "Plugger Spazzring" } },
     { ids = { 242 }, names = { "Ambassador Flamelash" } },
     { ids = { 244 }, names = { "Magmus" } },
-    { ids = { 2790 }, names = { "Emperor Dagran Thaurissan" } },
+    { ids = { 2790, 245 }, names = { "Emperor Dagran Thaurissan" } },
     { ids = { 2789 }, names = { "Princess Moira Bronzebeard" }, optional = true },
   } },
   { key = "Dalaran", instance = 2959, bosses = {
@@ -65,13 +66,13 @@ ns.InstanceDungeonData = {
     { ids = { 3301 }, names = { "Arcanic Enigma" }, optional = true },
   } },
   { key = "Deadmines", instance = 36, bosses = {
-    { ids = { 2741 }, names = { "Rhahk'Zor" } },
-    { ids = { 2742 }, names = { "Sneed's Shredder", "Sneed" } },
-    { ids = { 2743 }, names = { "Gilnid" } },
-    { ids = { 2745 }, names = { "Mr. Smite" } },
-    { ids = { 2744 }, names = { "Captain Greenskin" } },
-    { ids = { 2747 }, names = { "Edwin VanCleef" } },
-    { ids = { 2746 }, names = { "Cookie" } },
+    { ids = { 2741, 161 }, names = { "Rhahk'Zor" } },
+    { ids = { 2742, 162 }, names = { "Sneed's Shredder", "Sneed" } },
+    { ids = { 2743, 163 }, names = { "Gilnid" } },
+    { ids = { 2745, 164 }, names = { "Mr. Smite" } },
+    { ids = { 2744, 166 }, names = { "Captain Greenskin" } },
+    { ids = { 2747, 167 }, names = { "Edwin VanCleef" } },
+    { ids = { 2746, 165 }, names = { "Cookie" } },
     { ids = { 3676 }, names = { "Miner Johnson" }, rare = true },
   } },
   { key = "DireMaul", instance = 429, bosses = {
@@ -109,11 +110,11 @@ ns.InstanceDungeonData = {
     { ids = { 3482 }, names = { "Relic Guardian" } },
   } },
   { key = "Gnomeregan", instance = 90, bosses = {
-    { ids = { 2768 }, names = { "Grubbis" } },
-    { ids = { 2769 }, names = { "Viscous Fallout" } },
-    { ids = { 2770 }, names = { "Electrocutioner 6000" } },
-    { ids = { 2771 }, names = { "Crowd Pummeler 9-60" } },
-    { ids = { 2772 }, names = { "Mekgineer Thermaplugg" } },
+    { ids = { 2768, 379 }, names = { "Grubbis" } },
+    { ids = { 2769, 378 }, names = { "Viscous Fallout" } },
+    { ids = { 2770, 380 }, names = { "Electrocutioner 6000" } },
+    { ids = { 2771, 381 }, names = { "Crowd Pummeler 9-60" } },
+    { ids = { 2772, 382 }, names = { "Mekgineer Thermaplugg" } },
   } },
   { key = "HallOfThanes", instance = 3065, bosses = {
     { ids = { 3493 }, names = { "Faldrim Anvilmar" } },
@@ -153,25 +154,25 @@ ns.InstanceDungeonData = {
     { ids = { 1084 }, names = { "Onyxia" } },
   } },
   { key = "RagefireChasm", instance = 389, bosses = {
-    { ids = { 2732 }, names = { "Oggleflint" } },
-    { ids = { 2733 }, names = { "Taragaman the Hungerer" } },
-    { ids = { 2734 }, names = { "Jergosh the Invoker" } },
-    { ids = { 2735 }, names = { "Bazzalan" } },
+    { ids = { 2732, 430 }, names = { "Oggleflint" } },
+    { ids = { 2733, 431 }, names = { "Taragaman the Hungerer" } },
+    { ids = { 2734, 432 }, names = { "Jergosh the Invoker" } },
+    { ids = { 2735, 433 }, names = { "Bazzalan" } },
   } },
   { key = "RazorfenDowns", instance = 129, bosses = {
-    { ids = { 2780 }, names = { "Tuten'kash" } },
-    { ids = { 2782 }, names = { "Mordresh Fire Eye" } },
-    { ids = { 2784 }, names = { "Glutton" } },
-    { ids = { 2785 }, names = { "Amnennar the Coldbringer" } },
+    { ids = { 2780, 434 }, names = { "Tuten'kash" } },
+    { ids = { 2782, 435 }, names = { "Mordresh Fire Eye" } },
+    { ids = { 2784, 436 }, names = { "Glutton" } },
+    { ids = { 2785, 437 }, names = { "Amnennar the Coldbringer" } },
     { ids = { 2783 }, names = { "Ragglesnout" }, rare = true },
     { ids = { 2781 }, names = { "Plaguemaw the Rotting" }, rare = true },
   } },
   { key = "RazorfenKraul", instance = 47, bosses = {
-    { ids = { 2774 }, names = { "Aggem Thorncurse" } },
-    { ids = { 2775 }, names = { "Death Speaker Jargba" } },
-    { ids = { 2776 }, names = { "Overlord Ramtusk" } },
-    { ids = { 2777 }, names = { "Agathelos the Raging" } },
-    { ids = { 2778 }, names = { "Charlga Razorflank" } },
+    { ids = { 2774, 439 }, names = { "Aggem Thorncurse" } },
+    { ids = { 2775, 440 }, names = { "Death Speaker Jargba" } },
+    { ids = { 2776, 441 }, names = { "Overlord Ramtusk" } },
+    { ids = { 2777, 883 }, names = { "Agathelos the Raging" } },
+    { ids = { 2778, 443 }, names = { "Charlga Razorflank" } },
     { ids = { 2773 }, names = { "Roogug" }, optional = true },
   } },
   { key = "RuinsOfLordaeron", instance = 2999, bosses = {
@@ -192,7 +193,7 @@ ns.InstanceDungeonData = {
   } },
   { key = "ScarletMonasteryGraveyard", instance = 189, bosses = {
     { ids = { 444 }, names = { "Interrogator Vishas" } },
-    { ids = { 2779 }, names = { "Bloodmage Thalnos" } },
+    { ids = { 2779, 445 }, names = { "Bloodmage Thalnos" } },
   } },
   { key = "ScarletMonasteryLibrary", instance = 189, bosses = {
     { ids = { 446 }, names = { "Houndmaster Loksey" } },
@@ -215,14 +216,14 @@ ns.InstanceDungeonData = {
     { ids = { 3055 }, names = { "Kormok" }, optional = true },
   } },
   { key = "ShadowfangKeep", instance = 33, bosses = {
-    { ids = { 2748 }, names = { "Rethilgore" } },
-    { ids = { 2749 }, names = { "Razorclaw the Butcher" } },
-    { ids = { 2750 }, names = { "Baron Silverlaine" } },
-    { ids = { 2751 }, names = { "Commander Springvale" } },
-    { ids = { 2752 }, names = { "Odo the Blindwatcher" } },
-    { ids = { 2753 }, names = { "Fenrus the Devourer" } },
-    { ids = { 2754 }, names = { "Wolf Master Nandos" } },
-    { ids = { 2755 }, names = { "Archmage Arugal" } },
+    { ids = { 2748, 464 }, names = { "Rethilgore" } },
+    { ids = { 2749, 465 }, names = { "Razorclaw the Butcher" } },
+    { ids = { 2750, 466 }, names = { "Baron Silverlaine" } },
+    { ids = { 2751, 467 }, names = { "Commander Springvale" } },
+    { ids = { 2752, 468 }, names = { "Odo the Blindwatcher" } },
+    { ids = { 2753, 469 }, names = { "Fenrus the Devourer" } },
+    { ids = { 2754, 470 }, names = { "Wolf Master Nandos" } },
+    { ids = { 2755, 471 }, names = { "Archmage Arugal" } },
   } },
   { key = "ShapersTerrace", instance = 3001, bosses = {
     { ids = { 3502 }, names = { "Nanaya" } },
@@ -274,10 +275,10 @@ ns.InstanceDungeonData = {
     { ids = { 554 }, names = { "Archaedas" } },
   } },
   { key = "UpperBlackrockSpire", instance = 229, bosses = {
-    { ids = { 3062 }, names = { "Pyroguard Emberseer" } },
-    { ids = { 3063 }, names = { "Warchief Rend Blackhand" } },
-    { ids = { 3068 }, names = { "The Beast" } },
-    { ids = { 3069 }, names = { "General Drakkisath" } },
+    { ids = { 3062, 276 }, names = { "Pyroguard Emberseer" } },
+    { ids = { 3063, 278 }, names = { "Warchief Rend Blackhand" } },
+    { ids = { 3068, 279 }, names = { "The Beast" } },
+    { ids = { 3069, 280 }, names = { "General Drakkisath" } },
     { ids = { 3070 }, names = { "Lord Valthalak" }, optional = true },
   } },
   { key = "WailingCaverns", instance = 43, bosses = {
