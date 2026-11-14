@@ -21,6 +21,11 @@ ns.InstanceAlertsUI = A
 local CAP_SECONDS = 15
 local NEAR_SECONDS = 8      -- owner, 2026-11-14
 local TOAST_SECONDS = 30    -- paused while the mouse is over it
+-- Motion (owner, 2026-11-14: every component animates). Same engine, time and easing as
+-- Craft.Toast: one Weave tween per panel over { alpha, y }.
+local MOTION = 0.4          -- sonner's transition, Craft.Toast TRANSITION
+local LIFT = 16             -- panels drop in from / leave toward this many px above their slot
+local Weave = LibStub("Weave-1.0")
 
 local kit                   -- UI:Kit(), resolved on first use
 local anchor                -- top-center holder: alert on top, toast under it
@@ -38,6 +43,77 @@ local function text(parent, font, color)
   return fs
 end
 
+------------------------------------------------------------------------------
+-- Motion: enter = fade in dropping LIFT px into its slot; leave = fade out rising back, then
+-- hide; the panels left behind slide to their new slots instead of jumping.
+------------------------------------------------------------------------------
+local function place(f, v)   -- v = { alpha, y below the anchor's top }
+  f:SetAlpha(v[1])
+  f:ClearAllPoints()
+  f:SetPoint("TOP", anchor, "TOP", 0, -v[2])
+end
+
+local function motion(f)
+  local m = kit.ctx:get()
+  f.goal = Weave.signal({ 0, 0 })
+  f.tween = Weave.tween(f.goal, { duration = MOTION,
+    easing = Weave.easing[m.motionEasing] or Weave.easing.outQuad })
+  f.effect = Weave.effect(function()
+    local v = f.tween()
+    if type(v) == "table" then place(f, v) end
+  end)
+end
+
+-- Gives every shown panel its slot (alert on top, toast below) and slides it there.
+local function stack()
+  local y = 0
+  for _, f in ipairs({ cap or false, strip or false, toast or false }) do   -- no nil holes
+    if f and f:IsShown() and not f.leaving then
+      f.slot = y
+      f.goal:set({ 1, y })
+      if f.entering then
+        f.entering = false
+        f.tween:snap({ 0, y - LIFT })   -- start above, transparent, and drop in
+      end
+      y = y + f:GetHeight() + S.alertStack
+    end
+  end
+end
+
+local function dismiss(f)
+  if not f or not f:IsShown() or f.leaving then return end
+  f.leaving = true
+  f.leaveLeft = MOTION
+  f.goal:set({ 0, (f.slot or 0) - LIFT })
+  stack()
+end
+
+-- Shows `f` for `seconds` (re-armed on every show; hover holds it open). The caller fills it
+-- and then calls stack(), which starts the entry.
+local function showFor(f, seconds)
+  f.left = seconds
+  if not f:IsShown() or f.leaving then
+    f.leaving = false
+    f.entering = true
+    f:SetAlpha(0)
+    f:Show()
+  end
+end
+
+local function tick(f, dt)
+  if f.leaving then
+    f.leaveLeft = f.leaveLeft - dt
+    if f.leaveLeft <= 0 then
+      f.leaving = false
+      f:Hide()
+    end
+    return
+  end
+  if f:IsMouseOver() then return end
+  f.left = (f.left or 0) - dt
+  if f.left <= 0 then dismiss(f) end
+end
+
 local function panel(bg, border)
   local f = CreateFrame("Frame", nil, anchor)
   f:SetFrameStrata("HIGH")
@@ -48,37 +124,11 @@ local function panel(bg, border)
   f.border = kit.newBorder(f)
   kit.colorBorder(f.border, border)
   f:EnableMouse(true)
-  f:SetScript("OnMouseUp", function(self) self:Hide() end)
+  f:SetScript("OnMouseUp", dismiss)
+  f:SetScript("OnUpdate", tick)
   f:Hide()
+  motion(f)
   return f
-end
-
--- Shows `f` for `seconds` (re-armed on every show; hover holds it open).
-local function showFor(f, seconds)
-  f.left = seconds
-  f:Show()
-  f:SetScript("OnUpdate", function(self, dt)
-    if self:IsMouseOver() then return end
-    self.left = self.left - dt
-    if self.left <= 0 then self:Hide() end
-  end)
-end
-
--- The alert (or strip) on top, the toast below whatever is shown above it.
-local function stack()
-  local prev
-  local list = { cap or false, strip or false, toast or false }   -- no nil holes: ipairs stops there
-  for _, f in ipairs(list) do
-    if f and f:IsShown() then
-      f:ClearAllPoints()
-      if prev then
-        f:SetPoint("TOP", prev, "BOTTOM", 0, -S.alertStack)
-      else
-        f:SetPoint("TOP", anchor, "TOP", 0, 0)
-      end
-      prev = f
-    end
-  end
 end
 
 local function ensure()
@@ -111,7 +161,6 @@ local function buildCap()
   end
   cap.body:SetPoint("TOPLEFT", cap.icon, "BOTTOMLEFT", 0, -S.alertGap)
   cap.note:SetPoint("TOPLEFT", cap.body, "BOTTOMLEFT", 0, -S.alertGap)
-  cap:HookScript("OnHide", stack)
 end
 
 local function buildStrip()
@@ -120,7 +169,6 @@ local function buildStrip()
   strip.text:SetWidth(S.alertW - 2 * S.alertPadX)
   strip.text:SetWordWrap(true)
   strip.text:SetPoint("TOPLEFT", strip, "TOPLEFT", S.alertPadX, -S.stripPadY)
-  strip:HookScript("OnHide", stack)
 end
 
 -- notice = Alerts.hourNotice(...) (plain numbers: they come from our own list or the game's text)
@@ -128,7 +176,7 @@ function A:ShowHour(notice)
   if not notice or not ensure() then return end
   if notice.kind == "cap" then
     if not cap then buildCap() end
-    if strip then strip:Hide() end
+    dismiss(strip)
     kit.setText(cap.title, L.IT_A_CAP_TITLE:format(notice.count, notice.limit))
     if notice.freeIn and notice.freeIn > 0 then
       kit.setText(cap.body, L.IT_A_CAP_BODY:format(Style.code("text") .. Format.clock(notice.freeIn) .. "|r"))
@@ -141,7 +189,7 @@ function A:ShowHour(notice)
     showFor(cap, CAP_SECONDS)
   else
     if not strip then buildStrip() end
-    if cap and cap:IsShown() then return end   -- the red one says more
+    if cap and cap:IsShown() and not cap.leaving then return end   -- the red one says more
     kit.setText(strip.text, L.IT_A_NEAR:format(notice.count, notice.limit, Format.clock(notice.freeIn or 0)))
     strip:SetHeight(S.stripPadY * 2 + strip.text:GetStringHeight())
     showFor(strip, NEAR_SECONDS)
@@ -216,7 +264,6 @@ local function buildToast()
   end
   toast.share = kit.Craft.Button:Create(toast, { text = L.IT_A_SHARE, size = "sm", onClick = share,
     fontFlags = FONT.toastButton.flags })
-  toast:HookScript("OnHide", stack)
 end
 
 local function layoutToast()
