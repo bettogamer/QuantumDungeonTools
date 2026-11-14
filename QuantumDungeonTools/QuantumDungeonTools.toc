@@ -14,7 +14,7 @@
 libs\LibStub\LibStub.lua
 libs\Weave\Weave.xml
 
-# Craft v2.47.0 (Craft-2.0, build 49). media/ resolves by _hostName
+# Craft v2.50.0 (Craft-2.0, build 52). media/ resolves by _hostName
 # (Interface\AddOns\QuantumDungeonTools\libs\Craft\media\). Mirror order of Craft.toc.
 libs\Craft\Craft.lua
 libs\Craft\Reactive.lua
@@ -86,4 +86,5 @@ modules\InstanceTracker\wow\UI.lua
 modules\InstanceTracker\wow\Alerts.lua
 modules\InstanceTracker\wow\CheckF1.lua
 modules\InstanceTracker\wow\CheckF2.lua
+wow\MainWindow.lua
 Config.lua

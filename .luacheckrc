@@ -50,6 +50,8 @@ files = {
             "issecretvalue", "issecrettable",
             "print",
             "QuantumDungeonToolsDB",
+            -- Main window (MainWindow.lua, plan M1 F6b)
+            "time", "ReloadUI",
         },
     },
 

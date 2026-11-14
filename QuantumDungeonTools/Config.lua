@@ -36,7 +36,9 @@ end
 SLASH_QDT1 = "/qdt"
 SlashCmdList.QDT = function(msg)
   msg = (msg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
-  if msg == "it" or msg == "tracker" then
+  if msg == "" then
+    ns.MainWindow:Toggle("home")
+  elseif msg == "it" or msg == "tracker" then
     ns.InstanceTrackerUI:Toggle()
   elseif msg == "new" then
     ns.InstanceTracker:NewRun()

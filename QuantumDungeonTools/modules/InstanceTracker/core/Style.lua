@@ -45,6 +45,11 @@ C.panelBg     = Style.rgba(HEX.panel, 0.82)     -- compact panel
 C.alertBg     = Style.rgba(HEX.panel, 0.88)     -- 10/10 alert and 8/10 strip (artboard Avisos)
 C.goldBorder  = Style.rgba(HEX.gold, 0.6)       -- 8/10 strip border
 C.shadow      = { r = 0, g = 0, b = 0, a = 0.9 }
+-- Main window (plan M1 F6b, artboard "Ventana principal · Inicio"): same roles, other alphas.
+C.goldCard    = Style.rgba(HEX.gold, 0.35)      -- NOW card border
+C.goldWash    = Style.rgba(HEX.gold, 0.05)      -- NOW card fill
+C.hairlineSoft = Style.rgba(HEX.white, 0.06)    -- OPEN row dividers, idle module card
+C.mutedTag    = Style.rgba(HEX.muted, 0.35)     -- SOON tag border
 Style.C = C
 
 -- Semantic tones the view model (core/View.lua) speaks -> color.
@@ -143,6 +148,16 @@ Style.SIZE = {
 Style.GEO = 1000 / 932
 for k, v in pairs(Style.SIZE) do Style.SIZE[k] = math.floor(v * Style.GEO + 0.5) end
 
+-- Main window layout (plan M1 F6b, artboard "Ventana principal · Inicio"), px at scale 1.
+Style.WIN = {
+  width = 980, height = 640, minWidth = 820, minHeight = 560,
+  sidebar = 220, brandH = 64, footRow = 32, versionH = 22,
+  topBar = 52, padX = 28, padY = 22, gap = 18,
+  headH = 74,          -- kicker + title + subtitle, plus its bottom rule
+  nowH = 66, openRowH = 44, openColGap = 48, moduleH = 44, moduleGap = 8,
+}
+for k, v in pairs(Style.WIN) do Style.WIN[k] = math.floor(v * Style.GEO + 0.5) end   -- same ratio as SIZE
+
 -- `flags` overrides the theme outline ("OUTLINE, SLUG") for one element: the Slug outline is
 -- vector and grows with the font size, so the big clock blurs with it; there the classic ~1 px
 -- OUTLINE reads better (owner, 2026-11-13).
@@ -181,6 +196,23 @@ Style.FONT = {
   toastTag    = { size = 10, weight = "bold", flags = "" },     -- NEW RECORD: gold block (Oro Forever)
   toastButton = { flags = "" },                                 -- Craft.Button keeps its own size
   panelTag    = { size = 10, weight = "medium", flags = "" },   -- RARE on the compact panel
+  -- Main window (F6b): a solid panel, so no outline anywhere.
+  winBrand    = { size = 17, weight = "bold", flags = "" },     -- "Quantum" on the sidebar
+  winBrandSub = { size = 10, weight = "semibold", flags = "" }, -- "DUNGEON TOOLS"
+  winVersion  = { size = 10, weight = "medium", flags = "" },
+  winKicker   = { size = 11, weight = "medium", flags = "" },   -- addon name over the page title
+  winTitle    = { size = 26, weight = "semibold", flags = "" },
+  winSub      = { size = 12, weight = "medium", flags = "" },
+  winSection  = { size = 11, weight = "semibold", flags = "" }, -- NOW / OPEN / MODULES
+  winNowName  = { size = 15, weight = "semibold", flags = "" },
+  winNowLine  = { size = 12, weight = "medium", flags = "" },
+  winClock    = { size = 26, weight = "bold", flags = "" },
+  winDelta    = { size = 11, weight = "medium", flags = "" },
+  winHourNum  = { size = 18, weight = "bold", flags = "" },
+  winRow      = { size = 13, weight = "medium", flags = "" },
+  winRowSub   = { size = 11, weight = "medium", flags = "" },
+  winModule   = { size = 14, weight = "semibold", flags = "" },
+  winTag      = { size = 9, weight = "semibold", flags = "" },  -- SOON
 }
 
 return Style

@@ -10,8 +10,9 @@ ns.L = L
 L.MSG_LOADED   = "%s v%s loaded. Type /qdt for options."
 L.MSG_ON       = "on"
 L.MSG_OFF      = "off"
-L.HELP_USAGE   = "usage: /qdt [it | it compact | it demo | it alert | new | history | auto | info | check f1|f2]"
+L.HELP_USAGE   = "usage: /qdt [help | it | it compact | it demo | it alert | new | history | auto | info | check f1|f2]"
 L.HELP_LINES   = {
+  "/qdt -- open the main window",
   "/qdt it -- show/hide the Instance Tracker widget",
   "/qdt it compact -- one-line widget, bosses on hover (on/off)",
   "/qdt it demo <live | done | first | compact | off> -- preview a state of the widget",
@@ -120,6 +121,44 @@ L.CHECK_F1_STATIC = "globals %d/%d present, events %d/%d valid"
 L.CHECK_F1_ARMED  = "passive log ON (survives /reload). '/qdt check f1 off' clears it."
 L.CHECK_F1_OFF    = "check f1: data cleared, passive log OFF."
 
+-- Main window (plan M1 F6b)
+L.MW_HOME          = "Home"
+L.MW_HOME_SUB      = "What is going on in your dungeon, and every module one click away."
+L.MW_DUNGEONS      = "DUNGEONS"
+L.MW_LENS          = "Minimap Lens"
+L.MW_LENS_DESC     = "Big minimap inside the dungeon"
+L.MW_SOON          = "SOON"
+L.MW_SOON_TIP      = "Coming soon"
+L.MW_SOON_TITLE    = "Coming soon"
+L.MW_SOON_DESC     = "This page arrives in a future version."
+L.MW_GENERAL       = "General settings"
+L.MW_GENERAL_SUB   = "What applies to the whole addon."
+L.MW_NEWS          = "What's new"
+L.MW_NEWS_SUB      = "What changed in each version."
+L.MW_RELOAD        = "Reload UI"
+L.MW_CLOSE         = "Close"
+L.MW_NOW           = "NOW"
+L.MW_OPEN          = "OPEN"
+L.MW_MODULES       = "MODULES"
+L.MW_HOUR          = "Instances last hour"
+L.MW_NOW_RECORD    = "record %s"
+L.MW_VS_RECORD     = "%s vs record"
+L.MW_NO_RUN_HINT   = "The run starts when you enter a dungeon."
+L.MW_OPEN_HISTORY  = "Run history"
+L.MW_OPEN_HISTORY_SUB = "100 runs of the account, with filters"
+L.MW_OPEN_WIDGET   = "Instance Tracker widget"
+L.MW_OPEN_WIDGET_SUB = "Shows on its own inside a dungeon"
+L.MW_OPEN_ALERTS   = "Alert preview"
+L.MW_OPEN_ALERTS_SUB = "10/10 alert, 8/10 strip and toast"
+L.MW_OPEN_MOVE     = "Move frames"
+L.MW_OPEN_MOVE_SUB = "Unlocks the widget and the alerts"
+L.MW_BTN_OPEN      = "Open"
+L.MW_BTN_SHOW      = "Show"
+L.MW_BTN_TRY       = "Try"
+L.MW_BTN_MOVE      = "Move"
+L.MW_CONFIGURE     = "Configure ›"
+L.MW_IT_DESC       = "Run time, records, gold and XP, instances per hour"
+
 local locale = GetLocale()
 -- Supported: enUS (default) and Latin American Spanish (esMX, owner 2026-11-12). esES gets the
 -- same Latin American text rather than falling back to English.
@@ -127,8 +166,9 @@ if locale == "esES" or locale == "esMX" then
   L.MSG_LOADED   = "%s v%s cargado. Escribe /qdt para opciones."
   L.MSG_ON       = "activado"
   L.MSG_OFF      = "desactivado"
-  L.HELP_USAGE   = "uso: /qdt [it | it compact | it demo | it alert | new | history | auto | info | check f1|f2]"
+  L.HELP_USAGE   = "uso: /qdt [help | it | it compact | it demo | it alert | new | history | auto | info | check f1|f2]"
   L.HELP_LINES   = {
+    "/qdt -- abrir la ventana principal",
     "/qdt it -- mostrar/ocultar el widget del Instance Tracker",
     "/qdt it compact -- widget en una línea, jefes al pasar el mouse (sí/no)",
     "/qdt it demo <live | done | first | compact | off> -- ver un estado del widget",
@@ -232,4 +272,42 @@ if locale == "esES" or locale == "esMX" then
   L.CHECK_F1_STATIC = "globales %d/%d presentes, eventos %d/%d válidos"
   L.CHECK_F1_ARMED  = "registro pasivo ACTIVADO (sobrevive a /reload). '/qdt check f1 off' lo borra."
   L.CHECK_F1_OFF    = "check f1: datos borrados, registro pasivo DESACTIVADO."
+
+  -- Ventana principal (plan M1 F6b)
+  L.MW_HOME          = "Inicio"
+  L.MW_HOME_SUB      = "Lo que pasa ahora en tu mazmorra, y cada módulo a un clic."
+  L.MW_DUNGEONS      = "MAZMORRAS"
+  L.MW_LENS          = "Minimap Lens"
+  L.MW_LENS_DESC     = "Minimapa grande dentro de la mazmorra"
+  L.MW_SOON          = "PRONTO"
+  L.MW_SOON_TIP      = "Pronto"
+  L.MW_SOON_TITLE    = "Muy pronto"
+  L.MW_SOON_DESC     = "Esta página llega en una próxima versión."
+  L.MW_GENERAL       = "Ajustes generales"
+  L.MW_GENERAL_SUB   = "Lo que vale para todo el addon."
+  L.MW_NEWS          = "Novedades"
+  L.MW_NEWS_SUB      = "Qué cambió en cada versión."
+  L.MW_RELOAD        = "Recargar UI"
+  L.MW_CLOSE         = "Cerrar"
+  L.MW_NOW           = "AHORA"
+  L.MW_OPEN          = "ABRIR"
+  L.MW_MODULES       = "MÓDULOS"
+  L.MW_HOUR          = "Instancias última hora"
+  L.MW_NOW_RECORD    = "récord %s"
+  L.MW_VS_RECORD     = "%s vs récord"
+  L.MW_NO_RUN_HINT   = "La run empieza al entrar en una mazmorra."
+  L.MW_OPEN_HISTORY  = "Historial de runs"
+  L.MW_OPEN_HISTORY_SUB = "100 runs de la cuenta, con filtros"
+  L.MW_OPEN_WIDGET   = "Widget del Instance Tracker"
+  L.MW_OPEN_WIDGET_SUB = "Se ve solo dentro de una mazmorra"
+  L.MW_OPEN_ALERTS   = "Vista previa de avisos"
+  L.MW_OPEN_ALERTS_SUB = "Aviso 10/10, franja 8/10 y toast"
+  L.MW_OPEN_MOVE     = "Mover marcos"
+  L.MW_OPEN_MOVE_SUB = "Desbloquea el widget y los avisos"
+  L.MW_BTN_OPEN      = "Abrir"
+  L.MW_BTN_SHOW      = "Mostrar"
+  L.MW_BTN_TRY       = "Probar"
+  L.MW_BTN_MOVE      = "Mover"
+  L.MW_CONFIGURE     = "Configurar ›"
+  L.MW_IT_DESC       = "Tiempo de run, récords, oro y XP, instancias por hora"
 end

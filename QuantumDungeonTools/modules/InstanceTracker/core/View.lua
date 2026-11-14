@@ -239,4 +239,36 @@ function View.markerIndex(text)
   return nil
 end
 
+-- The NOW card of the main window's Home page (plan M1 F6b), from a View.build result and an
+-- hour snapshot ({ count, limit }, Hourly.snapshot). Both may be missing: nil run = no card,
+-- the hour counter still shows (it is account-wide, not tied to a run).
+--   -> { run = nil | { name, difficulty, bosses = "4/6", record = "29:51" | nil, deaths,
+--        clock, clockTone, delta = nil | { text, tone, kind } }, hour = nil | { text = "8/10", tone } }
+-- hour.tone: "behind" at the cap, "progress" from the amber strip on (limit - near), else "text".
+function View.now(v, hour, near)
+  local out = {}
+  if v then
+    local r = {
+      name = v.name, difficulty = v.difficulty,
+      bosses = v.totalKnown and (v.killed .. "/" .. v.total) or tostring(v.killed),
+      record = v.ref and v.ref.kind == "pb" and v.ref.text or nil,
+      deaths = v.deaths,
+      clock = v.clock, clockTone = v.clockTone,
+    }
+    local n = v.note
+    if n and (n.kind == "vsPB" or n.kind == "newRecord") then
+      r.delta = { text = n.text, kind = n.kind, tone = n.kind == "newRecord" and "ahead" or n.tone }
+    end
+    out.run = r
+  end
+  if type(hour) == "table" and num(hour.count) and num(hour.limit) then
+    near = num(near) and near or 2
+    local tone = "text"
+    if hour.count >= hour.limit then tone = "behind"
+    elseif hour.count >= hour.limit - near then tone = "progress" end
+    out.hour = { text = hour.count .. "/" .. hour.limit, tone = tone }
+  end
+  return out
+end
+
 return View
