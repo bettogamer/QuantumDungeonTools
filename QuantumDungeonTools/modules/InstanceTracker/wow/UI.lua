@@ -1233,6 +1233,9 @@ function UI:Init()
       font = Craft.mediaPath .. "BettoGeo-Medium.ttf",
       primary = C.gold, primaryForeground = C.panel,             -- Forever gold on navy (9.7:1)
       sidebarPrimary = C.gold, sidebarPrimaryForeground = C.panel,
+      -- Main window sidebar (F6b, artboard Inicio): darker navy, active row in gold.
+      sidebar = C.sidebar, sidebarForeground = C.cream, sidebarBorder = C.hairline,
+      sidebarAccent = C.sidebarActive, sidebarAccentForeground = C.gold,
       foreground = C.cream, mutedForeground = C.muted,
       popover = C.panel, popoverForeground = C.cream,
       border = C.hairline, destructive = C.red,

@@ -17,6 +17,12 @@ function Style.rgba(hex, a)
   return { r = tonumber(r, 16) / 255, g = tonumber(g, 16) / 255, b = tonumber(b, 16) / 255, a = a or 1 }
 end
 
+-- `top` drawn at alpha `a` over the opaque `base`: the color the eye sees (for opaque-only sinks).
+function Style.over(base, top, a)
+  local function ch(k) return base[k] + (top[k] - base[k]) * a end
+  return { r = ch("r"), g = ch("g"), b = ch("b"), a = 1 }
+end
+
 local HEX = {
   gold      = Brand.COLORS.primary,   -- F5BF57
   turquoise = Brand.COLORS.accent,    -- 36C9E8
@@ -50,6 +56,10 @@ C.goldCard    = Style.rgba(HEX.gold, 0.35)      -- NOW card border
 C.goldWash    = Style.rgba(HEX.gold, 0.05)      -- NOW card fill
 C.hairlineSoft = Style.rgba(HEX.white, 0.06)    -- OPEN row dividers, idle module card
 C.mutedTag    = Style.rgba(HEX.muted, 0.35)     -- SOON tag border
+-- Craft paints the sidebar fill and its active row OPAQUE (alpha forced to 1), so the canvas'
+-- "navy + black 22 %" and "gold 8 % on it" are pre-composited here from the same roles.
+C.sidebar       = Style.over(C.panel, { r = 0, g = 0, b = 0 }, 0.22)
+C.sidebarActive = Style.over(C.sidebar, C.gold, 0.08)
 Style.C = C
 
 -- Semantic tones the view model (core/View.lua) speaks -> color.
@@ -151,7 +161,7 @@ for k, v in pairs(Style.SIZE) do Style.SIZE[k] = math.floor(v * Style.GEO + 0.5)
 -- Main window layout (plan M1 F6b, artboard "Ventana principal · Inicio"), px at scale 1.
 Style.WIN = {
   width = 980, height = 640, minWidth = 820, minHeight = 560,
-  sidebar = 220, brandH = 64, footRow = 32, versionH = 22,
+  sidebar = 220, brandH = 64, versionH = 22,
   topBar = 52, padX = 28, padY = 22, gap = 18,
   headH = 74,          -- kicker + title + subtitle, plus its bottom rule
   nowH = 66, openRowH = 44, openColGap = 48, moduleH = 44, moduleGap = 8,

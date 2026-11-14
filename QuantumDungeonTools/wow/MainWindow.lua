@@ -322,8 +322,10 @@ local function buildSidebar(content)
   win:EnableDragFrom(brand)
 
   -- Bottom block: a second Sidebar so the pinned rows look and select like the top ones.
+  -- Craft rows are not GEO-scaled: 2 rows of 32 + its 8 px group padding above and below.
+  local footH = 2 * 32 + 16
   local footer = side:GetFooter()
-  footer:SetHeight(2 * WIN.footRow + 8 + WIN.versionH)
+  footer:SetHeight(footH + WIN.versionH)
   foot = Craft.Sidebar:Create(footer, {
     size = "default",
     items = {
@@ -335,7 +337,7 @@ local function buildSidebar(content)
   local ff = foot:GetFrame()
   ff:SetPoint("TOPLEFT", footer, "TOPLEFT", 0, 0)
   ff:SetPoint("TOPRIGHT", footer, "TOPRIGHT", 0, 0)
-  ff:SetHeight(2 * WIN.footRow + 8)
+  ff:SetHeight(footH)
   home.version = text(footer, FONT.winVersion, C.tickIdle)
   home.version:SetPoint("BOTTOMLEFT", footer, "BOTTOMLEFT", 16, 8)
   side:RefreshLayout()
@@ -422,7 +424,8 @@ function MW:Open(id)
     ns.say(L.IT_NO_CRAFT)
     return
   end
-  home.version:SetText("v" .. (ns.version or "dev"))
+  local ver = ns.version or "dev"
+  home.version:SetText(ver == "dev" and ver or ("v" .. ver))
   win:Show()
   self:Navigate(id or current or "home")
 end
