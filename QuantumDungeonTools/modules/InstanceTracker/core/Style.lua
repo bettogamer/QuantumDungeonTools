@@ -174,6 +174,9 @@ Style.FONT = {
   toastClock  = { size = 34, weight = "bold", flags = "" },
   toastDelta  = { size = 14, weight = "medium", flags = "" },
   toastStat   = { size = 13, weight = "semibold", flags = "" },
+  toastTag    = { size = 11, weight = "bold", flags = "" },     -- NEW RECORD on the toast
+  toastButton = { flags = "" },                                 -- Craft.Button keeps its own size
+  panelTag    = { size = 10, weight = "medium", flags = "" },   -- RARE on the compact panel
 }
 
 return Style

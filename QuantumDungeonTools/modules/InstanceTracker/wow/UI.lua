@@ -91,6 +91,7 @@ local function newTag(parent, font, padX, padY)
     fontWeight = font.weight,
     paddingX   = (padX or S.tagPadX) - 1,
     paddingY   = padY or S.tagPadY,
+    fontFlags  = font.flags,   -- nil = the theme's outline (HUD); "" on solid panels (FR-102)
   })
   local frame = badge:GetFrame()
   frame.badge = badge
@@ -843,7 +844,7 @@ local function panelLine(i)
   p.left:SetPoint("LEFT", p, "LEFT", 0, 0)
   p.right = newPanelText(p)
   p.right:SetPoint("RIGHT", p, "RIGHT", 0, 0)
-  p.tag = newTag(p, FONT.rareTag, S.rareTagPadX, S.rareTagPadY)
+  p.tag = newTag(p, FONT.panelTag, S.rareTagPadX, S.rareTagPadY)
   p.tag:SetPoint("LEFT", p.left, "RIGHT", S.panelTagGap, 0)
   p.sep = p:CreateTexture(nil, "ARTWORK")
   p.sep:SetAllPoints()

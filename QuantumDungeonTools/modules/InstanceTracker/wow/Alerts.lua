@@ -156,7 +156,7 @@ local STAT_LABEL = { deaths = "IT_A_DEATHS", xp = "IT_A_XP", gold = "IT_A_GOLD",
 
 local function statValue(s)
   if s.id == "deaths" then return tostring(s.value) end
-  if s.id == "gold" then return kit.moneyText(s.value) end
+  if s.id == "gold" then return kit.moneyText(Alerts.dropCopper(s.value)) end
   return (s.value > 0 and "+" or "") .. Format.thousands(s.value)
 end
 
@@ -195,7 +195,7 @@ local function buildToast()
   local inner = S.alertW - 2 * S.alertPadX
   toast.title = text(toast, FONT.alertTitle, C.cream)
   toast.title:SetPoint("TOPLEFT", toast, "TOPLEFT", S.alertPadX, -S.alertPadY)
-  toast.tag = kit.newTag(toast, FONT.tagStrong)
+  toast.tag = kit.newTag(toast, FONT.toastTag)
   toast.tag:SetPoint("TOPRIGHT", toast, "TOPRIGHT", -S.alertPadX, -S.alertPadY)
   toast.line = toast:CreateTexture(nil, "ARTWORK")
   kit.setColor(toast.line, C.hairline)
@@ -214,7 +214,8 @@ local function buildToast()
     v:SetPoint("TOPLEFT", k, "BOTTOMLEFT", 0, -S.toastStatKV)
     toast.stats[i] = { k = k, v = v }
   end
-  toast.share = kit.Craft.Button:Create(toast, { text = L.IT_A_SHARE, size = "sm", onClick = share })
+  toast.share = kit.Craft.Button:Create(toast, { text = L.IT_A_SHARE, size = "sm", onClick = share,
+    fontFlags = FONT.toastButton.flags })
   toast:HookScript("OnHide", stack)
 end
 

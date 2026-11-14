@@ -81,6 +81,13 @@ function Alerts.toast(run, opts)
   return t
 end
 
+-- The toast's gold column fits two denominations (artboard: "+7 [g] 80 [s]"): with gold, the
+-- copper is dropped (floored to the silver); below 1 gold it is kept.
+function Alerts.dropCopper(copper)
+  if not num(copper) or copper < 10000 then return copper end
+  return copper - copper % 100
+end
+
 -- coins(78012) -> "7g 80s 12c" (chat cannot carry coin textures); zero denominations dropped.
 function Alerts.coins(copper)
   if not num(copper) or copper <= 0 then return "0c" end
