@@ -84,19 +84,21 @@ Style.SIZE = {
   xpTop     = 2,    -- extra space above the XP bar
   totalsTop = 2,    -- extra space above the totals row
   bossGap   = 3,
-  bossTop   = 4,    -- extra space before the boss list (owner 2026-11-13: 10 left a hole)
+  bossTop   = 10,   -- extra space before the boss list (design value; owner 2026-11-13)
   rareTop   = 4,    -- extra space before the first rare
   rareTagPadX = 4,
   rareTagPadY = 1,
   rowGap    = 8,    -- between the pieces of a right-aligned row
   extrasGap = 20,   -- between money and reputation in the totals row (design option B: 20)
   repMinW   = 60,   -- totals row: below this room the faction is hidden instead of cut
-  coinSize  = 11,   -- inline coin icons in the totals row (= FONT.small size)
+  coinSize  = 10,   -- inline coin icons in the totals row (design: 10)
   coinBefore = 2,   -- design: margin 0 5px 0 2px around each coin icon
   coinAfter  = 5,
   compactPadX = 10,
   compactPadY = 6,
   compactSep  = 14, -- height of the compact separators
+  compactGap  = 10, -- between every piece of the compact bar (design)
+  infoSep     = 10, -- each side of the "·" in the info row (design gap 10)
 }
 
 -- The numbers above and the font sizes below are the CSS px of the design canvas. WoW sizes

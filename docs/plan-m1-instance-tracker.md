@@ -306,6 +306,26 @@ Pendiente, en este orden:
    ✅ Hecho: `fitText` en UI.lua (corta solo el nombre, nunca tiempo/delta/tag) + `S.xpTop`/`S.totalsTop`.
    Los gaps 8 (filas de jefe) y 10 (fila del reloj) siguen literales: tokenizarlos los escalaría ×1000/932
    (8→9, 10→11) = cambio visual; decidir en el cotejo. Pendiente prueba in-game con nombre largo.
+2b. **Cotejo resuelto por el owner** (docs/15, 2026-11-13): manda el DISEÑO en Main, Compacto (incluida la
+   posición del panel), Detalle y las menores; RARO a 10 px en el lienzo (v37); PRIMERA VEZ en semibold
+   (= el fichero Medium: el lienzo pinta 100–600 con un solo fichero y no hay BettoGeo SemiBold, así que
+   las «cifras en negrita» del diseño ya coinciden con el código).
+   ✅ Hecho en código: bossTop 10, monedas 10, tachado 1 px, PRIMERA VEZ medium, `·` de la info con
+   10 px a cada lado (texturas espaciadoras), compacto con gap 10 entre piezas, muertes del panel en
+   muted, `—` para jefe sin hora, etiquetas del Detalle en sand y sin líneas entre secciones, delta con
+   `−` (U+2212, BettoGeo lo trae).
+   Pendiente (siguiente sesión, en este orden):
+   a. **Pausa: diseño primero** (lienzo v37 lo separa en «En pausa» y «Retomada», con etiqueta solo de
+      borde, barra lisa en tickIdle y sin ↺, que BettoGeo no trae). Esperar el OK del owner antes del código.
+   b. **Panel propio del compacto** en lugar de Craft.Tooltip (que no admite ancho fijo, alineación,
+      tamaño por línea ni badges): 260 px, a la DERECHA bajo la barra a 10 px, fondo sólido panel,
+      padding 10×12, gap 6, jefes 12 px, cabecera/pie 11 px, badge RARO con borde, separadores hairline.
+      Pie «Récord 31:40 · hace N días» (`pb.at` ya existe en Records; falta la cadena en Locale).
+   c. Completada: «· N nivel(es)» en `IT_XP_RUN` (View necesita el nivel de inicio de la run).
+   d. Detalle: medidas del panel (300 px, padding 12, gap 10/4) también requieren panel propio o un FR
+      a Craft.Tooltip. `≈` NO está en BettoGeo: se queda `~` hasta que el owner añada el glifo. La línea
+      «Pasa el ratón para ver el detalle» del artboard: preguntar si es nota del lienzo o va en el widget.
+   e. El letter-spacing del diseño no se puede hacer con FontStrings: queda fuera.
 3. F5 (abajo).
 
 ## Puntos abiertos

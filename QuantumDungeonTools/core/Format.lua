@@ -27,13 +27,14 @@ function Format.clock(sec)
   return string.format("%d:%02d", m, s)
 end
 
--- delta(-12) -> "-0:12"; delta(20) -> "+0:20"; delta(0) -> "0:00". ASCII minus on purpose:
--- the widget font may not carry U+2212.
+-- delta(-12) -> "\226\136\1460:12" (U+2212 minus, as in the design: BettoGeo carries it and
+-- only the widget shows deltas); delta(20) -> "+0:20"; delta(0) -> "0:00".
+local MINUS = "\226\136\146"
 function Format.delta(sec)
   if type(sec) ~= "number" or sec ~= sec then sec = 0 end
   local whole = math.floor(math.abs(sec) + 0.5)
   if whole == 0 then return "0:00" end
-  return (sec < 0 and "-" or "+") .. Format.clock(whole)
+  return (sec < 0 and MINUS or "+") .. Format.clock(whole)
 end
 
 -- thousands(1234567) -> "1,234,567". Plain Lua on purpose: never pass it a secret value.

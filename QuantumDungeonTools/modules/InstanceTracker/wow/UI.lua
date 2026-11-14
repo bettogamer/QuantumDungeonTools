@@ -278,7 +278,7 @@ local function detailRow(r)
     left = r.id == "nextSlot" and L.IT_D_NEXT_SLOT or L.IT_D_THEN_SLOT
     right = L.IT_D_IN:format(r.text)
   end
-  return { left, right, leftColor = C.cream, rightColor = Style.tone(r.tone) }
+  return { left, right, leftColor = C.sand, rightColor = Style.tone(r.tone) }
 end
 
 local function detailLines()
@@ -288,7 +288,7 @@ local function detailLines()
   local lines = {}
   for i, sec in ipairs(sections) do
     local title = sec.id == "instances" and L.IT_D_INSTANCES:format(sec.count, sec.limit) or L[SECTION_TITLE[sec.id]]
-    lines[#lines + 1] = { title, leftColor = C.muted, separator = i > 1 or nil }
+    lines[#lines + 1] = { title, leftColor = C.muted }   -- design: no hairlines between sections
     for _, r in ipairs(sec.rows) do lines[#lines + 1] = detailRow(r) end
   end
   return lines
@@ -330,8 +330,8 @@ local function buildFull()
   W.strike = W.clockRow:CreateTexture(nil, "OVERLAY", nil, 7)
   W.strike:SetPoint("LEFT", W.ref, "LEFT", -1, 0)
   W.strike:SetPoint("RIGHT", W.ref, "RIGHT", 1, 0)
-  W.strike:SetHeight(2)
-  W.first = newTag(W.clockRow, FONT.tagStrong)
+  W.strike:SetHeight(1)   -- design: line-through, 1 px
+  W.first = newTag(W.clockRow, FONT.tag)   -- design 600 = the Medium file (no SemiBold)
 
   -- Info row: "Bosses 3/7 · vs. record -0:17" (+ NEW RECORD tag)
   W.infoRow = newRow(full)
@@ -494,7 +494,11 @@ local function paintXP(xp)
   W.xp:SetHeight(S.xpBarH + 3 + math.ceil(W.xpLeft:GetStringHeight()))
 end
 
-local SEP = "  ·  "
+-- " · " with the design's 10 px each side: BettoGeo spaces are ~3.5 px, so the gaps are spacer
+-- textures like the coin margins. SEP_END closes a row whose next piece is a tag: the chain gap
+-- gives the space after the dot (a trailing texture is not measured).
+local SEP = spacer(S.infoSep) .. "·" .. spacer(S.infoSep)
+local SEP_END = spacer(S.infoSep) .. "·"
 
 local function infoText(v)
   local total = v.totalKnown and tostring(v.total) or "?"
@@ -507,7 +511,7 @@ local function infoText(v)
   elseif note and note.kind == "firstHint" then
     text = text .. SEP .. L.IT_FIRST_HINT
   elseif note and note.kind == "newRecord" then
-    text = text .. SEP
+    text = text .. SEP_END
   end
   return text
 end
@@ -569,7 +573,7 @@ local function renderFull(v)
     W.record:Hide()
   end
   local infoRow = { W.record, W.info }
-  chain(W.infoRow, infoRow, "", 0)
+  chain(W.infoRow, infoRow, "", S.infoSep)
   place(W.infoRow, heightOf(infoRow))
 
   -- Bar
@@ -670,11 +674,11 @@ local function compactLines()
   if not v then return {} end
   local title = v.name .. (v.difficulty and (" · " .. v.difficulty) or "")
   local deaths = v.deaths and (v.deaths == 1 and L.IT_DEATH or L.IT_DEATHS):format(v.deaths) or nil
-  local lines = { { title, deaths, leftColor = C.muted, rightColor = C.red } }
+  local lines = { { title, deaths, leftColor = C.muted, rightColor = C.muted } }
   lines[#lines + 1] = { separator = true }
   for _, b in ipairs(v.bosses) do
     local tone = Style.tone(b.tone)
-    local time = b.time ~= "" and (b.time:gsub("[%[%]]", "")) or "--"
+    local time = b.time ~= "" and (b.time:gsub("[%[%]]", "")) or "\226\128\148"   -- U+2014
     local left = b.rare and (b.name .. "  " .. Style.code("muted") .. L.IT_RARE .. "|r") or b.name
     lines[#lines + 1] = { left, time, leftColor = tone, rightColor = tone }
   end
@@ -724,11 +728,11 @@ local function renderCompact(v)
       r:ClearAllPoints()
       r:SetPoint("LEFT", K.frame, "LEFT", x, 0)
       local w = r.GetStringWidth and math.ceil(r:GetStringWidth()) or r:GetWidth()
-      x = x + w + (r == K.clock and 4 or S.rowGap + 2)
+      x = x + w + S.compactGap
     end
   end
   local h = heightOf({ K.bosses, K.clock }) + 2 * S.compactPadY
-  K.frame:SetSize(x - S.rowGap - 2 + S.compactPadX, h)
+  K.frame:SetSize(x - S.compactGap + S.compactPadX, h)
   return K.frame:GetWidth(), h
 end
 
