@@ -919,6 +919,42 @@ local function renderPanel()
   K.panel:SetSize(S.panelW, y - S.panelGap + S.panelPadY)
 end
 
+-- Motion (owner, 2026-11-14: every component animates): the theme's overlay tokens, as Craft's
+-- popovers: fade in while dropping `motionSlide` px into place in `motionFast` s; out the same
+-- way, then hidden. A drag hides it at once (snap).
+local function panelMotion()
+  local Weave = LibStub("Weave-1.0")
+  local m = ctx:get()
+  local slide = m.motionSlide or 8
+  K.panelGoal = Weave.signal(0)
+  K.panelTween = Weave.tween(K.panelGoal, { duration = m.motionFast or 0.12,
+    easing = Weave.easing[m.motionEasing] or Weave.easing.outQuad })
+  K.panelFx = Weave.effect(function()
+    local v = K.panelTween()
+    if type(v) ~= "number" then return end
+    local p = K.panel
+    p:SetAlpha(v)
+    p:ClearAllPoints()
+    p:SetPoint("TOPRIGHT", K.frame, "BOTTOMRIGHT", 0, -S.panelTop + (1 - v) * slide)
+    if v <= 0 and K.panelGoal:peek() == 0 then p:Hide() end
+  end)
+end
+
+local function showPanel()
+  renderPanel()
+  if not lastView then return end
+  if not K.panel:IsShown() then
+    K.panel:SetAlpha(0)
+    K.panel:Show()
+  end
+  K.panelGoal:set(1)
+end
+
+local function hidePanel(now)
+  K.panelGoal:set(0)
+  if now then K.panelTween:snap(0) end
+end
+
 local function buildPanel()
   local p = CreateFrame("Frame", nil, K.frame)
   p:SetFrameStrata("TOOLTIP")
@@ -930,12 +966,10 @@ local function buildPanel()
   K.panelBg:SetAllPoints()
   K.panelBorder = newBorder(p)
   K.lines = {}
-  K.frame:HookScript("OnEnter", function()
-    renderPanel()
-    K.panel:Show()
-  end)
-  K.frame:HookScript("OnLeave", function() K.panel:Hide() end)
-  K.frame:HookScript("OnDragStart", function() K.panel:Hide() end)
+  panelMotion()
+  K.frame:HookScript("OnEnter", showPanel)
+  K.frame:HookScript("OnLeave", function() hidePanel() end)
+  K.frame:HookScript("OnDragStart", function() hidePanel(true) end)
 end
 
 local function buildCompact()

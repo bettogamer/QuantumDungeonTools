@@ -320,8 +320,11 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 
 > **Sesión F5 (2026-11-14, cierre):** F5 hecha en código (`9b6e7a4`, `e35bb2a`) y desplegada.
 > ✅ Vistas previas OK in-game (owner, 2026-11-14) tras dos ajustes: sin contorno en textos sobre fondo y
-> todo componente animado (Weave.tween, memoria `feedback-componentes-animados`). Pendiente menor: animar
-> también el panel hover del compacto. Después: **F4c**
+> todo componente animado (Weave.tween, memoria `feedback-componentes-animados`). Panel hover del compacto
+> también animado (motionFast/motionSlide del tema). Toast rediseñado con ui-critic (docs/17) y lienzo
+> v46: «Oro Forever» (botón oro, NUEVO RÉCORD oro relleno), delta 16 px + «vs récord», columnas
+> 1/1/1.5/1, ritmo 4/14/14; BettoGeo mínimo Medium en todo (lienzo incluido); artboard «Ping» = solo B
+> sin tooltip. Falta solo ver el toast nuevo in-game (`/qdt it alert toast`). Después: **F4c**
 > (% de trash con los totales de FDJ + tiempo fuera) y luego **F6**. Nada a medias.
 
 > **Sesión FDJ (2026-11-13, cierre):** inventario de ForeverDungeonJournal y cotejo de encounterID en
