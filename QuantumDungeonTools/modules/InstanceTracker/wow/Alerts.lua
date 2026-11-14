@@ -67,7 +67,8 @@ end
 -- The alert (or strip) on top, the toast below whatever is shown above it.
 local function stack()
   local prev
-  for _, f in ipairs({ cap, strip, toast }) do
+  local list = { cap or false, strip or false, toast or false }   -- no nil holes: ipairs stops there
+  for _, f in ipairs(list) do
     if f and f:IsShown() then
       f:ClearAllPoints()
       if prev then
