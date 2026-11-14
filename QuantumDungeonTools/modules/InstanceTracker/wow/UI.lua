@@ -336,6 +336,8 @@ local function buildFull()
   -- Info row: "Bosses 3/7 · vs. record -0:17" (+ NEW RECORD tag)
   W.infoRow = newRow(full)
   W.info = newText(W.infoRow, FONT.info)
+  W.infoDot = newText(W.infoRow, FONT.info)
+  W.infoNote = newText(W.infoRow, FONT.info)
   W.record = newTag(W.infoRow, FONT.tagStrong)
 
   -- Time bar (with record) / boss segments (first time)
@@ -494,26 +496,22 @@ local function paintXP(xp)
   W.xp:SetHeight(S.xpBarH + 3 + math.ceil(W.xpLeft:GetStringHeight()))
 end
 
--- " · " with the design's 10 px each side: BettoGeo spaces are ~3.5 px, so the gaps are spacer
--- textures like the coin margins. SEP_END closes a row whose next piece is a tag: the chain gap
--- gives the space after the dot (a trailing texture is not measured).
-local SEP = spacer(S.infoSep) .. "·" .. spacer(S.infoSep)
-local SEP_END = spacer(S.infoSep) .. "·"
-
-local function infoText(v)
+-- Info row = "Jefes 3/6", "·", then the note (or the NEW RECORD tag), as SEPARATE pieces chained
+-- with the design's gap of 10. Spacer textures inside one FontString made GetStringWidth come
+-- out short, so the right-anchored text spilled ~11 px past the widget's edge.
+-- Returns the bosses text and the note text (nil = no note).
+local function infoTexts(v)
   local total = v.totalKnown and tostring(v.total) or "?"
-  local text = L.IT_BOSSES:format(Style.code(v.bossesTone) .. v.killed .. "/" .. total .. "|r")
+  local bosses = L.IT_BOSSES:format(Style.code(v.bossesTone) .. v.killed .. "/" .. total .. "|r")
   local note = v.note
   if not v.totalKnown and #v.bosses == 0 then
-    text = text .. SEP .. L.IT_WAITING
+    return bosses, L.IT_WAITING
   elseif note and note.kind == "vsPB" then
-    text = text .. SEP .. L.IT_VS_PB:format(Style.code(note.tone) .. note.text .. "|r")
+    return bosses, L.IT_VS_PB:format(Style.code(note.tone) .. note.text .. "|r")
   elseif note and note.kind == "firstHint" then
-    text = text .. SEP .. L.IT_FIRST_HINT
-  elseif note and note.kind == "newRecord" then
-    text = text .. SEP_END
+    return bosses, L.IT_FIRST_HINT
   end
-  return text
+  return bosses, nil
 end
 
 local function renderFull(v)
@@ -565,14 +563,20 @@ local function renderFull(v)
   place(W.clockRow, chainBaseline(W.clockRow, clockRow, 10))
 
   -- Info row
-  setText(W.info, infoText(v), C.muted)
+  local bossesText, noteText = infoTexts(v)
+  local newRecord = v.note and v.note.kind == "newRecord"
+  setText(W.info, bossesText, C.muted)
+  setText(W.infoDot, "·", C.muted)
+  W.infoDot:SetShown(noteText ~= nil or newRecord)
+  W.infoNote:SetShown(noteText ~= nil)
+  if noteText then setText(W.infoNote, noteText, C.muted) end
   if v.note and v.note.kind == "newRecord" then
     setTag(W.record, L.IT_NEW_RECORD:format(v.note.text), C.turquoise, C.turquoise)
     W.record:Show()
   else
     W.record:Hide()
   end
-  local infoRow = { W.record, W.info }
+  local infoRow = { W.record, W.infoNote, W.infoDot, W.info }
   chain(W.infoRow, infoRow, "", S.infoSep)
   place(W.infoRow, heightOf(infoRow))
 
