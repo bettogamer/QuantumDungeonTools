@@ -26,6 +26,7 @@ local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
   "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper", "group", "levels", "trash",
+  "char",
 }
 
 -- A kill (PARTY_KILL) and a boss event this close are the same death (ForeverDungeonJournal
@@ -63,6 +64,7 @@ function Run.new(info, deps)
   self.rep = {}           -- reputation gained during the run: { [factionName] = amount } (F4)
   self.group = nil        -- signature of the party (Detail.groupKey), last seen while live (F4b)
   self.trash = 0          -- non-boss kills of the group during the run (F4c, PARTY_KILL)
+  self.char = info.char   -- "Name-Realm" of the player who ran it (F6; older runs: nil)
   return self
 end
 

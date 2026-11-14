@@ -34,13 +34,13 @@ function ns.InitDB()
   -- Module: Instance Tracker
   db.instanceTracker = db.instanceTracker or {}
   local it = db.instanceTracker
-  if it.autoShow == nil then it.autoShow = true end
-  if it.compact == nil then it.compact = false end   -- F2: one-line widget (additive field, no migration)
+  -- Widget settings (autoShow, compact, line switches, pingMarker, locked): additive fields,
+  -- defaults in modules/InstanceTracker/core/Settings.lua (F6).
+  ns.InstanceSettings.applyDefaults(it)
   it.history = it.history or {}
   it.records = it.records or {}     -- F3: PB per dungeon + difficulty (additive, no migration)
   it.trash = it.trash or {}         -- F4c: trash per dungeon (instanceID), learned from clean runs
   it.hourly = it.hourly or {}       -- F5: instances entered in the last hour, account-wide (additive)
-  if it.pingMarker == nil then it.pingMarker = 8 end   -- right click on a boss: skull (additive)
 
   ns.db = db
 end

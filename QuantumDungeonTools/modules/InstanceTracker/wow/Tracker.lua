@@ -27,7 +27,7 @@ local issecretvalue = ns.issecretvalue
 local T = { listeners = {}, hourListeners = {}, finishListeners = {}, inInstance = false, copyPending = false }
 ns.InstanceTracker = T
 
-local HISTORY_MAX = 100
+local HISTORY_MAX = ns.InstanceHistory.MAX
 local REFRESH_DELAY = 2   -- seconds after a kill before re-reading the lockout
 -- Away longer than this = a new run (owner, plan M1 points 6 and 8a; same values as FDJ).
 local RESUME_WINDOW = 90 * 60            -- run still open
@@ -209,9 +209,20 @@ local function fillDifficulty(run)
   end
 end
 
+-- "Name-Realm" of the player (own unit: never identity-restricted, guarded anyway).
+local function charName()
+  local ok, name, realm = pcall(UnitFullName, "player")
+  name = ok and safeStr(name) or nil
+  realm = ok and safeStr(realm) or nil
+  if name and realm then return name .. "-" .. realm end
+  return name
+end
+
 -- A new run races against the record of its dungeon + difficulty as it is NOW (a copy).
+-- It keeps who ran it: the history is account-wide and filters by character (F6).
 local function newRun(inst)
   local run = Run.new(inst, deps)
+  run.char = charName()
   run.pb = Records.get(db().records, run)
   return run
 end
@@ -248,13 +259,6 @@ end
 ------------------------------------------------------------------------------
 -- Instances per hour (F5, core/Hourly.lua)
 ------------------------------------------------------------------------------
-local function charName()
-  local ok, name, realm = pcall(UnitFullName, "player")
-  name = ok and safeStr(name) or nil
-  realm = ok and safeStr(realm) or nil
-  if name and realm then return name .. "-" .. realm end
-  return name
-end
 
 -- Walking into a copy that is new for us counts as one of the 10 per hour.
 function T:_noteEntry(inst, copy)

@@ -69,6 +69,8 @@ core\Brand.lua
 wow\Bootstrap.lua
 modules\InstanceTracker\core\Run.lua
 modules\InstanceTracker\core\Records.lua
+modules\InstanceTracker\core\History.lua
+modules\InstanceTracker\core\Settings.lua
 modules\InstanceTracker\core\Hourly.lua
 modules\InstanceTracker\core\ChatParse.lua
 modules\InstanceTracker\core\Guid.lua

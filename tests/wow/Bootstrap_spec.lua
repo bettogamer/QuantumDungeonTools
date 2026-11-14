@@ -8,6 +8,7 @@ local function loadAddon()
   _G.QuantumDungeonToolsDB = nil                       -- clean SavedVariables per spec
   local ns = wow.newNS()
   wow.loadModule("QuantumDungeonTools/core/Brand.lua", "QuantumDungeonTools", ns)   -- before wow/, as in the .toc
+  wow.loadModule("QuantumDungeonTools/modules/InstanceTracker/core/Settings.lua", "QuantumDungeonTools", ns)
   wow.loadModule("QuantumDungeonTools/wow/Bootstrap.lua", "QuantumDungeonTools", ns)
   return ns, wow._frames[1]
 end
