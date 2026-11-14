@@ -27,7 +27,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 | **F4** | Oro, reputación, ritmo + tooltip Detalle | ✅ HECHA en código (2026-11-13: F4a fila de totales, F4b tooltip Detalle); falta prueba in-game | nivel 3 (hover) |
 | **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ✅ HECHA en código (2026-11-14: F5a contador + Detalle, F5b avisos, F5c toast); falta prueba in-game | nivel 4 (avisos) |
 | **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ✅ HECHA en código (2026-11-14, lienzo v47); falta prueba in-game | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run **Hallazgo 2026-11-14:** FDJ NO trae totales de trash: los APRENDE por cuenta al completar runs (`RunLog.lua:498-503`, `max(seenN, kills)` → `runLogTrashTotal`), y el SavedVariables del owner no tiene ninguno. QDT tampoco cuenta kills de trash hoy. El tiempo fuera ya existe (`Run.pausedTotal`). **Decidido (owner, 2026-11-14):** (c) aprender como FDJ: contar `PARTY_KILL` anónimos menos los jefes detectados y guardar por mazmorra `max(total, kills)` al terminar una run limpia; el % sale desde que haya total, si no «N bichos». (d) fila «Fuera de la mazmorra m:ss» en RITMO del Detalle, solo si > 0. Diseño primero (artboard Detalle). |
-| **F6** | Ventana Historial + ajustes por línea | ⬜ PENDIENTE | nivel 4 (Historial), líneas desactivables |
+| **F6** | Ventana Historial + ajustes por línea | 🎨 DISEÑO (lienzo v51: ventana principal del addon, esperando OK del owner) | nivel 4 (Historial), líneas desactivables; decisiones del owner en §F6 |
 
 > Fuera de este hito por decisión previa: **Minimap Lens** (módulo futuro, hito propio);
 > **protocolo NIT** de NF (requiere LibSerialize/LibDeflate/AceComm); **flecha o posición del
@@ -271,6 +271,23 @@ Specs: `Alerts_spec.lua`.
 **Alcance:** `Craft.Window` Historial (artboard Historial) con filtros por mazmorra, dificultad y
 personaje; récords marcados. Ajustes: cada línea del widget se puede desactivar, más autoShow y
 Compacto. El historial sube de 20 a **100 runs** (owner, 2026-11-12); los récords se guardan aparte y no caducan.
+
+**Decidido (owner, 2026-11-14):** (1) un solo historial de **100 runs por cuenta**; cada run nueva
+guarda su personaje (campo aditivo `char`, sin migración; las viejas salen «—») y la ventana filtra
+por **Personaje** (Todos por defecto), además de mazmorra y dificultad. (2) Una sola `Craft.Window`
+con **pestañas Historial | Ajustes**. (3) Líneas desactivables: **lista de jefes, barra de tiempo,
+barra de XP, fila de totales** (la cabecera con nombre y reloj queda siempre); más autoShow,
+Compacto y botón de reset de la run (punto 8b). (4) Se abre con **`/qdt history`** (deja de
+imprimir en el chat), el **botón «Historial» del toast** (se muestra ya) y un **icono del
+minimapa** (vendorear LibDataBroker + LibDBIcon). Diseño primero: artboards Historial y Ajustes.
+
+**Cambio de rumbo (owner, 2026-11-14):** IT es solo un módulo; F6 pasa a ser la **ventana principal
+del addon** (patrón de la de Naowh Forever: barra lateral por módulos, página por módulo con pestañas,
+ajustes en grupos plegables). Sustituye a la ventana de dos pestañas del punto (2). Lienzo v51,
+página «Ventana principal»: artboards Inicio, Instance Tracker · Resumen, Instance Tracker ·
+Historial + nota de arquitectura. ✅ **OK del owner (2026-11-14, lienzo v52)**, sin logo (no hay
+icono del addon). **Modo edición** (mover widget y avisos): se necesita, no urge; copiar el de SMRT
+cuando toque (el acceso «Mover marcos» de Inicio lo abrirá).
 
 **Entregado (v1.0)** → release del hito.
 
