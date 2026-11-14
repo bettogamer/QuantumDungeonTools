@@ -286,6 +286,11 @@ cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 
 ## Siguiente (handoff 2026-11-13, sesión F4b)
 
+> **Sesión FDJ (2026-11-13, cierre):** inventario de ForeverDungeonJournal y cotejo de encounterID en
+> `docs/16` §Inventario y §Cotejo; punto abierto 8 decidido: (a) retomar 90/20 min y (e) IDs alternativos
+> de FDJ en el generador, ambos ✅ en código; (b) reset de la run como botón en los ajustes, en F6; (c)+(d)
+> en la fase nueva **F4c** (tras F5). Nada a medias. Sin desplegar a AddOns (va con la run de pruebas).
+
 Estado: F4 hecha en código y alineada con el lienzo (v35). Decisiones de diseño de hoy: sin etiqueta de
 instancias en el widget (solo tooltip + aviso 10/10), fila de totales a la DERECHA con 20 px entre oro y
 reputación (opción B), lista de jefes con `bossTop` 4, monedas 2/5 px, tooltip en BettoGeo Medium, fuente al
