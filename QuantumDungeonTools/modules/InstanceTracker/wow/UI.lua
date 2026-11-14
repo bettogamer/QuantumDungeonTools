@@ -372,9 +372,9 @@ local function buildFull()
   end
   W.xpLeft = newText(W.xp, FONT.small)
   W.xpLeft:SetJustifyH("LEFT")
-  W.xpLeft:SetPoint("TOPLEFT", W.xpBar, "BOTTOMLEFT", 0, -3)
+  W.xpLeft:SetPoint("TOPLEFT", W.xpBar, "BOTTOMLEFT", 0, -S.xpLabelGap)
   W.xpRight = newText(W.xp, FONT.small)
-  W.xpRight:SetPoint("TOPRIGHT", W.xpBar, "BOTTOMRIGHT", 0, -3)
+  W.xpRight:SetPoint("TOPRIGHT", W.xpBar, "BOTTOMRIGHT", 0, -S.xpLabelGap)
 
   -- Extras: "+4g 12s   +350 Undercity   [Instances 8/10 · free in 12:40]"
   W.extras = newRow(full)
@@ -493,7 +493,7 @@ local function paintXP(xp)
   setText(W.xpLeft, L.IT_XP_RUN:format(Style.code("xpLight") .. "+" .. xp.gained .. "|r"), C.muted)
   setText(W.xpRight, L.IT_XP_LEVEL:format(xp.level, xp.pct)
     .. (xp.restedPct and L.IT_XP_RESTED:format(xp.restedPct) or ""), C.muted)
-  W.xp:SetHeight(S.xpBarH + 3 + math.ceil(W.xpLeft:GetStringHeight()))
+  W.xp:SetHeight(S.xpBarH + S.xpLabelGap + math.ceil(W.xpLeft:GetStringHeight()))
 end
 
 -- Info row = "Jefes 3/6", "·", then the note (or the NEW RECORD tag), as SEPARATE pieces chained
@@ -560,7 +560,7 @@ local function renderFull(v)
     right = W.first
   end
   local clockRow = { right, W.clock, W.deaths }
-  place(W.clockRow, chainBaseline(W.clockRow, clockRow, 10))
+  place(W.clockRow, chainBaseline(W.clockRow, clockRow, S.clockGap))
 
   -- Info row
   local bossesText, noteText = infoTexts(v)
@@ -635,15 +635,15 @@ local function renderFull(v)
     local tone = Style.tone(b.tone)
     if b.rare then
       nr = nr + 1
-      if nr == 1 then y = y + S.rareTop end
+      y = y + S.rareTop
       r = rareRow(nr)
       setText(r.name, b.name, tone)
       setText(r.time, b.time, tone)
       r.time:SetShown(b.time ~= "")
       setTag(r.tag, L.IT_RARE, C.muted, C.mutedHalf)
       pieces = { r.name, r.time, r.tag }
-      fitText(r.name, { r.time, r.tag }, 8)
-      chain(r, pieces, "", 8)
+      fitText(r.name, { r.time, r.tag }, S.rowGap)
+      chain(r, pieces, "", S.rowGap)
       r.h = nil
     else
       nb = nb + 1
@@ -654,8 +654,8 @@ local function renderFull(v)
       r.delta:SetShown(b.delta ~= nil)
       if b.delta then setText(r.delta, b.delta, Style.tone(b.deltaTone)) end
       pieces = { r.name, r.time, r.delta }
-      fitText(r.name, { r.time, r.delta }, 8)
-      r.h = chainBaseline(r, pieces, 8)
+      fitText(r.name, { r.time, r.delta }, S.rowGap)
+      r.h = chainBaseline(r, pieces, S.rowGap)
     end
     r:ClearAllPoints()
     r:SetPoint("TOPRIGHT", W.frame, "TOPRIGHT", 0, -y)
@@ -718,7 +718,8 @@ local function renderCompact(v)
   setColor(K.sep2, C.goldSoft)
   local total = v.totalKnown and tostring(v.total) or "?"
   setText(K.bosses, L.IT_BOSSES:format(v.killed .. "/" .. total), Style.tone(v.bossesTone))
-  setText(K.clock, v.clock, Style.tone(v.clockTone))
+  -- Design (Compacto): the clock stays cream; the delta next to it carries ahead/behind.
+  setText(K.clock, v.clock, C.cream)
   K.delta:SetShown(v.compactDelta ~= nil)
   if v.compactDelta then setText(K.delta, v.compactDelta.text, Style.tone(v.compactDelta.tone)) end
   K.sep2:SetShown(v.xp ~= nil)
