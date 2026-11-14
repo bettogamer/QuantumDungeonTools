@@ -37,7 +37,8 @@ local lastFinished          -- the run the toast shows (Share sends it)
 ------------------------------------------------------------------------------
 local function text(parent, font, color)
   local fs = kit.newText(parent, font)
-  fs:SetShadowOffset(0, 0)   -- solid panel: no shadow, like the compact panel
+  fs:SetShadowOffset(0, 0)   -- solid panel: no shadow (and transparent: at offset 0 it still
+  fs:SetShadowColor(0, 0, 0, 0)   -- darkened the glyph edges like a thin outline)
   fs:SetJustifyH("LEFT")
   if color then fs:SetTextColor(color.r, color.g, color.b, color.a or 1) end
   return fs

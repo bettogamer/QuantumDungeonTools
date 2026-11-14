@@ -848,6 +848,7 @@ end
 local function newPanelText(parent)
   local fs = newText(parent, FONT.panel)
   fs:SetShadowOffset(0, 0)
+  fs:SetShadowColor(0, 0, 0, 0)   -- at offset 0 a visible shadow still darkens the glyph edges
   return fs
 end
 
