@@ -219,10 +219,11 @@ describe("InstanceTrackerView: ping al jefe (punto 7)", function()
     assert_true(v.bosses[7].alive)    -- el raro vivo también
   end)
 
-  it("macro: /target, ping de ataque y devuelve el objetivo", function()
+  it("macro: limpia el objetivo, busca el nombre exacto, ping solo a hostil vivo, devuelve el objetivo", function()
+    -- Sin /cleartarget, con el jefe fuera de vista el ping caía en el objetivo previo (owner, in-game).
     assert_eq(View.pingMacro("The Abandoned"),
-      "/target The Abandoned\n/ping [@target] attack\n/targetlasttarget")
-    assert_eq(View.pingMacro("Rath'mael"):match("^/target (.-)\n"), "Rath'mael")
+      "/cleartarget\n/targetexact The Abandoned\n/ping [@target,exists,harm,nodead] attack\n/targetlasttarget")
+    assert_eq(View.pingMacro("Rath'mael"):match("\n/targetexact (.-)\n"), "Rath'mael")
   end)
 
   it("sin macro para nombres que no caben en una línea", function()

@@ -197,12 +197,15 @@ function View.build(run, opts)
   return v
 end
 
--- Macro of the boss ping (plan M1 point 7, tested in-game by the owner 2026-11-13): target the
--- boss by name, attack ping on it, give the previous target back. nil when the name cannot go
--- into a macro line (empty, or a line break would split it into another command).
+-- Macro of the boss ping (plan M1 point 7): target the boss by name, attack ping on it, give
+-- the previous target back. /cleartarget first: when the boss is out of sight /target fails and
+-- would leave the OLD target, which got the ping (owner, in-game 2026-11-13). /targetexact so a
+-- partial name never picks another unit; the ping only on a live hostile target. The cleared
+-- target is the "last target", so /targetlasttarget gives it back in both cases.
+-- nil when the name cannot go into a macro line (empty, or a line break would split it).
 function View.pingMacro(name)
   if type(name) ~= "string" or name == "" or name:find("[\r\n]") then return nil end
-  return "/target " .. name .. "\n/ping [@target] attack\n/targetlasttarget"
+  return "/cleartarget\n/targetexact " .. name .. "\n/ping [@target,exists,harm,nodead] attack\n/targetlasttarget"
 end
 
 return View
