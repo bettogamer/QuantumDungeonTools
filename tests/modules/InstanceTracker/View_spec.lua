@@ -5,7 +5,7 @@ local helper = dofile("tests/helper.lua")
 
 local ns = helper.newNS()
 ns.Brand = { COLORS = { primary = "F5BF57", accent = "36C9E8", text = "F7EDDC", danger = "FF6B4F", sea = "0A8FB0" } }
-for _, f in ipairs({ "core/Format.lua", "modules/InstanceTracker/core/Run.lua",
+for _, f in ipairs({ "core/Format.lua", "core/Style.lua", "modules/InstanceTracker/core/Run.lua",
   "modules/InstanceTracker/core/DungeonData.lua", "modules/InstanceTracker/core/Dungeons.lua",
   "modules/InstanceTracker/core/Style.lua", "modules/InstanceTracker/core/View.lua",
   "modules/InstanceTracker/core/Demo.lua" }) do

@@ -28,8 +28,8 @@
   muertos/restantes (X/Y + lista), cronómetro de la run con split por jefe, XP ganada en la
   mazmorra e historial de las últimas 20 runs. Futuro: «Minimap Lens» (minimapa grande en
   mazmorras). Público: el owner y su guild; publicación sin decidir.
-- **Arquitectura**: `core/` puro (`core/Format.lua`); `wow/Bootstrap.lua` (DB, versión, arranque
-  de módulos); `modules/InstanceTracker/core/Run.lua` (modelo puro), `.../wow/Tracker.lua` (eventos
+- **Arquitectura**: `core/` puro (`Format.lua`, `Style.lua`: tokens del addon, los Style de módulo heredan con
+  `Style.extend`); `wow/Bootstrap.lua` (DB, versión, arranque), `wow/Kit.lua` (tema Craft), `wow/MainWindow.lua`; `modules/InstanceTracker/core/Run.lua` (modelo puro), `.../wow/Tracker.lua` (eventos
   PLAYER_ENTERING_WORLD, ZONE_CHANGED_NEW_AREA, UPDATE_INSTANCE_INFO, ENCOUNTER_END, BOSS_KILL,
   PLAYER_XP_UPDATE), `.../core/{Style,View,Demo}.lua` (tokens, modelo de vista, demos), `.../wow/UI.lua` (widget HUD sobre Craft); `Config.lua` (slash).
   Frontera core/wow forzada por `.luacheckrc` `files{}`.
@@ -56,11 +56,11 @@
 └── QuantumDungeonTools/     ← el addon (lo que se despliega)
     ├── QuantumDungeonTools.toc
     ├── Locale.lua     ← primero en el .toc
-    ├── core/          lógica PURA compartida (Format.lua)
-    ├── wow/           Bootstrap.lua: DB, versión, arranque de módulos
+    ├── core/          lógica PURA compartida (Format.lua, Brand.lua, Style.lua: tokens del addon)
+    ├── wow/           Bootstrap.lua (DB, versión, arranque), Kit.lua (tema Craft), MainWindow.lua
     ├── modules/
     │   └── InstanceTracker/
-    │       ├── core/  Run.lua (modelo de la run) + Guid.lua + Style.lua (ÚNICO sitio con colores/tamaños)
+    │       ├── core/  Run.lua (modelo de la run) + Guid.lua + Style.lua (colores/tamaños del widget; hereda core/Style.lua)
     │       │          + View.lua (qué pinta el widget) + Detail.lua (tooltip Detalle) + Demo.lua
     │       └── wow/   Tracker.lua (eventos) + UI.lua (widget) + CheckF1/CheckF2.lua (autopruebas)
     ├── libs/          LibStub, Weave, Craft vendoreadas READ-ONLY (versiones: libs/README.md)

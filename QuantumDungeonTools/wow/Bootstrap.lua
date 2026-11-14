@@ -69,7 +69,9 @@ f:SetScript("OnEvent", function(_, event, arg1)
   if event == "ADDON_LOADED" and arg1 == ADDON then
     ns.InitDB()
   elseif event == "PLAYER_LOGIN" then
-    -- World loaded: start the modules (each one injects the real game deps into its pure core).
+    -- World loaded: the addon UI kit (Craft theme context) first, then the modules (each one
+    -- injects the real game deps into its pure core and builds its UI on the kit).
+    if ns.Kit then ns.Kit:Init() end
     if ns.InstanceTracker then ns.InstanceTracker:Init() end
     if ns.InstanceTrackerUI then ns.InstanceTrackerUI:Init() end
     if ns.InstanceAlertsUI then ns.InstanceAlertsUI:Init() end

@@ -66,7 +66,9 @@ libs\Craft\components\Window.lua
 Locale.lua
 core\Format.lua
 core\Brand.lua
+core\Style.lua
 wow\Bootstrap.lua
+wow\Kit.lua
 modules\InstanceTracker\core\Run.lua
 modules\InstanceTracker\core\Records.lua
 modules\InstanceTracker\core\History.lua

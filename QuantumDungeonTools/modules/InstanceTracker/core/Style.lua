@@ -1,97 +1,28 @@
--- modules/InstanceTracker/core/Style.lua -- PURE: the ONLY place with colors and sizes of the
--- Instance Tracker widget (plan M1 F2). No hex anywhere else in the UI: it asks for a TONE
--- (semantic) or a token here.
---
--- Palette sampled from the WoW Forever key art (canvas artboard "Paleta", proposal B, 2026-11-13):
--- gold = progress, turquoise = ahead / record / XP, red = behind / deaths, cream = text.
+-- modules/InstanceTracker/core/Style.lua -- PURE: the ONLY place with the colors and sizes of
+-- the Instance Tracker widget (plan M1 F2). No hex anywhere else in the UI: it asks for a TONE
+-- (semantic) or a token here. Palette roles, tones, rgba/code and the main window tokens are
+-- addon-level (core/Style.lua): this file inherits them (Style.extend) and adds the widget's own.
 local _, ns = ...
-local Brand = ns.Brand
+local Base = ns.Style
+local rgba, HEX = Base.rgba, Base.HEX
 
-local Style = {}
-ns.InstanceTrackerStyle = Style
-
--- "F5BF57" (+ alpha) -> { r, g, b, a } in 0..1 (what SetColorTexture / SetTextColor take).
-function Style.rgba(hex, a)
-  local r, g, b = hex:match("^#?(%x%x)(%x%x)(%x%x)$")
-  assert(r, "Style.rgba: bad hex " .. tostring(hex))
-  return { r = tonumber(r, 16) / 255, g = tonumber(g, 16) / 255, b = tonumber(b, 16) / 255, a = a or 1 }
-end
-
--- `top` drawn at alpha `a` over the opaque `base`: the color the eye sees (for opaque-only sinks).
-function Style.over(base, top, a)
-  local function ch(k) return base[k] + (top[k] - base[k]) * a end
-  return { r = ch("r"), g = ch("g"), b = ch("b"), a = 1 }
-end
-
-local HEX = {
-  gold      = Brand.COLORS.primary,   -- F5BF57
-  turquoise = Brand.COLORS.accent,    -- 36C9E8
-  cream     = Brand.COLORS.text,      -- F7EDDC
-  red       = Brand.COLORS.danger,    -- FF6B4F
-  muted     = "93B6C2",               -- secondary text (foam toward sea)
-  sand      = "E6D2A9",               -- difficulty tag text (parchment)
-  xpLight   = "8FE3F5",               -- XP numbers, FIRST TIME tag
-  xpBase    = Brand.COLORS.sea,       -- 0A8FB0, XP owned before the run
-  track     = "06364A",               -- bar track (abyss)
-  panel     = "042239",               -- tooltip / compact panel, cut ticks of a finished run
-  tickIdle  = "5A808E",               -- PB split not reached yet
-  white     = "FFFFFF",
-}
-Style.HEX = HEX
-
-local C = {}
-for k, v in pairs(HEX) do C[k] = Style.rgba(v) end
-C.goldSoft    = Style.rgba(HEX.gold, 0.22)      -- difficulty tag border, compact separators
-C.goldHalf    = Style.rgba(HEX.gold, 0.5)       -- "Instances" tag border
-C.xpLightHalf = Style.rgba(HEX.xpLight, 0.5)    -- FIRST TIME tag border
-C.mutedHalf   = Style.rgba(HEX.muted, 0.5)      -- RARE tag border
-C.rested      = Style.rgba(HEX.turquoise, 0.22) -- rested XP extent
-C.hairline    = Style.rgba(HEX.white, 0.1)      -- 1px bar borders
-C.panelBg     = Style.rgba(HEX.panel, 0.82)     -- compact panel
-C.alertBg     = Style.rgba(HEX.panel, 0.88)     -- 10/10 alert and 8/10 strip (artboard Avisos)
-C.goldBorder  = Style.rgba(HEX.gold, 0.6)       -- 8/10 strip border
-C.shadow      = { r = 0, g = 0, b = 0, a = 0.9 }
--- Main window (plan M1 F6b, artboard "Ventana principal · Inicio"): same roles, other alphas.
-C.goldCard    = Style.rgba(HEX.gold, 0.35)      -- NOW card border
-C.goldWash    = Style.rgba(HEX.gold, 0.05)      -- NOW card fill
-C.hairlineSoft = Style.rgba(HEX.white, 0.06)    -- OPEN row dividers, idle module card
-C.mutedTag    = Style.rgba(HEX.muted, 0.35)     -- SOON tag border
--- Craft paints the sidebar fill and its active row OPAQUE (alpha forced to 1), so the canvas'
--- "navy + black 22 %" and "gold 8 % on it" are pre-composited here from the same roles.
-C.sidebar       = Style.over(C.panel, { r = 0, g = 0, b = 0 }, 0.22)
-C.sidebarActive = Style.over(C.sidebar, C.gold, 0.08)
-Style.C = C
-
--- Semantic tones the view model (core/View.lua) speaks -> color.
-Style.TONE = {
-  text     = C.cream,
-  muted    = C.muted,
-  progress = C.gold,
-  ahead    = C.turquoise,
-  behind   = C.red,
-  pending  = C.tickIdle,
-  cut      = C.panel,
-  pre      = C.muted,
-  idle     = C.track,
-  xp       = C.xpLight,
+-- Widget-only alpha variants of the palette roles (the roles themselves live in core/Style.lua).
+local C = {
+  goldSoft    = rgba(HEX.gold, 0.22),      -- difficulty tag border, compact separators
+  goldHalf    = rgba(HEX.gold, 0.5),       -- "Instances" tag border
+  xpLightHalf = rgba(HEX.xpLight, 0.5),    -- FIRST TIME tag border
+  mutedHalf   = rgba(HEX.muted, 0.5),      -- RARE tag border
+  rested      = rgba(HEX.turquoise, 0.22), -- rested XP extent
+  panelBg     = rgba(HEX.panel, 0.82),     -- compact panel
+  alertBg     = rgba(HEX.panel, 0.88),     -- 10/10 alert and 8/10 strip (artboard Avisos)
+  goldBorder  = rgba(HEX.gold, 0.6),       -- 8/10 strip border
 }
 
-function Style.tone(name) return Style.TONE[name] or C.cream end
-
--- "|cffRRGGBB" escape for inline runs of text inside one FontString.
-function Style.code(name)
-  local c = Style.TONE[name] or C[name] or C.cream
-  return string.format("|cff%02x%02x%02x", math.floor(c.r * 255 + 0.5), math.floor(c.g * 255 + 0.5),
-    math.floor(c.b * 255 + 0.5))
-end
-
--- Sizes (px at scale 1). Font weights map BettoGeo files: 500/600 medium, 700 bold. No regular:
--- with OUTLINE it reads too thin over the game (owner, 2026-11-12).
-Style.SIZE = {
+-- Sizes (canvas px; Style.extend scales them by Base.GEO, see core/Style.lua). tagPadX/Y are
+-- inherited from the addon level.
+local SIZE = {
   width     = 340,
   gap       = 6,    -- between stacked rows
-  tagPadX   = 6,
-  tagPadY   = 2,
   barH      = 14,   -- time bar (owner: 14 px)
   tickW     = 2,
   tickOut   = 3,    -- the tick sticks out of the bar this much, top and bottom
@@ -150,29 +81,11 @@ Style.SIZE = {
   toastClockGap = 10, -- big clock <-> delta
 }
 
--- The numbers above and the font sizes below are the CSS px of the design canvas. WoW sizes
--- a font by its LINE box (BettoGeo: ascender + descender = 740 + 192 = 932 of 1000 units), so
--- the same font size draws glyphs 1000/932 bigger than the canvas. The owner keeps the font
--- sizes of the design (2026-11-13), so the GEOMETRY grows by that ratio instead: the widget
--- is ~7 % bigger than the canvas with the canvas proportions (text no longer outgrows bars).
-Style.GEO = 1000 / 932
-for k, v in pairs(Style.SIZE) do Style.SIZE[k] = math.floor(v * Style.GEO + 0.5) end
-
--- Main window layout (plan M1 F6b, artboard "Ventana principal · Inicio"), px at scale 1.
-Style.WIN = {
-  width = 980, height = 640, minWidth = 820, minHeight = 560,
-  sidebar = 220, brandH = 64, versionH = 22,
-  topBar = 52, padX = 28, padY = 22, gap = 18,
-  headH = 74,          -- kicker + title + subtitle, plus its bottom rule
-  nowH = 66, openRowH = 44, openColGap = 48, moduleH = 44, moduleGap = 8,
-}
-for k, v in pairs(Style.WIN) do Style.WIN[k] = math.floor(v * Style.GEO + 0.5) end   -- same ratio as SIZE
-
 -- `flags` overrides the theme outline ("OUTLINE, SLUG") for one element: the Slug outline is
 -- vector and grows with the font size, so the big clock blurs with it; there the classic ~1 px
 -- OUTLINE reads better (owner, 2026-11-13).
 
-Style.FONT = {
+local FONT = {
   head      = { size = 12, weight = "medium" },
   tag       = { size = 11, weight = "medium" },
   tagStrong = { size = 11, weight = "bold" },
@@ -206,23 +119,9 @@ Style.FONT = {
   toastTag    = { size = 10, weight = "bold", flags = "" },     -- NEW RECORD: gold block (Oro Forever)
   toastButton = { flags = "" },                                 -- Craft.Button keeps its own size
   panelTag    = { size = 10, weight = "medium", flags = "" },   -- RARE on the compact panel
-  -- Main window (F6b): a solid panel, so no outline anywhere.
-  winBrand    = { size = 17, weight = "bold", flags = "" },     -- "Quantum" on the sidebar
-  winBrandSub = { size = 10, weight = "semibold", flags = "" }, -- "DUNGEON TOOLS"
-  winVersion  = { size = 10, weight = "medium", flags = "" },
-  winKicker   = { size = 11, weight = "medium", flags = "" },   -- addon name over the page title
-  winTitle    = { size = 26, weight = "semibold", flags = "" },
-  winSub      = { size = 12, weight = "medium", flags = "" },
-  winSection  = { size = 11, weight = "semibold", flags = "" }, -- NOW / OPEN / MODULES
-  winNowName  = { size = 15, weight = "semibold", flags = "" },
-  winNowLine  = { size = 12, weight = "medium", flags = "" },
-  winClock    = { size = 26, weight = "bold", flags = "" },
-  winDelta    = { size = 11, weight = "medium", flags = "" },
-  winHourNum  = { size = 18, weight = "bold", flags = "" },
-  winRow      = { size = 13, weight = "medium", flags = "" },
-  winRowSub   = { size = 11, weight = "medium", flags = "" },
-  winModule   = { size = 14, weight = "semibold", flags = "" },
-  winTag      = { size = 9, weight = "semibold", flags = "" },  -- SOON
 }
+
+local Style = Base.extend({ C = C, SIZE = SIZE, FONT = FONT })
+ns.InstanceTrackerStyle = Style
 
 return Style

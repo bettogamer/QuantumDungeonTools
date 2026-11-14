@@ -7,9 +7,10 @@
 -- once and switched with Show/Hide (no re-render per visit). F6b paints the Home page (NOW,
 -- OPEN, MODULES); the module pages are placeholders that F6c/F6d fill.
 --
--- Fonts, borders and the theme context come from the Instance Tracker kit (ns.InstanceTrackerUI:
--- Kit()), so the window is built lazily on the first Open, after the widget's Init. WHAT the NOW
--- card says comes from core/View.lua (View.now, pure and tested); colors only from Style.lua.
+-- Fonts, borders and the theme context come from the addon kit (wow/Kit.lua) and colors, fonts
+-- and sizes from the addon Style (core/Style.lua): nothing here depends on a module being on.
+-- Built lazily on the first Open. WHAT the NOW card says comes from the Instance Tracker view
+-- model (View.now, pure and tested), only while that module runs.
 local _, ns = ...
 local L = ns.L
 
@@ -18,7 +19,7 @@ ns.MainWindow = MW
 
 local TICK = 0.5   -- NOW card clock, same cadence as the widget
 
-local Style, View        -- resolved on build (module files load after this one is defined)
+local Style, View        -- resolved on build
 local C, FONT, WIN
 local kit, Craft
 local win, side, foot
@@ -373,9 +374,9 @@ local function buildMain(content)
 end
 
 local function build()
-  kit = ns.InstanceTrackerUI and ns.InstanceTrackerUI:Kit()
+  kit = ns.Kit:Get()
   if not kit then return false end
-  Craft, Style, View = kit.Craft, ns.InstanceTrackerStyle, ns.InstanceTrackerView
+  Craft, Style, View = kit.Craft, ns.Style, ns.InstanceTrackerView
   C, FONT, WIN = Style.C, Style.FONT, Style.WIN
 
   local saved = wdb()

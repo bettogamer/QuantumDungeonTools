@@ -8,8 +8,8 @@
 -- on a panel, with the boss list in our own hover panel (artboard Compacto).
 --
 -- WHAT to paint comes from core/View.lua (pure, tested); colors and sizes ONLY from
--- core/Style.lua. Craft gives the theme context (own one, so Coffer & co. are untouched), the
--- BettoGeo fonts (applyFont arms the async font probes), the pixel-perfect border and the tooltip.
+-- core/Style.lua. The theme context, BettoGeo text, borders and tags come from the addon kit
+-- (wow/Kit.lua, own Craft context); this file adds the HUD shadow, bars, coins and the tooltip.
 -- Only the header row (or the compact panel) takes the mouse: the rest is click-through, except
 -- the live boss names, covered by the secure ping buttons (Boss ping, below).
 local _, ns = ...
@@ -21,15 +21,14 @@ local S, C, FONT = Style.SIZE, Style.C, Style.FONT
 local UI = {}
 ns.InstanceTrackerUI = UI
 
-local THEME_NAME = "QuantumDungeonTools"
 local TICK = 0.5
 
-local Craft            -- resolved in Init (LibStub)
-local ctx              -- our Craft theme context
+local Craft            -- resolved in Init (from the addon kit)
+local ctx              -- our Craft theme context (wow/Kit.lua)
+local kit              -- ns.Kit:Get()
 local root             -- position anchor, holds both layouts
 local W = {}           -- widgets of the full layout
 local K = {}           -- widgets of the compact layout
-local fontOf = {}      -- FontString -> Style.FONT entry (re-applied on theme / font-metrics change)
 local forced           -- nil (automatic) | "show" | "hide"; reset on every zone change
 local demo             -- nil | scenario name of core/Demo.lua
 local lastView         -- what was painted last (the tick repaints only when the clock moves)
@@ -43,7 +42,7 @@ local DESCENT = 192 / 932
 ------------------------------------------------------------------------------
 -- Building blocks
 ------------------------------------------------------------------------------
-local function setColor(tex, c) tex:SetColorTexture(c.r, c.g, c.b, c.a or 1) end
+local function setColor(tex, c) kit.setColor(tex, c) end
 
 -- Bar fills use Craft's "BettoBar" texture (FR-151, Craft 2.50.0) tinted with the palette role;
 -- a flat color if this Craft build does not ship it.
@@ -67,39 +66,18 @@ local function setBarColor(tex, c)
   tex:SetVertexColor(c.r, c.g, c.b, c.a or 1)
 end
 
-local function applyFont(fs)
-  local f = fontOf[fs]
-  local weight = f.weight ~= "regular" and f.weight or nil
-  ctx:applyFont(fs, ctx:getFont(weight), f.size, f.flags)   -- nil flags: the theme's
-end
-
+-- Kit text + the HUD look: drop shadow (legibility over the game) and right-aligned.
 local function newText(parent, font)
-  local fs = parent:CreateFontString(nil, "OVERLAY")
-  fontOf[fs] = font
-  applyFont(fs)
-  fs:SetShadowColor(C.shadow.r, C.shadow.g, C.shadow.b, C.shadow.a)
+  local fs = kit.newText(parent, font)
   fs:SetShadowOffset(1, -1)
-  fs:SetWordWrap(false)
   fs:SetJustifyH("RIGHT")
   return fs
 end
 
-local function setText(fs, text, color)
-  fs:SetText(text or "")
-  if color then fs:SetTextColor(color.r, color.g, color.b, color.a or 1) end
-end
+local function setText(fs, text, color) kit.setText(fs, text, color) end
 
--- 1px border (Craft's corner-safe helper) in a given color.
-local function newBorder(frame, layer)
-  local b = {}
-  for i = 1, 4 do b[i] = frame:CreateTexture(nil, layer or "BORDER") end
-  Craft.Theme.AnchorBorder(frame, b[1], b[2], b[3], b[4])
-  return b
-end
-
-local function colorBorder(b, c)
-  for i = 1, 4 do setColor(b[i], c) end
-end
+local function newBorder(frame, layer) return kit.newBorder(frame, layer) end
+local function colorBorder(b, c) kit.colorBorder(b, c) end
 
 -- A bar fill sits INSIDE the 1px border, as in the design (CSS: the absolute fill lives in the
 -- padding box). Anchored to the left border strip itself so the inset matches its pixel-perfect
@@ -115,29 +93,9 @@ local function innerWidth(border)
   return S.width - 2 * (border[3]:GetWidth() or 0)
 end
 
--- Tag = text with a 1px border and no fill (design: "tags = only border"): a Craft.Badge
--- `outline` with per-instance font, padding and colors (FR-140, Craft 2.48.0). It sizes itself
--- (whole pixels, CSS-centered caps, re-measured next frame) and inherits our theme context.
--- Returns the Badge's frame (what the row chains/shows); the Badge object rides in `.badge`.
--- S.tagPad* count the 1px border; Badge's padding sits inside it, hence the -1.
-local function newTag(parent, font, padX, padY)
-  local badge = Craft.Badge:Create(parent, {
-    variant    = "outline",
-    fontSize   = font.size,
-    fontWeight = font.weight,
-    paddingX   = (padX or S.tagPadX) - 1,
-    paddingY   = padY or S.tagPadY,
-    fontFlags  = font.flags,   -- nil = the theme's outline (HUD); "" on solid panels (FR-102)
-  })
-  local frame = badge:GetFrame()
-  frame.badge = badge
-  return frame
-end
-
-local function setTag(tag, text, textColor, borderColor)
-  tag.badge:SetColors({ text = textColor, border = borderColor })
-  tag.badge:SetText(text)
-end
+-- Outline tags (Craft.Badge): the kit's; padding defaults to Style.SIZE.tagPadX/Y.
+local function newTag(parent, font, padX, padY) return kit.newTag(parent, font, padX, padY) end
+local function setTag(tag, text, textColor, borderColor) kit.setTag(tag, text, textColor, borderColor) end
 
 -- Chains the shown regions right-to-left inside `row` (pieces[1] is the rightmost).
 -- `point` = "" centers them vertically ("BOTTOM" aligns box bottoms: use chainBaseline for text).
@@ -858,12 +816,7 @@ end
 -- Hover panel of the compact mode (artboard Compacto): our own frame, not Craft.Tooltip, which
 -- has no fixed width, per-line font size nor badges. 260 px, right-aligned 10 px under the bar,
 -- solid panel background, padding 10x12, 6 px between lines, hairline separators.
-local function setFont(fs, font)
-  if fontOf[fs] ~= font then
-    fontOf[fs] = font
-    applyFont(fs)
-  end
-end
+local function setFont(fs, font) kit.applyFontOf(fs, font) end
 
 local function recordAge(days)
   if days == 0 then return L.IT_AGE_TODAY end
@@ -1107,8 +1060,7 @@ local function build()
   end)
 
   -- Theme or font metrics changed (first-ever BettoGeo load is async): re-font and repaint.
-  ctx:register(function()
-    for fs in pairs(fontOf) do applyFont(fs) end
+  ns.Kit:OnThemeChange(function()   -- the kit re-fonts first
     if root:IsShown() then UI:Render() end
   end)
 end
@@ -1191,20 +1143,14 @@ function UI:Demo(name)
   return true
 end
 
--- Building blocks for the other screens of the module (wow/Alerts.lua): same fonts, borders,
--- tags and coins as the widget, re-fonted with it on theme changes. nil before Init / no Craft.
+-- Building blocks for the other screens of the module (wow/Alerts.lua): the addon kit with the
+-- widget's HUD text (shadow, right-aligned) and coins. nil before Init / no Craft.
 function UI:Kit()
   if not ctx then return nil end
-  return {
-    Craft = Craft, ctx = ctx, newText = newText, setText = setText, setColor = setColor,
-    newBorder = newBorder, colorBorder = colorBorder, newTag = newTag, setTag = setTag,
-    moneyText = moneyText,
-    -- Re-points a kit FontString at another Style.FONT entry (kept on theme changes).
-    applyFontOf = function(fs, font)
-      fontOf[fs] = font
-      applyFont(fs)
-    end,
-  }
+  local k = {}
+  for name, v in pairs(kit) do k[name] = v end
+  k.newText, k.moneyText = newText, moneyText
+  return k
 end
 
 -- For /qdt check f2: what was built and painted (plain values only).
@@ -1214,33 +1160,17 @@ function UI:Snapshot()
     built = root ~= nil, shown = root and root:IsShown() or false,
     compact = db().compact == true, demo = demo,
     width = root and root:GetWidth() or nil, height = root and root:GetHeight() or nil,
-    fonts = (function() local n = 0 for _ in pairs(fontOf) do n = n + 1 end return n end)(),
+    fonts = ns.Kit:FontCount(),
   }
 end
 
 function UI:Init()
-  Craft = LibStub and LibStub("Craft-2.0", true)
-  if not Craft then
+  kit = ns.Kit:Get()
+  if not kit then
     ns.say(L.IT_NO_CRAFT)
     return
   end
-  ctx = Craft.Theme.context(THEME_NAME, {
-    font = "bettogeo", headingFont = "bettogeo",
-    overrides = {
-      fontFlags = "OUTLINE, SLUG",   -- vector (Slug) outline: thinner and crisper than bitmap OUTLINE
-      -- No regular weight anywhere (Style.lua): Craft overlays (tooltip) read `font`, so the
-      -- body token is BettoGeo Medium too (owner, 2026-11-13).
-      font = Craft.mediaPath .. "BettoGeo-Medium.ttf",
-      primary = C.gold, primaryForeground = C.panel,             -- Forever gold on navy (9.7:1)
-      sidebarPrimary = C.gold, sidebarPrimaryForeground = C.panel,
-      -- Main window sidebar (F6b, artboard Inicio): darker navy, active row in gold.
-      sidebar = C.sidebar, sidebarForeground = C.cream, sidebarBorder = C.hairline,
-      sidebarAccent = C.sidebarActive, sidebarAccentForeground = C.gold,
-      foreground = C.cream, mutedForeground = C.muted,
-      popover = C.panel, popoverForeground = C.cream,
-      border = C.hairline, destructive = C.red,
-    },
-  })
+  Craft, ctx = kit.Craft, kit.ctx
   T:OnChange(function(reason) UI:Update(reason) end)
 end
 
