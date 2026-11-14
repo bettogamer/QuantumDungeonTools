@@ -383,9 +383,10 @@ function T:SampleXP()
   local prev = self.xpPrev
   self.xpPrev = cur
   local run = self.run
-  if cur and prev and run and self.inInstance and run:addXP(Run.xpDelta(prev, cur)) then
-    self:_notify("data")
-  end
+  if not (cur and prev and run and self.inInstance) then return end
+  local changed = run:addXP(Run.xpDelta(prev, cur))
+  if cur.level > prev.level and run:addLevels(cur.level - prev.level) then changed = true end
+  if changed then self:_notify("data") end
 end
 
 function T:PLAYER_XP_UPDATE(unit)

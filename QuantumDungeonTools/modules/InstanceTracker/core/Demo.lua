@@ -20,6 +20,7 @@ local KILLS = { Witherfang = 238, ["The Butcher"] = 521, ["Viktor the Vile"] = 7
 -- rare's split on purpose: the view must ignore it (no tick, no delta).
 local PB = {
   total = 1900,
+  at = START - 3 * 86400,   -- Compacto: "31:40 · hace 3 días"
   splits = { Witherfang = 250, ["The Butcher"] = 501, ["Viktor the Vile"] = 790, ["Lordaeron Captain"] = 1065,
     ["The Abandoned"] = 1133, Bjork = 1536, ["Rath'mael"] = 1900 },
 }
@@ -67,15 +68,18 @@ local SCENARIOS = {
   -- Main: 16:22 with 3/6, record 31:40, ahead by 0:17.
   live = function()
     return withLoot(makeRun(LIVE_KILLS, 982, false, 18450), 41200, { Undercity = 350 }), {
-      pb = PB, deaths = 2, instances = { count = 8, limit = 10, freeIn = 760, slots = { 760, 1275 } },
+      pb = PB, deaths = 2, now = START + 982,
+      instances = { count = 8, limit = 10, freeIn = 760, slots = { 760, 1275 } },
       xp = { level = 54, xp = 54560, max = XP_MAX, rested = 15840 },
       group = GROUP, history = { past(1685, GROUP), past(1902, GROUP), past(1750, "Zed") },
     }
   end,
   -- Completada: 29:51, new record by 1:49, crossed a level.
   done = function()
-    return withLoot(makeRun(KILLS, 1791, true, 41220), 87512, { Undercity = 725, ["The Forsaken"] = 150 }), {
-      pb = PB, deaths = 3, instances = { count = 9, limit = 10, freeIn = 665 },
+    local run = withLoot(makeRun(KILLS, 1791, true, 41220), 87512, { Undercity = 725, ["The Forsaken"] = 150 })
+    run.levels = 1   -- "+41,220 XP en la run · 1 nivel"
+    return run, {
+      pb = PB, deaths = 3, now = START + 1791, instances = { count = 9, limit = 10, freeIn = 665 },
       xp = { level = 55, xp = 29920, max = XP_MAX, rested = 0 },
     }
   end,

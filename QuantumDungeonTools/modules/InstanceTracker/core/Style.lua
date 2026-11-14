@@ -100,6 +100,13 @@ Style.SIZE = {
   compactPadY = 6,
   compactSep  = 14, -- height of the compact separators
   compactGap  = 10, -- between every piece of the compact bar (design)
+  panelW      = 260, -- compact hover panel (artboard Compacto): fixed width
+  panelTop    = 10,  -- panel below the compact bar, right edges aligned
+  panelPadX   = 12,
+  panelPadY   = 10,
+  panelGap    = 6,   -- between the panel's lines (separators included)
+  panelColGap = 8,   -- left text <-> right column
+  panelTagGap = 6,   -- rare name <-> its RARE badge
   infoSep     = 10, -- each side of the "·" in the info row (design gap 10)
 }
 
@@ -132,6 +139,9 @@ Style.FONT = {
   rareTag   = { size = 10, weight = "medium" },
   compact   = { size = 13, weight = "medium" },
   compactSm = { size = 11, weight = "medium" },
+  -- Compact hover panel: solid background, so no outline (flags "") and no shadow.
+  panel     = { size = 12, weight = "medium", flags = "" },
+  panelSm   = { size = 11, weight = "medium", flags = "" },
 }
 
 return Style

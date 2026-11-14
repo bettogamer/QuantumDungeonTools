@@ -5,7 +5,7 @@
 -- following the design canvas: header (dungeon + difficulty tag), big clock with the record or
 -- the FIRST TIME tag, info line, 14 px time bar (or boss segments without a record), XP bar,
 -- contextual "Instances X/10" and the boss list with splits and deltas. Compact mode = one line
--- on a panel, with the boss list in a Craft.Tooltip on hover.
+-- on a panel, with the boss list in our own hover panel (artboard Compacto).
 --
 -- WHAT to paint comes from core/View.lua (pure, tested); colors and sizes ONLY from
 -- core/Style.lua. Craft gives the theme context (own one, so Coffer & co. are untouched), the
@@ -490,7 +490,8 @@ local function paintXP(xp)
   seg(W.xpRested, xp.rested, C.rested)
   seg(W.xpCur, xp.cur, C.turquoise)
   seg(W.xpBase, xp.base, C.xpBase)
-  setText(W.xpLeft, L.IT_XP_RUN:format(Style.code("xpLight") .. "+" .. xp.gained .. "|r"), C.muted)
+  local levels = xp.levels and (xp.levels == 1 and L.IT_XP_GAINED_LV or L.IT_XP_GAINED_LVS):format(xp.levels) or ""
+  setText(W.xpLeft, L.IT_XP_RUN:format(Style.code("xpLight") .. "+" .. xp.gained .. "|r") .. levels, C.muted)
   setText(W.xpRight, L.IT_XP_LEVEL:format(xp.level, xp.pct)
     .. (xp.restedPct and L.IT_XP_RESTED:format(xp.restedPct) or ""), C.muted)
   W.xp:SetHeight(S.xpBarH + S.xpLabelGap + math.ceil(W.xpLeft:GetStringHeight()))
@@ -673,24 +674,130 @@ end
 ------------------------------------------------------------------------------
 -- Compact layout
 ------------------------------------------------------------------------------
-local function compactLines()
-  local v = lastView
-  if not v then return {} end
+-- Hover panel of the compact mode (artboard Compacto): our own frame, not Craft.Tooltip, which
+-- has no fixed width, per-line font size nor badges. 260 px, right-aligned 10 px under the bar,
+-- solid panel background, padding 10x12, 6 px between lines, hairline separators.
+local function setFont(fs, font)
+  if fontOf[fs] ~= font then
+    fontOf[fs] = font
+    applyFont(fs)
+  end
+end
+
+local function recordAge(days)
+  if days == 0 then return L.IT_AGE_TODAY end
+  return (days == 1 and L.IT_AGE_DAY or L.IT_AGE_DAYS):format(days)
+end
+
+-- { sep = true } | { left, right, font, leftColor, rightColor, rare }
+local function panelSpec(v)
   local title = v.name .. (v.difficulty and (" · " .. v.difficulty) or "")
   local deaths = v.deaths and (v.deaths == 1 and L.IT_DEATH or L.IT_DEATHS):format(v.deaths) or nil
-  local lines = { { title, deaths, leftColor = C.muted, rightColor = C.muted } }
-  lines[#lines + 1] = { separator = true }
+  local spec = { { title, deaths, font = FONT.panelSm, leftColor = C.muted, rightColor = C.muted }, { sep = true } }
   for _, b in ipairs(v.bosses) do
     local tone = Style.tone(b.tone)
     local time = b.time ~= "" and (b.time:gsub("[%[%]]", "")) or "\226\128\148"   -- U+2014
-    local left = b.rare and (b.name .. "  " .. Style.code("muted") .. L.IT_RARE .. "|r") or b.name
-    lines[#lines + 1] = { left, time, leftColor = tone, rightColor = tone }
+    spec[#spec + 1] = { b.name, time, font = b.rare and FONT.panelSm or FONT.panel,
+      leftColor = tone, rightColor = tone, rare = b.rare }
   end
   if v.ref.kind == "pb" then
-    lines[#lines + 1] = { separator = true }
-    lines[#lines + 1] = { L.IT_RECORD, v.ref.text, leftColor = C.muted, rightColor = C.muted }
+    local ref = v.ref.text .. (v.ref.age and (" · " .. recordAge(v.ref.age)) or "")
+    spec[#spec + 1] = { sep = true }
+    spec[#spec + 1] = { L.IT_RECORD, ref, font = FONT.panelSm, leftColor = C.muted, rightColor = C.muted }
   end
-  return lines
+  return spec
+end
+
+local function newPanelText(parent)
+  local fs = newText(parent, FONT.panel)
+  fs:SetShadowOffset(0, 0)
+  return fs
+end
+
+local function panelLine(i)
+  local p = K.lines[i]
+  if p then return p end
+  p = CreateFrame("Frame", nil, K.panel)
+  p.left = newPanelText(p)
+  p.left:SetJustifyH("LEFT")
+  p.left:SetPoint("LEFT", p, "LEFT", 0, 0)
+  p.right = newPanelText(p)
+  p.right:SetPoint("RIGHT", p, "RIGHT", 0, 0)
+  p.tag = newTag(p, FONT.rareTag, S.rareTagPadX, S.rareTagPadY)
+  p.tag:SetPoint("LEFT", p.left, "RIGHT", S.panelTagGap, 0)
+  p.sep = p:CreateTexture(nil, "ARTWORK")
+  p.sep:SetAllPoints()
+  K.lines[i] = p
+  return p
+end
+
+local function renderPanel()
+  local v = lastView
+  if not v then
+    K.panel:Hide()
+    return
+  end
+  setColor(K.panelBg, C.panel)
+  colorBorder(K.panelBorder, C.hairline)
+  local inner = S.panelW - 2 * S.panelPadX
+  local spec = panelSpec(v)
+  local y = S.panelPadY
+  for i, e in ipairs(spec) do
+    local p = panelLine(i)
+    p:ClearAllPoints()
+    p:SetPoint("TOPLEFT", K.panel, "TOPLEFT", S.panelPadX, -y)
+    p:SetWidth(inner)
+    local h
+    if e.sep then
+      p.left:Hide()
+      p.right:Hide()
+      p.tag:Hide()
+      setColor(p.sep, C.hairline)
+      p.sep:Show()
+      h = 1
+    else
+      p.sep:Hide()
+      setFont(p.left, e.font)
+      setFont(p.right, e.font)
+      setText(p.left, e[1], e.leftColor)
+      p.left:Show()
+      p.right:SetShown(e[2] ~= nil)
+      if e[2] then setText(p.right, e[2], e.rightColor) end
+      p.tag:SetShown(e.rare == true)
+      if e.rare then setTag(p.tag, L.IT_RARE, C.muted, C.mutedHalf) end
+      -- The cut always falls on the left text, never on the time or the badge.
+      local room = inner
+      if e[2] then room = room - math.ceil(p.right:GetStringWidth()) - S.panelColGap end
+      if e.rare then room = room - math.ceil(p.tag:GetWidth()) - S.panelTagGap end
+      p.left:SetWidth(0)
+      if math.ceil(p.left:GetStringWidth()) > room then p.left:SetWidth(math.max(1, room)) end
+      h = heightOf({ p.left, p.right, p.tag })
+    end
+    p:SetHeight(h)
+    p:Show()
+    y = y + h + S.panelGap
+  end
+  for i = #spec + 1, #K.lines do K.lines[i]:Hide() end
+  K.panel:SetSize(S.panelW, y - S.panelGap + S.panelPadY)
+end
+
+local function buildPanel()
+  local p = CreateFrame("Frame", nil, K.frame)
+  p:SetFrameStrata("TOOLTIP")
+  p:SetClampedToScreen(true)
+  p:SetPoint("TOPRIGHT", K.frame, "BOTTOMRIGHT", 0, -S.panelTop)
+  p:Hide()
+  K.panel = p
+  K.panelBg = p:CreateTexture(nil, "BACKGROUND")
+  K.panelBg:SetAllPoints()
+  K.panelBorder = newBorder(p)
+  K.lines = {}
+  K.frame:HookScript("OnEnter", function()
+    renderPanel()
+    K.panel:Show()
+  end)
+  K.frame:HookScript("OnLeave", function() K.panel:Hide() end)
+  K.frame:HookScript("OnDragStart", function() K.panel:Hide() end)
 end
 
 local function buildCompact()
@@ -708,7 +815,7 @@ local function buildCompact()
   K.sep2 = f:CreateTexture(nil, "ARTWORK")
   K.xp = newText(f, FONT.compact)
   for _, s in ipairs({ K.sep1, K.sep2 }) do s:SetSize(1, S.compactSep) end
-  Craft.Tooltip.Attach(f, { lines = compactLines, fontFlags = "", side = "bottom", delay = 150 })
+  buildPanel()
 end
 
 local function renderCompact(v)
@@ -738,6 +845,7 @@ local function renderCompact(v)
   end
   local h = heightOf({ K.bosses, K.clock }) + 2 * S.compactPadY
   K.frame:SetSize(x - S.compactGap + S.compactPadX, h)
+  if K.panel:IsShown() then renderPanel() end
   return K.frame:GetWidth(), h
 end
 
@@ -750,7 +858,8 @@ local function source()
     return run, opts, compact
   end
   local run = T.run
-  return run, { xp = T:XPSnapshot(), pb = run and run.pb, deaths = run and run.deaths }, db().compact
+  return run, { xp = T:XPSnapshot(), pb = run and run.pb, deaths = run and run.deaths, now = time() },
+    db().compact
 end
 
 local function build()

@@ -9,6 +9,7 @@
 --   opts.pb        = nil | { total = sec, splits = { [bossName] = sec since start } }   (F3)
 --   opts.xp        = nil | { level, xp, max, rested, atMax }   plain numbers (wow/ scrubs them)
 --   opts.deaths    = nil | number                                                        (F3)
+--   opts.now       = nil | epoch seconds (time()): gives the record's age (v.ref.age, in days)
 -- Every opts field may be missing: the widget simply hides what it does not get.
 local _, ns = ...
 local Format = ns.Format
@@ -123,6 +124,7 @@ local function xpView(run, xp)
     level = xp.level,
     pct = math.floor(cur * 100),
     restedPct = rested > 0 and math.floor(rested / xp.max * 100) or nil,
+    levels = num(run.levels) and run.levels > 0 and run.levels or nil,
     base = base, cur = cur, rested = restedEnd,
   }
 end
@@ -158,6 +160,9 @@ function View.build(run, opts)
 
   if pb then
     v.ref = { kind = "pb", text = Format.clock(pb.total), struck = finished and elapsed < pb.total }
+    if num(pb.at) and num(opts.now) and opts.now >= pb.at then
+      v.ref.age = math.floor((opts.now - pb.at) / 86400)   -- days since the record was set
+    end
     if finished then
       local d = elapsed - pb.total
       if d < 0 then

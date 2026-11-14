@@ -25,7 +25,7 @@ local function never() return false end
 local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
-  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper", "group",
+  "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper", "group", "levels",
 }
 
 -- info = { instanceID = number, name = string, difficulty = string }
@@ -45,6 +45,7 @@ function Run.new(info, deps)
                           --            order | nil, rare | nil, seq }
   self.listKnown = false  -- true once the full boss list came from the lockout
   self.xp = 0
+  self.levels = 0         -- levels gained during the run (artboard Completada: "· 1 nivel")
   self.degraded = 0       -- values dropped because they were secret
   self.archived = false   -- already copied to the history
   self.lockKilled = 0     -- most kills the LOCKOUT itself has reported (not the events)
@@ -355,6 +356,12 @@ function Run:addXP(n)
   end
   if type(n) ~= "number" or n <= 0 then return false end
   self.xp = self.xp + n
+  return true
+end
+
+function Run:addLevels(n)
+  if self._isSecret(n) or type(n) ~= "number" or n <= 0 then return false end
+  self.levels = (self.levels or 0) + n
   return true
 end
 

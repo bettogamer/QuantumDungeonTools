@@ -109,6 +109,14 @@ describe("InstanceTrackerView: completada (Completada)", function()
     assert_eq(v.xp.base, 0)
     assert_eq(v.xp.pct, 34)
     assert_eq(v.xp.restedPct, nil)
+    assert_eq(v.xp.levels, 1)   -- "· 1 nivel"
+  end)
+
+  it("antigüedad del récord en días (pie del panel compacto)", function()
+    assert_eq(v.ref.age, 3)
+    local run, opts = Demo.get("done")
+    opts.now = nil
+    assert_eq(View.build(run, opts).ref.age, nil)
   end)
 
   it("más lenta que el récord: reloj en rojo y delta positivo", function()

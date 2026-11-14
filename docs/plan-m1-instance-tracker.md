@@ -315,15 +315,16 @@ Pendiente, en este orden:
    muted, `—` para jefe sin hora, etiquetas del Detalle en sand y sin líneas entre secciones, delta con
    `−` (U+2212, BettoGeo lo trae).
    Pendiente (siguiente sesión, en este orden):
-   a. **Pausa: diseño primero** (lienzo v37 lo separa en «En pausa» y «Retomada», con etiqueta solo de
-      borde, barra lisa en tickIdle y sin ↺, que BettoGeo no trae). Esperar el OK del owner antes del código.
-   b. **Panel propio del compacto** en lugar de Craft.Tooltip (que no admite ancho fijo, alineación,
-      tamaño por línea ni badges): 260 px, a la DERECHA bajo la barra a 10 px, fondo sólido panel,
-      padding 10×12, gap 6, jefes 12 px, cabecera/pie 11 px, badge RARO con borde, separadores hairline.
-      Pie «Récord 31:40 · hace N días» (`pb.at` ya existe en Records; falta la cadena en Locale).
-   c. Completada: «· N nivel(es)» en `IT_XP_RUN` (View necesita el nivel de inicio de la run).
-   d. Detalle: medidas del panel (300 px, padding 12, gap 10/4) también requieren panel propio o un FR
-      a Craft.Tooltip. `≈` NO está en BettoGeo: se queda `~` hasta que el owner añada el glifo. La línea
+   a. **Pausa: APLAZADA** (owner, 2026-11-13): el diseño vale, pero no está claro que se use en la
+      práctica; se analiza cuando el plan llegue a esa parte. No programar antes.
+   b. ✅ **Panel propio del compacto** (2026-11-13) en lugar de Craft.Tooltip: 260 px, a la derecha bajo
+      la barra a 10 px, fondo sólido panel, padding 10×12, gap 6, jefes 12 px, cabecera/pie/raros 11 px,
+      badge RARO con borde, separadores hairline, pie «Récord 31:40 · hace N días» (`v.ref.age`).
+      Pendiente de prueba in-game.
+   c. ✅ Completada: «· N nivel(es)» (`Run.levels`, sumado en `T:SampleXP` al subir de nivel).
+   d. Detalle: medidas del panel (300 px, padding 12, gap 10/4, títulos 11) → **FR-150 a Craft**
+      (`craft/docs/requests/FR-150-tooltip-medidas-por-config.md`); fallback: Craft.Tooltip actual.
+      Re-vendorear cuando salga. `≈` NO está en BettoGeo: se queda `~` (owner OK). La línea
       «Pasa el ratón para ver el detalle» es nota del lienzo (owner): NO va en el widget.
    e. El letter-spacing del diseño no se puede hacer con FontStrings: queda fuera.
 3. F5 (abajo).
