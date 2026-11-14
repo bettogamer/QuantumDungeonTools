@@ -107,6 +107,10 @@ Style.SIZE = {
   panelGap    = 6,   -- between the panel's lines (separators included)
   panelColGap = 8,   -- left text <-> right column
   panelTagGap = 6,   -- rare name <-> its RARE badge
+  detailW     = 300, -- hover detail tooltip (artboard Detalle, Craft.Tooltip FR-150)
+  detailPad   = 12,
+  detailRowGap = 4,  -- between the lines of a section
+  detailSecGap = 10, -- between sections (no hairline)
   infoSep     = 10, -- each side of the "·" in the info row (design gap 10)
 }
 
@@ -142,6 +146,8 @@ Style.FONT = {
   -- Compact hover panel: solid background, so no outline (flags "") and no shadow.
   panel     = { size = 12, weight = "medium", flags = "" },
   panelSm   = { size = 11, weight = "medium", flags = "" },
+  detail      = { size = 12, weight = "medium" },     -- detail tooltip rows
+  detailTitle = { size = 11, weight = "semibold" },   -- its section titles (Craft: the medium file)
 }
 
 return Style

@@ -288,7 +288,9 @@ local function detailLines()
   local lines = {}
   for i, sec in ipairs(sections) do
     local title = sec.id == "instances" and L.IT_D_INSTANCES:format(sec.count, sec.limit) or L[SECTION_TITLE[sec.id]]
-    lines[#lines + 1] = { title, leftColor = C.muted }   -- design: no hairlines between sections
+    -- Design: no hairlines between sections, just a bigger gap (FR-150 gapBefore adds to rowGap).
+    lines[#lines + 1] = { title, leftColor = C.muted, size = FONT.detailTitle.size, weight = FONT.detailTitle.weight,
+      gapBefore = i > 1 and (S.detailSecGap - S.detailRowGap) or nil }
     for _, r in ipairs(sec.rows) do lines[#lines + 1] = detailRow(r) end
   end
   return lines
@@ -304,7 +306,11 @@ local function attachDetail(frame, catchHover)
       frame:EnableMouse(true)
     end
   end
-  Craft.Tooltip.Attach(frame, { lines = detailLines, fontFlags = "", side = "left", delay = 150 })
+  Craft.Tooltip.Attach(frame, {
+    lines = detailLines, fontFlags = "", side = "left", delay = 150,
+    width = S.detailW, padding = S.detailPad, rowGap = S.detailRowGap,   -- Craft 2.49 (FR-150)
+    fontSize = FONT.detail.size, fontWeight = FONT.detail.weight,
+  })
 end
 
 ------------------------------------------------------------------------------

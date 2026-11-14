@@ -323,7 +323,8 @@ Pendiente, en este orden:
       Pendiente de prueba in-game.
    c. ✅ Completada: «· N nivel(es)» (`Run.levels`, sumado en `T:SampleXP` al subir de nivel).
    d. Detalle: medidas del panel (300 px, padding 12, gap 10/4, títulos 11) → **FR-150 a Craft**
-      (`craft/docs/requests/FR-150-tooltip-medidas-por-config.md`); fallback: Craft.Tooltip actual.
+      (`craft/docs/requests/FR-150-tooltip-medidas-por-config.md`). ✅ Craft 2.49.0 vendoreado y opciones
+      aplicadas en `attachDetail` (2026-11-13); pendiente de prueba in-game.
       Re-vendorear cuando salga. `≈` NO está en BettoGeo: se queda `~` (owner OK). La línea
       «Pasa el ratón para ver el detalle» es nota del lienzo (owner): NO va en el widget.
    e. El letter-spacing del diseño no se puede hacer con FontStrings: queda fuera.
