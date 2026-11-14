@@ -16,6 +16,7 @@
 |-------|-----------|-------|
 | [wow-tamano-fuente-caja-de-linea](#wow-tamano-fuente-caja-de-linea) | el texto sale ~7 % más grande que en el diseño | 2026-11-13 |
 | [craft-tooltip-lines-posicionales](#craft-tooltip-lines-posicionales) | tooltip de Craft vacío (cuadro diminuto) | 2026-11-13 |
+| [forever-dificultad-vacia-al-entrar](#forever-dificultad-vacia-al-entrar) | /reload dentro de la mazmorra pierde las kills | 2026-11-13 |
 
 ---
 
@@ -56,6 +57,20 @@
   espacio de cierre).
 - **Cómo se comprueba:** captura in-game; el borde derecho de cada fila debe coincidir con el del reloj.
 - **Origen:** M1, cotejo docs/15 (separador `·` de la línea de info), 2026-11-13.
+
+## forever-dificultad-vacia-al-entrar
+
+- **Síntoma:** tras un `/reload` dentro de la mazmorra la run vuelve a 0 y el reloj se reinicia; lo
+  matado antes del reload desaparece (Deadmines, Normal).
+- **Causa:** en el primer `PLAYER_ENTERING_WORLD` al entrar, `GetInstanceInfo` devolvió la
+  dificultad VACÍA (`""`); tras el reload ya decía `"Normal"`, y `Run:canResume` exigía la misma
+  dificultad → run nueva. Visto en la traza `QDT_RUN` del registro pasivo (`Deadmines||id=36` →
+  `Deadmines|Normal|id=36`).
+- **Patrón correcto:** un dato de `GetInstanceInfo` leído al entrar puede faltar: rellenarlo
+  después (`Run:fillDifficulty` en `CheckZone`/`Refresh`, y recargar el récord, que va por
+  dificultad) y no compararlo cuando falta en cualquiera de los dos lados.
+- **Cómo se comprueba:** entrar, matar un jefe, `/reload`: la kill y el reloj siguen.
+- **Origen:** M1, run del owner en Deadmines (2026-11-13).
 
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)
      también viven aquí, con motivo y con lo que se hace en su lugar. -->

@@ -340,12 +340,25 @@ end
 -- `window` seconds (a 5-man copy does not outlive ~30 min empty). A finished run also
 -- "resumes" (it keeps showing as completed: /reload, a step outside). The castGUID of the
 -- first spell has the last word (wow/Tracker); a reset message closes the run before this.
+-- An EMPTY difficulty on either side does not block: on the first PLAYER_ENTERING_WORLD of a
+-- dungeon GetInstanceInfo may not have it yet ("" in Deadmines, owner 2026-11-13), and after a
+-- /reload it says "Normal": comparing them started a new run and lost the kills.
 function Run:canResume(info, window)
   if type(info) ~= "table" or self.endedAt then return false end
-  if info.instanceID ~= self.instanceID or (info.difficulty or "") ~= (self.difficulty or "") then
+  if info.instanceID ~= self.instanceID then return false end
+  local a, b = info.difficulty or "", self.difficulty or ""
+  if a ~= "" and b ~= "" and a ~= b then return false end
+  if self.pausedAt and window and self._now() - self.pausedAt > window then return false end
+  return true
+end
+
+-- fillDifficulty(d): the run was created before the game knew its difficulty; take it now.
+-- Only fills an empty one (a known difficulty never changes inside a run). Returns true if set.
+function Run:fillDifficulty(d)
+  if self._isSecret(d) or type(d) ~= "string" or d == "" or (self.difficulty or "") ~= "" then
     return false
   end
-  if self.pausedAt and window and self._now() - self.pausedAt > window then return false end
+  self.difficulty = d
   return true
 end
 

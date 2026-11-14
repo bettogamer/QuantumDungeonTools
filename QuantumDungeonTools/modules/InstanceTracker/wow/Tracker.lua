@@ -192,6 +192,15 @@ function T:_close()
   self.run = nil
 end
 
+-- The difficulty may come empty on the first PLAYER_ENTERING_WORLD: fill it as soon as
+-- GetInstanceInfo has it, and re-read the record (it is keyed by dungeon + difficulty).
+local function fillDifficulty(run)
+  local inst = currentInstance()
+  if inst and inst.instanceID == run.instanceID and run:fillDifficulty(inst.difficulty) then
+    run.pb = Records.get(db().records, run)
+  end
+end
+
 -- A new run races against the record of its dungeon + difficulty as it is NOW (a copy).
 local function newRun(inst)
   local run = Run.new(inst, deps)
@@ -211,6 +220,7 @@ end
 -- Re-reads the lockout of the current instance and merges it into the run.
 function T:Refresh()
   local run = self.run
+  if run and self.inInstance then fillDifficulty(run) end
   if run and self.inInstance and not self.copyPending then
     local list = readBosses()
     if list then
@@ -235,6 +245,7 @@ function T:CheckZone()
     if not run or not run:canResume(inst, RESUME_WINDOW) then
       self:StartRun(inst)
     else
+      fillDifficulty(run)
       -- Same dungeon again: resume the clock; same copy or not is confirmed by the first
       -- cast (_onCast), which starts a new run if it is another copy.
       run:resume()
