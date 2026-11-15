@@ -3,7 +3,7 @@
 > README ejecutable para agentes de IA. Fuente de verdad única del proyecto: si cambia una
 > decisión, este archivo (y el ADR, si nivel M+) se actualizan en el mismo commit.
 >
-> **Estado (2026-11-14):** hito M1, F1-F6 en código; F6 cerrándose (falta el guion in-game de Novedades), luego la run de pruebas en mazmorra y el checklist de cierre → `docs/plan-m1-instance-tracker.md`.
+> **Estado (2026-11-14):** hito M1, F1-F6 en código (F6 ✅ in-game); falta la run de pruebas en mazmorra y el checklist de cierre → `docs/plan-m1-instance-tracker.md`.
 > **Nivel de proceso:** M (ver AddonTemplate/docs/04-proceso.md).
 >
 > **TECHO: este archivo ≤ 150 líneas (nivel L: 250).** Se poda al cerrar cada hito y en cada

@@ -27,7 +27,7 @@ sale mal, solo se replanifican las capas y no hay que tocar la base.
 | **F4** | Oro, reputación, ritmo + tooltip Detalle | ✅ HECHA en código (2026-11-13: F4a fila de totales, F4b tooltip Detalle); falta prueba in-game | nivel 3 (hover) |
 | **F5** | Contador 10/hora, aviso 10/10, toast de fin de run | ✅ HECHA en código (2026-11-14: F5a contador + Detalle, F5b avisos, F5c toast); falta prueba in-game | nivel 4 (avisos) |
 | **F4c** | % de trash + tiempo fuera de la mazmorra en el Detalle | ✅ HECHA en código (2026-11-14, lienzo v47); falta prueba in-game | punto 8c-8d: total de trash por mazmorra con los números de FDJ (citando la fuente); tiempo fuera en el modelo de la run **Hallazgo 2026-11-14:** FDJ NO trae totales de trash: los APRENDE por cuenta al completar runs (`RunLog.lua:498-503`, `max(seenN, kills)` → `runLogTrashTotal`), y el SavedVariables del owner no tiene ninguno. QDT tampoco cuenta kills de trash hoy. El tiempo fuera ya existe (`Run.pausedTotal`). **Decidido (owner, 2026-11-14):** (c) aprender como FDJ: contar `PARTY_KILL` anónimos menos los jefes detectados y guardar por mazmorra `max(total, kills)` al terminar una run limpia; el % sale desde que haya total, si no «N bichos». (d) fila «Fuera de la mazmorra m:ss» en RITMO del Detalle, solo si > 0. Diseño primero (artboard Detalle). |
-| **F6** | Ventana principal (Historial + ajustes por línea) | 🔨 EN CURSO (F6a-F6e ✅ código + in-game, 2026-11-14; Novedades en código, falta su guion in-game; ver §F6 Subfases) | nivel 4 (Historial), líneas desactivables; decisiones del owner en §F6 |
+| **F6** | Ventana principal (Historial + ajustes por línea) | ✅ HECHA (2026-11-14: F6a-F6e y Novedades, código + in-game; ver §F6 Subfases) | nivel 4 (Historial), líneas desactivables; decisiones del owner en §F6 |
 
 > Fuera de este hito por decisión previa: **Minimap Lens** (módulo futuro, hito propio);
 > **protocolo NIT** de NF (requiere LibSerialize/LibDeflate/AceComm); **flecha o posición del
@@ -339,7 +339,7 @@ Fila activa del sidebar (owner, 2026-11-14): el diseño se alinea con shadcn (FR
 sin adopción): solo el lavado, con el margen del grupo, sin barra oro; lienzo v62 (de paso, fuera la
 caja «Buscar ajustes» de los artboards). Sin apaño en el código.
 
-**Guion Novedades + barra (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 22/22;
+**Guion Novedades + barra (in-game, sin mazmorra)** — ✅ (owner, 2026-11-14: `check f2` 22/22 y los 7 puntos OK, inglés incluido): `/reload` → `/qdt check f2` (esperado 22/22;
 «page news» dice «1 versions, 10/10 items»). (1) `/qdt` → la fila activa solo con el lavado oro, sin barra.
 (2) Novedades: una tarjeta «En desarrollo · SIN PUBLICAR · 10 cambios» abierta, chevron oro hacia
 abajo. (3) Filas: título en crema (y «/qdt» como etiqueta en «Ventana principal»), detalle en gris
