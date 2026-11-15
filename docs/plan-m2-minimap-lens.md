@@ -43,7 +43,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 
 | Fase | Feature | Estado | Nota |
 |------|---------|--------|------|
-| **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast / B chat, punto 8 sin cerrar), AppLens |
+| **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast elegida, punto 8), AppLens |
 | **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
 | **F2** | Núcleo de la lente | 🟡 en código (2026-11-15), falta la prueba in-game (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
@@ -373,7 +373,7 @@ Al terminar, `/reload` y avisar: el agente lee `_checkLens` (esperado: `off.diff
 | 5 | Aro decorativo | **owner** | ocultar + contorno QDT | ✅ así (2026-11-15) |
 | 6 | Ocultar rastreo de recursos | **owner** | opción apagada por defecto | ✅ así (2026-11-15) |
 | 7 | Soporte de EllesmereUI/ElvUI | **owner** | modo suave + aviso único | ✅ así (2026-11-15) |
-| 8 | Aviso de convivencia: ¿chat o toast? | **owner** | toast como el de fin de run | ⬜ (en el lienzo) |
+| 8 | Aviso de convivencia: ¿chat o toast? | **owner** | toast como el de fin de run | ✅ toast (owner, 2026-11-15): artboard LensAviso variante A |
 | 9 | Valores por defecto y límites de tamaño y opacidad | agente (tras F1) | ~2× el original, opacidad 100 % | ✅ 2,6× (1,5-3,5×, ≤85 % del alto), opacidad 100 % (40-100 %), §F2 |
 | 10 | Revisar FarmMode/MountMapMove (guardan y restauran el ancla) | agente | `addon-scout` antes de F2 si F1 da sorpresas | ⬜ |
 | 11 | Lente con EllesmereUI cuando el minimapa está pegado (snap) en su modo desbloqueo | **owner** | intentar mover, comprobar en el siguiente fotograma y, si se deshizo, crecer en su sitio y avisar | ✅ así: solo un **aviso** de que con el minimapa pegado no se puede mover; lo pegado al minimapa se mueve con la lente (2026-11-15) |
@@ -385,5 +385,6 @@ la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada 
 NewsData y `Siguiente:` escrito aquí.
 
 **Siguiente:** prueba in-game de F2 (guion en §F2) y, con su OK, F3 (convivencia) en sesión
-nueva. Antes de F3, el owner decide el punto 8 (toast o chat), que es donde vive el aviso de
-«minimapa pegado en EllesmereUI» (`MinimapLensUI.moveHeld == false`).
+nueva. Punto 8 cerrado: el aviso de «minimapa pegado en EllesmereUI» (`MinimapLensUI.moveHeld
+== false`) es un **toast** (LensAviso A, mismo motor que el toast de fin de run). Pendiente de F2:
+la prueba sin otro UI y con ElvUI.
