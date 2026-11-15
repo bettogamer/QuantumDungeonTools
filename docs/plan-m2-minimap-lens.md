@@ -44,7 +44,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | Fase | Feature | Estado | Nota |
 |------|---------|--------|------|
 | **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast / B chat, punto 8 sin cerrar), AppLens |
-| **F1** | Sondas de Forever (`/qdt check m2`) | ✅ fuera de mazmorra en las 3 configuraciones (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-26 en §F1; **pendiente la decisión del owner sobre mover la lente con EUI** |
+| **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
 | **F2** | Núcleo de la lente | ⬜ PENDIENTE | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
 | **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
@@ -333,6 +333,7 @@ después de F2.
 | 8 | Aviso de convivencia: ¿chat o toast? | **owner** | toast como el de fin de run | ⬜ (en el lienzo) |
 | 9 | Valores por defecto y límites de tamaño y opacidad | agente (tras F1) | ~2× el original, opacidad 100 % | ⬜ |
 | 10 | Revisar FarmMode/MountMapMove (guardan y restauran el ancla) | agente | `addon-scout` antes de F2 si F1 da sorpresas | ⬜ |
+| 11 | Lente con EllesmereUI cuando el minimapa está pegado (snap) en su modo desbloqueo | **owner** | intentar mover, comprobar en el siguiente fotograma y, si se deshizo, crecer en su sitio y avisar | ✅ así: solo un **aviso** de que con el minimapa pegado no se puede mover; lo pegado al minimapa se mueve con la lente (2026-11-15) |
 
 ## Checklist de cierre del hito
 
@@ -346,4 +347,5 @@ ni tamaño sin zoom); máscara 130937 + `GetMinimapShape` = `SQUARE` solo sin ot
 con 186178); **guardar el zoom original en la DB** y reponerlo tras `/reload`/logout (gotcha 16);
 la lente no sobrevive a recargas ni a pantallas de carga; posición propia por defecto (en su sitio
 la tapa el rastreador de misiones); con EUI no tocar los iconos LibDBIcon; todo vale en combate.
-Antes de F2: decisión del owner sobre EUI (la lente no se mueve ahí) y punto 8 (toast o chat).
+Decisión EUI cerrada (punto 11: aviso si el minimapa está pegado). Punto 8 (toast o chat) se
+decide antes de F3, que es donde vive el aviso.
