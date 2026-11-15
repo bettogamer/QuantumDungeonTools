@@ -52,8 +52,8 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 
 > Fuera de este hito por decisión previa: **flecha o posición del jugador** (no hay datos en
 > instancia); **activación automática al entrar** (owner: solo manual); **clic en el icono de
-> LibDBIcon** como disparador (no elegido); **rotación, máscara/forma y blobs** del minimapa (no
-> tienen getter para restaurarlos, doc 23); **segunda vista propia del mapa** (casi seguro
+> LibDBIcon** como disparador (no elegido); **rotación y blobs** del minimapa (no tienen getter
+> para restaurarlos, doc 23); **segunda vista propia del mapa** (casi seguro
 > inviable, doc 22).
 
 ---
@@ -71,6 +71,11 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 - **Al salir de la mazmorra la lente se cierra sola.**
 - Botones: **los de Blizzard se quedan en su sitio** y **los iconos de addons (LibDBIcon) se
   reacomodan alrededor del mapa grande**; al apagar, vuelven.
+- Forma: **la lente es CUADRADA** (owner, 2026-11-15: «así vemos más terreno»). `SetMaskTexture`
+  cuadrada mientras está activa (~27 % más área al mismo tamaño) y `GetMinimapShape()` →
+  `"SQUARE"` para que LibDBIcon coloque los iconos en el borde cuadrado. Al apagarla: sin otro UI
+  se restaura la máscara redonda de Blizzard (conocida: no hay getter). Con ElvUI o EllesmereUI,
+  cuyo minimapa ya es cuadrado, la máscara no se toca.
 - Borde: **se oculta el aro de Blizzard** y se dibuja un **contorno QDT** fino con la paleta B
   (como el HUD del widget).
 - Rastreo: interruptor **«Ocultar hierbas y minas mientras la lente está activa», apagado por
@@ -109,6 +114,9 @@ de pruebas (memoria «pruebas in-game agrupadas»). Lo esencial:
 - Si el zoom de la lente se revierte solo a los +5/+10/+30 s (ElvUI, auto-reset de EUI).
 - `SetAlpha` del Minimap: ¿atenúa el terreno renderizado, los pines y los iconos hijos?
 - `C_Minimap.GetViewRadius` antes y después (¿se ve más área o solo más grande?).
+- Máscara cuadrada en Forever: ¿el renderer pinta las esquinas (terreno y pines) o quedan
+  vacías?, ¿qué textura de máscara usa Blizzard por defecto (para restaurarla)? y
+  `GetMinimapShape` (¿la define alguien ya?, ¿la respeta LibDBIcon al hacer `Refresh`?).
 - ¿Existen `SetBlipTexture`/`SetPlayerTexture` en Forever? (no documentadas).
 - `Bindings.xml` + `BINDING_HEADER_*` en Teclado › Atajos › AddOns de Forever.
 - Modo edición: ¿repone los anclajes de `MinimapContainer` con la lente activa?
