@@ -10,6 +10,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
   minimapa real a un cuadrado de 2,6× su lado, en su propia posición, un paso de zoom más cerca,
   con el contorno QDT en lugar del aro de Blizzard y los iconos de addons alrededor; al apagarla
   (o al recargar / pantalla de carga) todo vuelve como estaba, también en combate.
+- **Minimap Lens, convivencia (M2 F3):** si otro UI (EllesmereUI, ElvUI u otro addon) vuelve a
+  colocar el minimapa con la lente puesta, la lente repone solo lo que cambió, sin pelear; si
+  insiste, cede y avisa una vez con un toast. También avisa si el minimapa está pegado en
+  EllesmereUI y la lente no se puede mover.
 
 ## [0.1.0-beta.1] - 2026-11-15
 

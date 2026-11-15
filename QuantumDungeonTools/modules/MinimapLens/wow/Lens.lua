@@ -11,8 +11,14 @@
 --
 -- The lens does not survive a reload or a loading screen (gotcha 3): PLAYER_LEAVING_WORLD
 -- restores it. The original zoom also lives in the DB while it is on (gotcha 16).
--- Triggers (binding, magnifier button, auto-close on leaving the instance) are F4; the
--- coexistence warning is F3 (it reads LensUI.moveHeld).
+-- Triggers (binding, magnifier button, auto-close on leaving the instance) are F4.
+--
+-- Coexistence (F3, soft mode): hooks on the Minimap's setters see every write that is not ours
+-- (`writing` marks ours). Once the lens has settled (the move check is done), a foreign write
+-- waits REAPPLY s for the other UI to finish, then only what drifted is put back
+-- (Lens.drift); a referee yields after Lens.REFEREE fixes and the lens stays as it was left.
+-- The anchor is not fought when the move did not hold (EUI with the minimap pinned). Each case
+-- warns once per session with the LensAviso toast.
 local _, ns = ...
 local L = ns.L
 local Lens = ns.MinimapLens
@@ -24,12 +30,22 @@ ns.MinimapLensUI = UI
 local Weave = LibStub and LibStub("Weave-1.0", true)
 local FADE = 0.2                      -- Craft motionBase, in and out (one tween)
 local MOVE_CHECK = 0.6                -- past EUI's resize repositioning (throttle 50 ms + tail <= 0.5 s)
+local REAPPLY = 0.6                   -- same window: let the other UI finish before putting back
+local AFTER_COMBAT = 1.5              -- EUI reanchors at +0.7 s after combat (gotcha 10): look again
+local NOTICE_SECONDS = 8              -- LensAviso: closes by itself after 8 s
 
 local snap        -- what to put back; nil = lens off
 local outline     -- QDT outline frame (child of the Minimap: fades with it)
 local fade        -- { goal, tween, effect } over the Minimap alpha
 local leaving     -- fading out before the restore
 local token = 0   -- invalidates pending timers of an older on/off
+local writing = false   -- true while the lens itself writes on the Minimap (the hooks skip it)
+local settled = false   -- the move check is done: from here on, foreign writes are watched
+local fadingUntil = 0   -- GetTime() when the running fade ends (alpha is not watched before)
+local referee           -- Lens.newReferee() of the current lens
+local maskDirty = false -- someone else called SetMaskTexture (there is no getter to compare)
+local watchToken = 0    -- debounces the reapply after a burst of foreign writes
+local warned = {}       -- warnings already shown this session (soft, pinned)
 
 local function db() return ns.db and ns.db.minimapLens end
 
@@ -39,13 +55,33 @@ local function call(obj, method, ...)
   return pcall(fn, obj, ...)
 end
 
--- Who owns the minimap (same detection as the F1 probe; F3 refines it).
+-- Runs fn as the lens's own write (the setter hooks ignore it). Returns pcall's results.
+local function mine(fn, ...)
+  local was = writing   -- nests (a tween frame inside another write)
+  writing = true
+  local ok, e = pcall(fn, ...)
+  writing = was
+  return ok, e
+end
+
+local function squareShape() return "SQUARE" end
+
+-- Who owns the minimap: ElvUI (its holder exists only with its minimap module on), EllesmereUI
+-- (its minimap module cannot be turned off live, gotcha 27), or "other" when an unknown addon
+-- already says the minimap is not round (SexyMap, Leatrix... own the mask then).
 function UI.owner()
   local elv = _G.ElvUI_MinimapHolder ~= nil
   local okE, eui = pcall(C_AddOns.IsAddOnLoaded, "EllesmereUIMinimap")
   eui = okE and not issecretvalue(eui) and eui == true
   if elv and eui then return "elvui+eui" end
-  return elv and "elvui" or eui and "eui" or "none"
+  if elv then return "elvui" end
+  if eui then return "eui" end
+  local fn = GetMinimapShape
+  if type(fn) == "function" and fn ~= squareShape then
+    local ok, shape = pcall(fn)
+    if ok and not issecretvalue(shape) and type(shape) == "string" and shape ~= "ROUND" then return "other" end
+  end
+  return "none"
 end
 
 ------------------------------------------------------------------------------
@@ -144,8 +180,6 @@ local function refreshIcons(plan)
   for _, name in ipairs(list) do pcall(icon.Refresh, icon, name) end
 end
 
-local function squareShape() return "SQUARE" end
-
 local function maxZoomLevels()
   local ok, n = call(Minimap, "GetZoomLevels")
   return ok and not issecretvalue(n) and n or nil
@@ -159,8 +193,9 @@ end
 
 -- Tweens the Minimap alpha to `to`; `done` runs when it gets there (or right away without Weave).
 local function fadeTo(to, done)
+  fadingUntil = GetTime() + FADE + 0.1
   if not Weave then
-    pcall(Minimap.SetAlpha, Minimap, to)
+    mine(Minimap.SetAlpha, Minimap, to)
     if done then done() end
     return
   end
@@ -169,7 +204,7 @@ local function fadeTo(to, done)
     fade.tween = Weave.tween(fade.goal, { duration = FADE, easing = motion() })
     fade.effect = Weave.effect(function()
       local v = fade.tween()
-      if type(v) == "number" then pcall(Minimap.SetAlpha, Minimap, v) end
+      if type(v) == "number" then mine(Minimap.SetAlpha, Minimap, v) end
     end)
   end
   local okA, from = call(Minimap, "GetAlpha")
@@ -221,25 +256,147 @@ end
 ------------------------------------------------------------------------------
 -- Apply / restore
 ------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- Coexistence (F3): warnings, watching and putting back
+------------------------------------------------------------------------------
+local function ownerLabel(owner) return Lens.ownerName(owner) or L.LENS_OTHER_UI end
+
+-- kind: "soft" (another UI keeps writing; the lens yields) or "pinned" (the move did not hold).
+-- Once per session each; the toast of the Instance Tracker alerts, or a chat line without it.
+function UI:Warn(kind, owner)
+  if warned[kind] then return end
+  warned[kind] = true
+  local body
+  if kind == "pinned" then
+    body = owner == "eui" and L.LENS_PINNED_EUI or L.LENS_PINNED:format(ownerLabel(owner))
+  else
+    body = L.LENS_SOFT_BODY:format(ownerLabel(owner))
+  end
+  local alerts = ns.InstanceAlertsUI
+  local ok, shown = false, false
+  if alerts and alerts.ShowNotice then
+    ok, shown = pcall(alerts.ShowNotice, alerts, { icon = "search", title = L.LENS_SOFT_TITLE, body = body,
+      seconds = NOTICE_SECONDS })
+  end
+  if not ok or not shown then ns.say(body) end
+end
+
+local function coexist(fields)
+  local root = QuantumDungeonToolsDB
+  if type(root) ~= "table" or type(root._checkLens) ~= "table" then return nil end
+  local c = root._checkLens.coexist
+  if not c then
+    c = { foreign = 0, reapplied = 0, yielded = false, last = "" }
+    root._checkLens.coexist = c
+  end
+  for k, v in pairs(fields) do c[k] = v end
+  return c
+end
+
+-- What the lens should look like right now (see Lens.drift).
+local function wanted(s)
+  local w = { side = s.side, scale = s.scale }
+  if GetTime() >= fadingUntil and fade then
+    local okG, g = pcall(fade.goal.peek, fade.goal)
+    if okG and type(g) == "number" then w.alpha = g end
+  end
+  if UI.moveHeld then w.pos = s.pos end
+  return w
+end
+
+local function readBack()
+  local _, w, h = call(Minimap, "GetSize")
+  local _, scale = call(Minimap, "GetScale")
+  local _, alpha = call(Minimap, "GetAlpha")
+  local function num(v) return (not issecretvalue(v) and type(v) == "number") and v or nil end
+  return { w = num(w), h = num(h), scale = num(scale), alpha = num(alpha), anchor = anchor() }
+end
+
+local function reassert(reason)
+  local s = snap
+  if not s or leaving or not settled or not referee then return end
+  local fix = Lens.drift(wanted(s), readBack())
+  if maskDirty and s.plan.mask then
+    fix = fix or {}
+    fix.mask = true
+  end
+  maskDirty = false
+  if not fix then return end   -- they wrote, but the lens still stands
+  local names = {}
+  for k in pairs(fix) do names[#names + 1] = k end
+  table.sort(names)
+  local verdict = referee:call(GetTime())
+  local c = coexist({ last = verdict .. " " .. table.concat(names, ",") .. " (" .. reason .. ")" })
+  if verdict == "yield" then
+    if c then c.yielded = true end
+    UI:Warn("soft", s.owner)
+    return
+  end
+  if verdict ~= "reapply" then return end
+  if c then c.reapplied = c.reapplied + 1 end
+  local p, w = s.pos, wanted(s)
+  mine(function()
+    if fix.scale then Minimap:SetScale(s.scale) end
+    if fix.size then Minimap:SetSize(s.side, s.side) end
+    if fix.anchor then
+      Minimap:ClearAllPoints()
+      Minimap:SetPoint(p.point, UIParent, p.point, p.x, p.y)
+    end
+    if fix.alpha and w.alpha then Minimap:SetAlpha(w.alpha) end
+    if fix.mask then Minimap:SetMaskTexture(Lens.MASK_SQUARE) end
+  end)
+  if fix.size then refreshIcons(s.plan) end
+end
+
+local function schedule(reason, delay)
+  watchToken = watchToken + 1
+  local my = watchToken
+  C_Timer.After(delay or REAPPLY, function()
+    if my == watchToken then reassert(reason) end
+  end)
+end
+
+-- Every setter that can undo the lens (the zoom is left alone on purpose).
+local WATCHED = { "SetSize", "SetWidth", "SetHeight", "SetPoint", "ClearAllPoints", "SetAllPoints",
+  "SetScale", "SetAlpha", "SetMaskTexture" }
+local hooked = false
+
+local function hookSetters()
+  if hooked then return end
+  hooked = true
+  for _, m in ipairs(WATCHED) do
+    if type(Minimap[m]) == "function" then
+      hooksecurefunc(Minimap, m, function()
+        if writing or not snap or leaving or not settled then return end
+        if m == "SetMaskTexture" then maskDirty = true end
+        local c = coexist({})
+        if c then c.foreign = c.foreign + 1 end
+        schedule(m)
+      end)
+    end
+  end
+end
+
 local function checkMove(my)
   local want = snap.pos
+  local function done(held, retried)
+    UI.moveHeld = held
+    settled = true
+    dump("move", { held = held, retried = retried })
+    if not held then UI:Warn("pinned", snap.owner) end
+  end
   C_Timer.After(MOVE_CHECK, function()
     if my ~= token or not snap then return end
-    if Lens.held(want, anchor()) then
-      UI.moveHeld = true
-      dump("move", { held = true, retried = false })
-      return
-    end
+    if Lens.held(want, anchor()) then return done(true, false) end
     -- Undone (EUI reanchors on resize): one more try past its window, then a frame to look.
     local p = want
-    pcall(function()
+    mine(function()
       Minimap:ClearAllPoints()
       Minimap:SetPoint(p.point, UIParent, p.point, p.x, p.y)
     end)
     C_Timer.After(0, function()
       if my ~= token or not snap then return end
-      UI.moveHeld = Lens.held(want, anchor())
-      dump("move", { held = UI.moveHeld, retried = true })
+      done(Lens.held(want, anchor()), true)
     end)
   end)
 end
@@ -252,19 +409,21 @@ local function apply(s, d)
   s.pos = Lens.position(d.pos, uiH)
   s.lensZoom = Lens.zoomIn(s.zoom, maxZoomLevels())
   local p = s.pos
-  return pcall(function()
+  return mine(function()
     Minimap:SetSize(side, side)
     Minimap:ClearAllPoints()
     Minimap:SetPoint(p.point, UIParent, p.point, p.x, p.y)
     if s.plan.mask then Minimap:SetMaskTexture(Lens.MASK_SQUARE) end
-    if s.plan.shape and GetMinimapShape == nil then GetMinimapShape = squareShape end
+    -- Also over an addon that only says "ROUND" (owner "none"): restore puts its function back.
+    if s.plan.shape then GetMinimapShape = squareShape end
     if s.backdrop and s.backdropShown then s.backdrop:Hide() end
     Minimap:SetZoom(s.lensZoom)
   end)
 end
 
 local function restore(s)
-  local ok, e = pcall(function()
+  settled = false
+  local ok, e = mine(function()
     Minimap:SetScale(s.scale)
     Minimap:SetSize(s.w, s.h)
     Minimap:ClearAllPoints()
@@ -300,10 +459,12 @@ function UI:On()
     return false
   end
   token = token + 1
+  watchToken = watchToken + 1
   snap, UI.moveHeld = s, nil
+  settled, maskDirty, referee = false, false, Lens.newReferee()
   local d = db()
   Lens.markApplied(d, s.zoom)
-  pcall(Minimap.SetAlpha, Minimap, 0)   -- grow unseen, then fade in (never tween the size)
+  mine(Minimap.SetAlpha, Minimap, 0)   -- grow unseen, then fade in (never tween the size)
   local ok, e = apply(s, d)
   if not ok then
     restore(s)
@@ -317,6 +478,9 @@ function UI:On()
     point = s.pos.point, x = s.pos.x, y = s.pos.y, mask = s.plan.mask, icons = s.plan.icons,
     ring = s.backdropShown,
     shape = type(GetMinimapShape) == "function" and select(2, pcall(GetMinimapShape)) or "nil" })
+  if type(QuantumDungeonToolsDB) == "table" and QuantumDungeonToolsDB._checkLens then
+    QuantumDungeonToolsDB._checkLens.coexist = nil   -- F3 counts per lens
+  end
   fadeTo(Lens.clamp(d.opacity, Lens.OPACITY))
   checkMove(token)
   return true
@@ -362,15 +526,31 @@ function UI:SetOpacity(v)
   if self:IsOn() then fadeTo(d.opacity) end
 end
 
+-- Previews of the coexistence toast (/qdt lens notice <soft | pinned>): ignore the once rule.
+function UI:PreviewNotice(kind)
+  if kind ~= "soft" and kind ~= "pinned" then return false end
+  warned[kind] = nil
+  self:Warn(kind, self.owner())
+  return true
+end
+
 local events = CreateFrame("Frame")
 events:SetScript("OnEvent", function(_, event)
-  if event == "PLAYER_LEAVING_WORLD" or event == "PLAYER_LOGOUT" then UI:Off(true) end
+  if event == "PLAYER_LEAVING_WORLD" or event == "PLAYER_LOGOUT" then
+    UI:Off(true)
+  elseif event == "PLAYER_REGEN_ENABLED" then
+    -- Safety net for a UI that writes through a cached setter (no hook sees it): look once
+    -- after its post-combat pass. Only what drifted is put back, as with the hooks.
+    if snap and settled and not leaving then schedule("combat", AFTER_COMBAT) end
+  end
 end)
 
 function UI:Init()
   -- A crash or a disconnect with the lens on: put the original zoom back (gotcha 16).
   local z = Lens.takePendingZoom(db())
   if z then pcall(Minimap.SetZoom, Minimap, z) end
+  hookSetters()
   events:RegisterEvent("PLAYER_LEAVING_WORLD")
   events:RegisterEvent("PLAYER_LOGOUT")
+  events:RegisterEvent("PLAYER_REGEN_ENABLED")
 end

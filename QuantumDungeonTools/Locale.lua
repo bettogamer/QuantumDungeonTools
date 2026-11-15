@@ -139,6 +139,16 @@ L.CHECK_M2_USAGE      = "check m2 [ab | on | off | alpha | combat | reset]"
 
 -- Minimap Lens (plan M2 F2)
 L.LENS_FAIL           = "Minimap Lens: could not change the minimap (%s)."
+-- Coexistence toast (plan M2 F3, artboard LensAviso A)
+L.LENS_SOFT_TITLE     = "Minimap Lens in soft mode"
+L.LENS_SOFT_BODY      = "%s keeps putting the minimap back. The lens stays on,"
+  .. " but stops correcting it so they do not fight."
+L.LENS_PINNED_EUI     = "The minimap is pinned in EllesmereUI, so the lens grows in place."
+  .. " Unpin it in EllesmereUI's unlock mode to move the lens."
+L.LENS_PINNED         = "%s holds the minimap in place, so the lens grows there."
+L.LENS_OTHER_UI       = "Another addon"
+L.LENS_GOT_IT         = "Got it"
+L.LENS_NOTICE_USAGE   = "lens notice <soft | pinned>"
 
 -- Main window (plan M1 F6b)
 L.MW_HOME          = "Home"
@@ -374,6 +384,14 @@ if locale == "esES" or locale == "esMX" then
   L.CHECK_M2_FAIL       = "check m2: no se pudo aplicar la lente (ver el volcado)."
 
   L.LENS_FAIL           = "Minimap Lens: no se pudo cambiar el minimapa (%s)."
+  L.LENS_SOFT_TITLE     = "Minimap Lens en modo suave"
+  L.LENS_SOFT_BODY      = "%s ha vuelto a colocar el minimapa. La lente sigue activa,"
+    .. " pero deja de corregirlo para no pelear con él."
+  L.LENS_PINNED_EUI     = "El minimapa está pegado en EllesmereUI, así que la lente crece en su sitio."
+    .. " Despégalo en su modo desbloqueo para poder moverla."
+  L.LENS_PINNED         = "%s sujeta el minimapa en su sitio, así que la lente crece ahí."
+  L.LENS_OTHER_UI       = "Otro addon"
+  L.LENS_GOT_IT         = "Entendido"
 
   L.CHECK_F1_SAVED  = "check f1: foto %d guardada (%s)."
   L.CHECK_F1_LOCK   = "lockout: %s/%s muertos, %d filas de jefe"

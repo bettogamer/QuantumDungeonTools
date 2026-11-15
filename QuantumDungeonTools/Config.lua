@@ -67,6 +67,8 @@ SlashCmdList.QDT = function(msg)
     ns.CheckM2:Run((msg:gsub("^check m2%s*", "")))
   elseif msg == "lens" then
     ns.MinimapLensUI:Toggle()   -- M2 F2: interim trigger (F4 adds the binding and the button)
+  elseif msg:find("^lens notice") then
+    if not ns.MinimapLensUI:PreviewNotice((msg:gsub("^lens notice%s*", ""))) then say(L.LENS_NOTICE_USAGE) end
   elseif msg == "minimap" then
     local shown = not ns.Minimap:IsShown()
     ns.Minimap:SetShown(shown)

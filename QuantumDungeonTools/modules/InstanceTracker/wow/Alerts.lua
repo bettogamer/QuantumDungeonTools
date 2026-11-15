@@ -30,6 +30,7 @@ local Weave = LibStub("Weave-1.0")
 local kit                   -- UI:Kit(), resolved on first use
 local anchor                -- top-center holder: alert on top, toast under it
 local cap, strip, toast     -- frames, built lazily
+local board                 -- other modules' notices (Minimap Lens soft mode, plan M2 F3)
 local lastFinished          -- the run the toast shows (Share sends it)
 
 ------------------------------------------------------------------------------
@@ -68,7 +69,7 @@ end
 -- Gives every shown panel its slot (alert on top, toast below) and slides it there.
 local function stack()
   local y = 0
-  for _, f in ipairs({ cap or false, strip or false, toast or false }) do   -- no nil holes
+  for _, f in ipairs({ cap or false, strip or false, toast or false, board or false }) do   -- no nil holes
     if f and f:IsShown() and not f.leaving then
       f.slot = y
       f.goal:set({ 1, y })
@@ -438,6 +439,59 @@ function A:ShowToast(run, opts)
   layoutToast()
   showFor(toast, TOAST_SECONDS)
   stack()
+end
+
+------------------------------------------------------------------------------
+-- Notice (artboard LensAviso, variant A): gold icon + title, sand body, "Got it" (outline) and
+-- an optional primary action. Same panel, motion and stack as the alerts; one at a time.
+--   A:ShowNotice({ icon, title, body, seconds, action = { text, onClick }? }) -> true if shown
+------------------------------------------------------------------------------
+local function buildNotice()
+  board = panel(C.alertBg, C.goldBorder)
+  board.icon = board:CreateTexture(nil, "OVERLAY")
+  board.icon:SetPoint("TOPLEFT", board, "TOPLEFT", S.alertPadX, -S.alertPadY)
+  board.title = text(board, FONT.alertTitle, C.gold)
+  board.title:SetPoint("LEFT", board.icon, "RIGHT", S.alertIconGap, 0)
+  board.body = text(board, FONT.alertBody, C.sand)
+  board.body:SetWidth(S.alertW - 2 * S.alertPadX)
+  board.body:SetWordWrap(true)
+  board.body:SetPoint("TOPLEFT", board.icon, "BOTTOMLEFT", 0, -S.alertGap)
+  board.action = kit.Craft.Button:Create(board, { text = "", size = "sm", fontFlags = FONT.toastButton.flags,
+    onClick = function()
+      if board.onAction then board.onAction() end
+      dismiss(board)
+    end })
+  board.close = kit.Craft.Button:Create(board, { text = L.LENS_GOT_IT, size = "sm", variant = "outline",
+    fontFlags = FONT.toastButton.flags, onClick = function() dismiss(board) end })
+end
+
+function A:ShowNotice(n)
+  if type(n) ~= "table" or not ensure() then return false end
+  if not board then buildNotice() end
+  kit.Craft.Icons.Apply(board.icon, n.icon or "search", S.alertIcon)
+  board.icon:SetVertexColor(C.gold.r, C.gold.g, C.gold.b, 1)
+  kit.setText(board.title, n.title or "")
+  kit.setText(board.body, n.body or "")
+  local y = S.alertPadY + math.max(S.alertIcon, board.title:GetStringHeight()) + S.alertGap
+    + board.body:GetStringHeight() + S.alertGap
+  local close, action = board.close:GetFrame(), board.action:GetFrame()
+  action:ClearAllPoints()
+  close:ClearAllPoints()
+  if n.action then
+    board.action:SetText(n.action.text)
+    board.onAction = n.action.onClick
+    action:SetPoint("TOPRIGHT", board, "TOPRIGHT", -S.alertPadX, -y)
+    close:SetPoint("RIGHT", action, "LEFT", -S.toastButtonGap, 0)
+    action:Show()
+  else
+    board.onAction = nil
+    close:SetPoint("TOPRIGHT", board, "TOPRIGHT", -S.alertPadX, -y)
+    action:Hide()
+  end
+  board:SetHeight(y + close:GetHeight() + S.alertPadY)
+  showFor(board, n.seconds or NEAR_SECONDS)
+  stack()
+  return true
 end
 
 ------------------------------------------------------------------------------

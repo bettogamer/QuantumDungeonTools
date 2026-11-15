@@ -88,4 +88,69 @@ describe("MinimapLens core", function()
     Lens.markRestored(db)
     assert_eq(Lens.takePendingZoom(db), nil)
   end)
+
+  -- F3: convivencia
+  it("plan con un addon desconocido que define su forma: no toca la máscara, sí los iconos", function()
+    local p = Lens.plan("other")
+    assert_false(p.mask)
+    assert_false(p.shape)
+    assert_true(p.icons)
+  end)
+
+  it("ownerName: nombre de los UI conocidos y nil para el resto", function()
+    assert_eq(Lens.ownerName("eui"), "EllesmereUI")
+    assert_eq(Lens.ownerName("elvui"), "ElvUI")
+    assert_eq(Lens.ownerName("other"), nil)
+    assert_eq(Lens.ownerName("none"), nil)
+  end)
+
+  it("árbitro: corrige hasta el máximo en la ventana, cede una vez y luego se queda quieto", function()
+    local r = Lens.newReferee({ max = 3, window = 10 })
+    assert_eq(r:call(0), "reapply")
+    assert_eq(r:call(1), "reapply")
+    assert_eq(r:call(2), "reapply")
+    assert_eq(r:call(3), "yield")
+    assert_eq(r:call(4), "idle")
+    assert_eq(r:call(100), "idle")
+  end)
+
+  it("árbitro: las pisadas viejas salen de la ventana y no cuentan", function()
+    local r = Lens.newReferee({ max = 3, window = 10 })
+    assert_eq(r:call(0), "reapply")
+    assert_eq(r:call(1), "reapply")
+    assert_eq(r:call(12), "reapply")   -- 0 y 1 ya caducaron
+    assert_eq(r:call(13), "reapply")
+    assert_eq(r:call(14), "reapply")
+    assert_eq(r:call(15), "yield")      -- 12, 13 y 14 vivas
+  end)
+
+  it("árbitro: cede con max correcciones vivas en la ventana", function()
+    local r = Lens.newReferee({ max = 2, window = 10 })
+    assert_eq(r:call(0), "reapply")
+    assert_eq(r:call(11), "reapply")    -- la de 0 caducó
+    assert_eq(r:call(12), "reapply")
+    assert_eq(r:call(13), "yield")
+  end)
+
+  it("drift: marca solo lo que se movió, con tolerancia", function()
+    local want = { side = 442, scale = 1, alpha = 1, pos = { point = "CENTER", x = 80, y = -30 } }
+    local fine = { w = 442.3, h = 442, scale = 1, alpha = 1, anchor = { point = "CENTER", x = 80.2, y = -30 } }
+    assert_eq(Lens.drift(want, fine), nil)
+    local f = Lens.drift(want, { w = 198, h = 198, scale = 1, alpha = 1,
+      anchor = { point = "TOPRIGHT", x = -10, y = -10 } })
+    assert_true(f.size)
+    assert_true(f.anchor)
+    assert_eq(f.scale, nil)
+    assert_eq(f.alpha, nil)
+    f = Lens.drift(want, { w = 442, h = 442, scale = 1, alpha = 0.5, anchor = nil })
+    assert_true(f.alpha)
+    assert_true(f.anchor)   -- varios puntos o relativo a otro marco
+  end)
+
+  it("drift: sin alpha (fundido en curso) ni pos (ancla cedida) no los vigila; ilegible no es deriva", function()
+    local want = { side = 442, scale = 1 }
+    assert_eq(Lens.drift(want, { w = 442, h = 442, scale = 1, alpha = 0.1, anchor = nil }), nil)
+    assert_eq(Lens.drift(want, { w = nil, h = 442, scale = "x" }), nil)
+    assert_eq(Lens.drift(nil, {}), nil)
+  end)
 end)

@@ -46,7 +46,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast elegida, punto 8), AppLens |
 | **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
 | **F2** | Núcleo de la lente | ✅ cerrada (2026-11-15): OK del owner en las tres configuraciones (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
-| **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
+| **F3** | Convivencia con otros UI | 🟡 en código (2026-11-15), falta la prueba in-game (§F3) | dueño `other`, vigilante de setters, reaplicar solo lo que derivó, ceder a las 4 correcciones en 10 s, toast LensAviso una vez por sesión |
 | **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
 | **F5** | Página del módulo + ajustes | ⬜ PENDIENTE | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
 
@@ -366,6 +366,52 @@ Al terminar, `/reload` y avisar: el agente lee `_checkLens` (esperado: `off.diff
 combate, zoom tras `/reload`). El volcado `_checkLens` seguía siendo el de la prueba con EUI (no se
 escribió tras estas pruebas), así que el cierre se apoya en la revisión visual del owner.
 
+## F3 — Convivencia (2026-11-15)
+
+Código: `core/Lens.lua` (`ownerName`, `newReferee`, `drift`, `plan("other")`; tests en
+`Lens_spec.lua`), `wow/Lens.lua` (vigilante) y `InstanceTracker/wow/Alerts.lua`
+(`A:ShowNotice`, cuarto panel del mismo motor que el toast de fin de run).
+
+- **Dueño:** se añade `other` = un addon desconocido que ya define `GetMinimapShape` con algo
+  distinto de `"ROUND"`: no se toca su máscara ni su forma, sí se reacomodan los iconos. ElvUI se
+  sigue detectando por `ElvUI_MinimapHolder` (solo existe con su módulo de minimapa encendido,
+  `ElvUI/Game/Shared/Modules/Maps/Minimap.lua:791-843`). Si un addon define la forma como
+  `"ROUND"`, la lente la cambia a cuadrada mientras está activa y al cerrarse repone su función.
+- **Modo suave:** `hooksecurefunc` sobre los setters del Minimap (`SetSize/Width/Height`,
+  `SetPoint`, `ClearAllPoints`, `SetAllPoints`, `SetScale`, `SetAlpha`, `SetMaskTexture`). Las
+  escrituras propias van marcadas (`mine`) y no cuentan. Se vigila solo **tras asentarse** (fin de
+  la comprobación de mover, +0,6 s). Una escritura ajena espera 0,6 s (que el otro UI termine) y
+  se repone **solo lo que derivó** (`Lens.drift`: tamaño, escala, alpha fuera de un fundido, ancla
+  solo si mover aguantó, máscara si alguien la cambió). **El zoom no se pelea** (rueda del jugador
+  y «Reset Zoom» de EUI). Red de seguridad: una mirada a +1,5 s de `PLAYER_REGEN_ENABLED` (setters
+  cacheados que no ve el hook).
+- **Ceder:** el árbitro corrige hasta **4 veces en 10 s** (una pisada de EUI más el eco de nuestra
+  corrección, porque EUI reancla al cambiar el tamaño, ya son 2). A la quinta, la lente se queda
+  como la dejó el otro UI y sale el toast «modo suave». Decisión del agente: **no se quita el zoom
+  extra al ceder** (el artboard lo decía, pero el zoom no es lo que pisan); el texto se ajustó.
+- **Avisos** (LensAviso A, 8 s, una vez por sesión cada uno): «modo suave» y «minimapa pegado»
+  (`moveHeld == false`; con EUI explica cómo despegarlo). Sin el motor de avisos, línea de chat.
+  El botón «Ajustes de la lente» del artboard llega con la página de F5 (`ShowNotice` ya admite
+  `action`).
+- Autoprueba: `_checkLens.coexist = { foreign, reapplied, yielded, last }` por lente
+  (`lua scripts/read-check-lens.lua`).
+
+### Guion de prueba (owner, fuera de mazmorra)
+
+1. `/reload`, `/qdt lens notice soft` y luego `/qdt lens notice pinned`. 👁 Toast arriba al centro:
+   lupa y título dorados «Minimap Lens en modo suave», texto arena, botón «Entendido»; se va solo
+   a los 8 s o con un clic.
+2. **Sin otro UI** (o ElvUI): `/qdt lens` y, con la lente puesta, pegar **cinco veces seguidas**
+   (una cada ~1 s) `/run Minimap:SetSize(140,140)`. 👁 Las cuatro primeras el mapa encoge y a
+   ~0,6 s vuelve grande; a la quinta se queda pequeño y sale el toast «modo suave». `/qdt lens`
+   para cerrar.
+3. **EllesmereUI con el minimapa despegado:** `/qdt lens`, pegarle a un bicho y salir de combate.
+   👁 La lente sigue en el centro (si EUI la devuelve a su esquina, vuelve al centro en ~1 s).
+4. **EllesmereUI con el minimapa pegado:** `/qdt lens`. 👁 Crece en su esquina y, a ~0,6 s, sale
+   el toast «minimapa pegado» (una sola vez: cerrar y abrir la lente no lo repite).
+Al terminar, `/reload` y avisar: el agente lee `_checkLens.coexist` (esperado tras el paso 2:
+`foreign >= 5`, `reapplied = 4`, `yielded = true`).
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
@@ -388,6 +434,5 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** F3 (convivencia), en sesión nueva. Recargar AGENTS.md + este plan (§F1 gotchas,
-§F2). Punto 8 cerrado: el aviso de «minimapa pegado en EllesmereUI» (`MinimapLensUI.moveHeld
-== false`) es un **toast** (LensAviso A, mismo motor que el toast de fin de run).
+**Siguiente:** prueba in-game de F3 (guion de §F3) y, con su OK, F4 (disparadores y ciclo de
+vida) en sesión nueva. Recargar AGENTS.md + este plan (§F1 gotchas, §F2, §F3).

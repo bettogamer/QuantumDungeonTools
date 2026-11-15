@@ -1,4 +1,4 @@
--- scripts/read-check-lens.lua -- summary of QuantumDungeonToolsDB._checkLens (plan M2 F2).
+-- scripts/read-check-lens.lua -- summary of QuantumDungeonToolsDB._checkLens (plan M2 F2-F3).
 --   lua scripts/read-check-lens.lua [path\to\SavedVariables\QuantumDungeonTools.lua]
 -- Without a path it takes the first account under the Forever WTF folder.
 local path = arg[1]
@@ -19,7 +19,7 @@ assert(loadfile(path, "t", env))()
 local db = env.QuantumDungeonToolsDB or {}
 local c = db._checkLens
 if not c then print("no _checkLens (use /qdt lens and /reload)") return end
-for _, k in ipairs({ "on", "move", "off" }) do
+for _, k in ipairs({ "on", "move", "coexist", "off" }) do
   local t = c[k]
   if t then
     local keys = {}

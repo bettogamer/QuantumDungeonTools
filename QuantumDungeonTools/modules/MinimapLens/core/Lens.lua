@@ -77,9 +77,10 @@ function Lens.position(pos, uiH)
   return { point = d.point, x = round(d.x * k), y = round(d.y * k) }
 end
 
--- What the lens may touch given who owns the minimap ("none" | "eui" | "elvui" | "elvui+eui").
---   mask/shape: square mask + GetMinimapShape only on Blizzard's minimap (ElvUI and EUI are
---               square already and own their mask).
+-- What the lens may touch given who owns the minimap
+-- ("none" | "eui" | "elvui" | "elvui+eui" | "other" = an unknown addon that set its own shape).
+--   mask/shape: square mask + GetMinimapShape only on Blizzard's minimap (ElvUI, EUI and any
+--               addon with its own GetMinimapShape own their mask).
 --   icons:      LibDBIcon Refresh, except with EllesmereUIMinimap, which hides those buttons in
 --               its drawer and Refresh would force them visible for good (gotcha 4).
 function Lens.plan(owner)
@@ -109,6 +110,59 @@ function Lens.held(want, got, tol)
   if got.point ~= want.point or type(got.x) ~= "number" or type(got.y) ~= "number" then return false end
   tol = tol or 0.5
   return math.abs(want.x - got.x) <= tol and math.abs(want.y - got.y) <= tol
+end
+
+------------------------------------------------------------------------------
+-- Coexistence (plan M2 F3): soft mode. Another UI that writes on the Minimap while the lens is
+-- on gets the last word for a moment; the lens then puts back only what drifted. If it keeps
+-- writing (REFEREE.max fixes inside REFEREE.window seconds), the lens yields: it stays on as the
+-- other UI left it and warns once. The zoom is never fought (the wheel and EUI's reset own it).
+------------------------------------------------------------------------------
+Lens.REFEREE = { max = 4, window = 10 }   -- a stomp + the echo of our fix (EUI reanchors on resize) = 2
+
+-- Name shown in the warning; nil = an unknown addon (the caller says "another addon").
+local OWNER_NAME = { eui = "EllesmereUI", elvui = "ElvUI", ["elvui+eui"] = "ElvUI" }
+function Lens.ownerName(owner) return OWNER_NAME[owner] end
+
+-- referee:call(now) after a foreign write left the lens drifted:
+--   "reapply" (put it back), "yield" (once: stop fixing, warn) or "idle" (already yielded).
+function Lens.newReferee(spec)
+  spec = spec or Lens.REFEREE
+  local r = { hits = {}, yielded = false }
+  function r:call(now)
+    if self.yielded then return "idle" end
+    local keep = {}
+    for _, t in ipairs(self.hits) do
+      if now - t < spec.window then keep[#keep + 1] = t end
+    end
+    self.hits = keep
+    if #keep >= spec.max then
+      self.yielded = true
+      return "yield"
+    end
+    keep[#keep + 1] = now
+    return "reapply"
+  end
+  return r
+end
+
+-- What drifted from the lens. want = { side, scale, alpha?, pos? } (alpha nil while a fade runs,
+-- pos nil when the move did not hold: that anchor is not ours to fight); got = { w, h, scale,
+-- alpha, anchor } read back (anchor nil = several points or not on UIParent). Unreadable numbers
+-- count as no drift (never fight what cannot be measured). Returns { size?, scale?, alpha?,
+-- anchor? } = true for each field to put back, or nil when nothing drifted.
+local function off(a, b, tol)
+  return type(a) == "number" and type(b) == "number" and math.abs(a - b) > tol
+end
+function Lens.drift(want, got)
+  if type(want) ~= "table" or type(got) ~= "table" then return nil end
+  local fix, any = {}, false
+  local function mark(k) fix[k] = true; any = true end
+  if off(want.side, got.w, 0.5) or off(want.side, got.h, 0.5) then mark("size") end
+  if off(want.scale, got.scale, 0.01) then mark("scale") end
+  if want.alpha ~= nil and off(want.alpha, got.alpha, 0.01) then mark("alpha") end
+  if want.pos ~= nil and not Lens.held(want.pos, got.anchor) then mark("anchor") end
+  return any and fix or nil
 end
 
 -- The original zoom, kept in the DB while the lens is on (gotcha 16). The normal exit restores
