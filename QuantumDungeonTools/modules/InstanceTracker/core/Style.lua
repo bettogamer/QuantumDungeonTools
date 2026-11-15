@@ -97,6 +97,14 @@ local SIZE = {
   pageDot     = 5,   -- the gold "changed" dot
   pageSelectW = 130,
   pageBottom  = 16,  -- room under the last block (scroll)
+  -- Widget preview inside «Qué enseña» (F6f, artboard «Resumen con vista previa»).
+  previewTop  = 12,  -- group rule -> state tabs (padding 12)
+  previewTabsW = 330, -- state tabs, equal columns (Craft.Tabs fill), right-aligned
+  previewTabsH = 32, -- Craft.Tabs bar
+  previewGap  = 10,  -- tabs -> preview box
+  previewH    = 360, -- preview box
+  previewBottom = 14, -- preview box -> settings grid
+  previewNote = 10,  -- caption inset (left 12 / bottom 10)
   -- History tab (F6d, artboard «Instance Tracker · Historial»).
   histBarH    = 52,  -- filter bar (padding 12 + 28 select + 12)
   histLabelGap = 8,  -- filter label -> its select (gap 8)

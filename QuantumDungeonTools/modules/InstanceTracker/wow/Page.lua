@@ -4,8 +4,9 @@
 --
 -- Header + tabs Summary | History (wow/HistoryTab.lua, F6d). Summary: the MODULE card (module
 -- switch, applied on reload), the WIDGET group «What it shows» (our own fold, animated with
--- Weave: Craft.Section has no summary slot and puts the chevron on the right) with the 8
--- settings of core/Settings.lua in two columns, a gold dot on the ones off their default and the
+-- Weave: Craft.Section has no summary slot and puts the chevron on the right): state tabs and a
+-- preview box with the real widget (F6f), then the 8 settings of core/Settings.lua in two
+-- columns, a gold dot on the ones off their default and the
 -- "N changed · Reset" footer, and the RUN group (current run + "Reset the run", history line).
 --
 -- Every change writes db.instanceTracker and repaints the widget at once. Built by
@@ -106,6 +107,7 @@ local function refreshSettings()
     end
   end
   P.summary:SetText(summaryText())
+  if P.previewNote then P.previewNote:SetText(d.compact and L.IT_P_PREVIEW_CMP or L.IT_P_PREVIEW) end
   local n = Settings.changedCount(d)
   P.footText:SetText(n == 0 and L.IT_P_DEFAULTS or (n == 1 and L.IT_P_CHANGED1 or L.IT_P_CHANGEDN:format(n)))
   P.reset:GetFrame():SetShown(n > 0)
@@ -226,6 +228,55 @@ local function buildCell(parent, spec)
   return cell
 end
 
+-- Preview (F6f): state tabs on the right and, under them, a box that borrows the real widget
+-- (UI:Preview) while it is visible: every setting changed below shows on it at once. Folding the
+-- group, switching to History or closing the window hides the box and gives the widget back.
+local PREVIEW_STATES = { "live", "done", "first" }
+
+local function startPreview()
+  local UI = ns.InstanceTrackerUI
+  if not (ns.itLoaded and UI and P.previewBox and P.previewBox:IsVisible()) then return end
+  UI:Preview(P.previewBox, P.previewState)
+end
+
+local function stopPreview()
+  local UI = ns.InstanceTrackerUI
+  if ns.itLoaded and UI then UI:Preview(nil) end
+end
+
+-- Returns the height it takes in the fold's body (from its top rule).
+local function buildPreview(body)
+  local tabs = {}
+  for i, id in ipairs(PREVIEW_STATES) do tabs[i] = { id = id, label = L.IT_P_STATES[id] } end
+  P.previewState = PREVIEW_STATES[1]
+  local bar = Craft.Tabs:Create(body, { variant = "default", fill = true, defaultTab = P.previewState,
+    tabs = tabs, onTabChange = function(id)
+      P.previewState = id
+      startPreview()
+    end })
+  local bf = bar:GetFrame()
+  bf:SetPoint("TOPRIGHT", body, "TOPRIGHT", -S.pagePadX, -(1 + S.previewTop))
+  bf:SetSize(S.previewTabsW, S.previewTabsH)
+  P.previewTabs = bar
+
+  local box = B.box(body, C.sidebar, C.hairline)
+  box:SetPoint("TOPLEFT", body, "TOPLEFT", S.pagePadX, -(1 + S.previewTop + S.previewTabsH + S.previewGap))
+  box:SetPoint("RIGHT", body, "RIGHT", -S.pagePadX, 0)
+  box:SetHeight(S.previewH)
+  box:SetClipsChildren(true)
+  P.previewBox = box
+  P.previewNote = B.text(box, FONT.winRowSub, C.muted)
+  P.previewNote:SetPoint("BOTTOMLEFT", box, "BOTTOMLEFT", S.previewNote + 2, S.previewNote)
+  if not ns.itLoaded then   -- module off: no widget to borrow
+    local off = B.text(box, FONT.winRow, C.muted)
+    off:SetPoint("CENTER")
+    off:SetText(L.IT_MODULE_OFF)
+  end
+  box:SetScript("OnShow", startPreview)
+  box:SetScript("OnHide", stopPreview)
+  return S.previewTop + S.previewTabsH + S.previewGap + S.previewH + S.previewBottom
+end
+
 -- «What it shows»: header (chevron, title, summary) over a body that folds with a Weave tween
 -- (height and alpha; the chevron turns from down to right), as every component animates.
 local function buildFold(parent, anchor, onHeight)
@@ -247,14 +298,18 @@ local function buildFold(parent, anchor, onHeight)
   P.summary:SetPoint("LEFT", title, "RIGHT", S.pageIconGap, 0)
 
   local rows = math.ceil(#Settings.WIDGET / 2)
-  local bodyH = 1 + rows * S.pageRowH + S.pageFootH
   local body = CreateFrame("Frame", nil, f)
   body:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
   body:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT")
-  body:SetHeight(bodyH)
   local top = B.hline(body, C.hairlineSoft)
   top:SetPoint("TOPLEFT")
   top:SetPoint("TOPRIGHT")
+  local previewH = buildPreview(body)
+  local gridTop = B.hline(body, C.hairlineSoft)
+  gridTop:SetPoint("TOPLEFT", body, "TOPLEFT", 0, -(1 + previewH))
+  gridTop:SetPoint("TOPRIGHT", body, "TOPRIGHT", 0, -(1 + previewH))
+  local bodyH = 1 + previewH + 1 + rows * S.pageRowH + S.pageFootH
+  body:SetHeight(bodyH)
 
   local list = {}
   for i, spec in ipairs(Settings.WIDGET) do list[i] = buildCell(body, spec) end
@@ -265,7 +320,7 @@ local function buildFold(parent, anchor, onHeight)
     for i, cell in ipairs(list) do
       local col, line = (i - 1) % 2, math.floor((i - 1) / 2)
       cell:ClearAllPoints()
-      cell:SetPoint("TOPLEFT", body, "TOPLEFT", col * w, -(1 + line * S.pageRowH))
+      cell:SetPoint("TOPLEFT", body, "TOPLEFT", col * w, -(2 + previewH + line * S.pageRowH))
       cell:SetWidth(col == 0 and w or body:GetWidth() - w)
       cell.vrule:SetShown(col == 0)
     end
@@ -473,7 +528,7 @@ function Page:Snapshot()
       tostring(f:IsShown()), tostring(f:IsVisible()), f:GetAlpha() or -1, tostring(l and math.floor(l)),
       tostring(b and math.floor(b)), tostring(w and math.floor(w)), tostring(h and math.floor(h)))
   end
-  return { built = P.tabs ~= nil, cells = n,
+  return { built = P.tabs ~= nil, cells = n, preview = P.previewState, previewBox = rect(P.previewBox),
     painted = P.last ~= nil and P.last:GetRect() ~= nil, folded = P.foldProg and P.foldProg:peek() == 0 or false,
     probe = P.tabs and {   -- why the Summary tab paints nothing (F6c in-game, 2026-11-14)
       tabs = rect(P.tabs:GetFrame()), content = rect(P.panes and P.panes.summary),

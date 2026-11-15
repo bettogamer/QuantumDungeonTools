@@ -109,6 +109,13 @@ function C:Run()
     check("page history", okH and hs.built and hs.cols == 9 and hs.shown == hs.filtered,
       okH and (hs.cols .. " cols, " .. hs.shown .. "/" .. hs.filtered .. " rows, " .. hs.saved .. " saved") or errH)
     if before ~= "history" then pcall(Page.ShowTab, Page, before) end
+    -- F6f: with the Summary tab on screen and «What it shows» open, the widget sits in the
+    -- preview box with the state of the tabs (and goes back when the box hides).
+    if wasShown and before ~= "history" and not ps.folded then
+      local us = ns.InstanceTrackerUI:Snapshot()
+      check("page preview", us.preview == ps.preview and us.shown,
+        tostring(us.preview) .. " / tab " .. tostring(ps.preview) .. ", box " .. tostring(ps.previewBox))
+    end
     -- What's new: one wrapped line per item of core/NewsData.lua (generated from the CHANGELOG).
     local nsn = MW.NewsSnapshot and MW:NewsSnapshot()
     check("page news", nsn and nsn.items > 0 and nsn.items == nsn.expected,

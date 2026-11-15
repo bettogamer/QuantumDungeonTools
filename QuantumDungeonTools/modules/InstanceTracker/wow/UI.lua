@@ -31,6 +31,7 @@ local W = {}           -- widgets of the full layout
 local K = {}           -- widgets of the compact layout
 local forced           -- nil (automatic) | "show" | "hide"; reset on every zone change
 local demo             -- nil | scenario name of core/Demo.lua
+local preview          -- nil | { host = frame, state = Demo scenario }: shown inside the page (F6f)
 local lastView         -- what was painted last (the tick repaints only when the clock moves)
 
 local function db() return ns.db.instanceTracker end
@@ -238,7 +239,7 @@ local function makeHandle(frame)
   frame:EnableMouse(true)
   frame:RegisterForDrag("LeftButton")
   frame:SetScript("OnDragStart", function()
-    if db().locked then return end
+    if db().locked or preview then return end
     moving = true
     root:StartMoving()
   end)
@@ -250,7 +251,7 @@ local function makeHandle(frame)
     UI:SyncPings()   -- the ping buttons sit by screen coordinates (see Boss ping)
   end)
   frame:SetScript("OnMouseUp", function(_, button)
-    if button == "RightButton" then UI:Hide() end
+    if button == "RightButton" and not preview then UI:Hide() end
   end)
 end
 
@@ -509,7 +510,7 @@ function UI:SyncPings()
   pingDirty = false
   local n = 0
   local marker = db().pingMarker
-  if root and root:IsShown() and W.frame and W.frame:IsShown() then
+  if root and root:IsShown() and W.frame and W.frame:IsShown() and not preview then
     for name, row in pairs(liveRows) do
       local macro = not issecretvalue(name) and View.pingMacro(name)
       if macro then
@@ -1035,6 +1036,10 @@ end
 -- Render / visibility
 ------------------------------------------------------------------------------
 local function source()
+  if preview then   -- the page's preview: a demo run, painted with the live settings
+    local run, opts = Demo.get(preview.state)
+    return run, opts, db().compact
+  end
   if demo then
     local run, opts, compact = Demo.get(demo)
     return run, opts, compact
@@ -1107,7 +1112,7 @@ function UI:Update(reason)
   if not ctx then return end
   if reason == "zone" then forced = nil end
   local want
-  if demo or forced == "show" then
+  if preview or demo or forced == "show" then
     want = true
   elseif forced == "hide" then
     want = false
@@ -1156,6 +1161,33 @@ function UI:Demo(name)
   return true
 end
 
+-- Preview (F6f, artboard «Resumen con vista previa»): the real widget, re-parented into `host`
+-- (centered, clipped by it) and painted from a Demo scenario with the current settings. No drag,
+-- no right-click hide, no ping buttons while it lasts. UI:Preview(nil) puts it back where it was.
+function UI:Preview(host, state)
+  if not ctx then return false end
+  if host then
+    if not Demo.get(state) then return false end
+    if not root then build() end
+    preview = { host = host, state = state }
+    root:SetParent(host)
+    root:SetFrameStrata(host:GetFrameStrata())
+    root:SetFrameLevel(host:GetFrameLevel() + 5)
+    root:SetClampedToScreen(false)
+    root:ClearAllPoints()
+    root:SetPoint("CENTER", host, "CENTER", 0, 0)
+  elseif preview then
+    preview = nil
+    hidePanel(true)
+    root:SetParent(UIParent)
+    root:SetFrameStrata("MEDIUM")
+    root:SetClampedToScreen(true)
+    restorePosition()
+  end
+  self:Update()
+  return true
+end
+
 -- Building blocks for the other screens of the module (wow/Alerts.lua): the addon kit with the
 -- widget's HUD text (shadow, right-aligned) and coins. nil before Init / no Craft.
 function UI:Kit()
@@ -1171,7 +1203,7 @@ function UI:Snapshot()
   return {
     craft = Craft ~= nil, context = ctx and ctx.name or nil,
     built = root ~= nil, shown = root and root:IsShown() or false,
-    compact = db().compact == true, demo = demo,
+    compact = db().compact == true, demo = demo, preview = preview and preview.state or nil,
     width = root and root:GetWidth() or nil, height = root and root:GetHeight() or nil,
     fonts = ns.Kit:FontCount(),
   }

@@ -12,6 +12,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Añadido
 
+- **Vista previa del widget** (F6f) en IT › Resumen › «Qué enseña»: pestañas En curso / Completada /
+  Primera vez a la derecha y, debajo, el widget real con los datos de la demo; cada ajuste (líneas,
+  compacto) se ve en él al momento. Mientras se ve, el widget vive en la ventana (sin arrastre ni pings)
+  y vuelve a su sitio al plegar el grupo, cambiar de pestaña o cerrar la ventana.
 - **Página Novedades** en la ventana principal: una tarjeta plegable por versión (las cinco más
   recientes) con una frase corta por cambio, en español e inglés.
 - **Icono del minimapa** (hito M1 F6e): clic abre la ventana principal, mayús+clic el Historial de

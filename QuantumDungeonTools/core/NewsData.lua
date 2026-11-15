@@ -10,6 +10,8 @@ ns.NewsData = {
   {
     unreleased = true,
     es = {
+      "Vista previa del widget: en los ajustes del Instance Tracker, el widget en curso, completado "
+        .. "o en tu primera vez, y cada ajuste se ve en él al momento.",
       "Novedades: esta página, con lo que cambia en cada versión.",
       "Icono del minimapa: clic abre la ventana, mayús+clic el Historial y clic derecho un menú. "
         .. "Se oculta desde Ajustes generales o con /qdt minimap.",
@@ -27,6 +29,8 @@ ns.NewsData = {
       "Barras: nueva textura en las barras de tiempo, de jefes y de XP.",
     },
     en = {
+      "Widget preview: the Instance Tracker settings show the widget in progress, completed or on "
+        .. "your first time, and every setting shows on it at once.",
       "What's new: this page, with what changes in each version.",
       "Minimap icon: click opens the window, shift+click the History and right click a menu. "
         .. "Hide it from General settings or with /qdt minimap.",
