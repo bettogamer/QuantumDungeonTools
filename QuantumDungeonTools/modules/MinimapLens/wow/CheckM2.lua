@@ -231,16 +231,20 @@ local function note(s, text) push(s.log, ("%.1f %s [%s]"):format(GetTime() - s.t
 
 local function writer()
   if selfWriting then return "QDT" end
-  local ok, st = pcall(debugstack, 3, 8, 0)
+  local ok, st = pcall(debugstack, 3, 14, 0)
   if not ok or type(st) ~= "string" then return "?" end
-  -- addon + file:line of the first foreign frame (which EUI file re-anchors, F1 retest)
+  -- addon + file:line of the first foreign frames, innermost first (who calls EUI's generic
+  -- SetFramePoint helper, F1 retest)
+  local chain = {}
   for line in st:gmatch("[^\n]+") do
     local addon, rest = line:match("AddOns[/\\]([^/\\]+)[/\\](.*)")
     if addon and addon ~= "QuantumDungeonTools" then
       local file, num = rest:match("([^/\\\"%]]+%.lua)\"?%]?:(%d+)")
-      return file and (addon .. " " .. file .. ":" .. num) or addon
+      chain[#chain + 1] = file and (addon .. " " .. file .. ":" .. num) or addon
+      if #chain == 3 then break end
     end
   end
+  if #chain > 0 then return table.concat(chain, " < ") end
   return (st:match("^[^\n]*") or "?"):sub(1, 80)
 end
 
@@ -540,6 +544,24 @@ local function tour(s)
     selfWriting = false
     if not ok then err(s, "move", e) end
     saveState(s, "tour:moved")
+  end)
+  -- EUI retest: when does the move get undone, and does a second SetPoint (outside EUI's
+  -- 0.05-0.55 s resize window) stick?
+  C_Timer.After(8.1, function() saveState(s, "tour:moved+0.1") end)
+  C_Timer.After(8.7, function() saveState(s, "tour:moved+0.7") end)
+  C_Timer.After(9, function()
+    local ok, _, rel, _, x, y = call(Minimap, "GetPoint", 1)
+    local public = ok and not issecretvalue(x) and not issecretvalue(y)
+    if public and not (rel == UIParent and x == 0 and y == 0) then
+      note(s, "MOVE REVERTED before +1 s -> second SetPoint")
+      selfWriting = true
+      pcall(function()
+        Minimap:ClearAllPoints()
+        Minimap:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+      end)
+      selfWriting = false
+    end
+    saveState(s, "tour:moved2")
   end)
   after(s, "tour:size", { 10, 30 })
   C_Timer.After(31, function()

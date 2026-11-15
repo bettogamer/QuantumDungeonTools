@@ -118,7 +118,7 @@ for _, cfg in ipairs(sorted(c.runs)) do
   list(r.errors)
   print("notable log lines:")
   for _, line in ipairs(r.log or {}) do
-    local notable = line:find("STOMPED") or line:find("ZOOM ") or line:find("ADDON_ACTION") or line:find("EditMode")
+    local notable = line:find("STOMPED") or line:find("ZOOM ") or line:find("MOVE ") or line:find("ADDON_ACTION") or line:find("EditMode")
       or line:find("==") or line:find("EVENT PEW")
     local foreign = not line:find(" by QDT ") and not line:find("EVENT ")
     if notable or (full and (foreign or line:find("EVENT "))) then print("    " .. line) end

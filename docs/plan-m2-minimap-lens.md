@@ -267,6 +267,19 @@ después de F2.
     seguro, porque el core no depende del módulo (`EllesmereUIMinimap.toc:8`), pero es permanente
     hasta reactivarlo, no algo para la duración de la lente.
 
+28. **Opciones de EUI frente a la lente** (addon-scout, por claves de la DB: el panel no se localizó):
+    **Visibility** distinta de «Always» rompe la lente (mouseover hace `Minimap:Hide()`; en
+    combate/fuera usa un state driver), y la **opacidad** de EUI pisa nuestra `SetAlpha` en cada
+    apply (`EUI_Minimap_Lifecycle.lua:43-201`). **Reset Zoom** > 0 solo se arma con zoom
+    propio de EUI (rueda, botones, cada ApplyMinimap), pero si ya estaba armado devuelve nuestro
+    zoom a 0 (`EUI_Minimap_Buttons.lua:167-181`): recomendar 0. Size/Shape solo pisan en
+    opciones/PEW. **Reanclaje:** ninguna opción del panel lo apaga. Solo lo evita una posición
+    nunca guardada en `/unlock` (`profile.minimap.position == nil`) o guardada sin CENTER/CENTER.
+    El hook de `SetPoint` de EUI solo propaga a los hijos (`Anchors:1619`) y el reanclaje sale
+    de `OnSizeChanged` (con throttle de 50 ms y una repetición de cola). Hipótesis: un segundo
+    `SetPoint` fuera de esa ventana aguanta. La sonda lo prueba (`tour:moved+0.1/+0.7/moved2`)
+    y apunta la cadena de llamadas.
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
