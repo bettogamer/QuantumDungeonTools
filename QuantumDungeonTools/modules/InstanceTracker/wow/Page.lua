@@ -17,6 +17,7 @@ local Page = {}
 ns.InstanceTrackerPage = Page
 
 local TICK = 0.5            -- the RUN line carries the clock
+local RAIL = 8              -- Craft.Scroll's rail (Scroll.lua SCROLLBAR_W, Craft px: not GEO-scaled)
 local CONFIRM_SECS = 4      -- "Reset the run" asks for a second click within this time
 local DOT_MASK = [[Interface\CharacterFrame\TempPortraitAlphaMask]]
 local MARKER_ICON = [[|TInterface\TargetingFrame\UI-RaidTargetingIcon_%d:0|t %s]]
@@ -348,7 +349,17 @@ end
 
 local function buildSummary(frame, onHistory)
   local scroll = Craft.Scroll:Create(frame, {})
-  scroll:GetFrame():SetAllPoints(frame)
+  -- Craft reserves an 8 px rail on the right, always: it goes into the page margin, so the cards
+  -- end where the tab bar line ends.
+  local sf = scroll:GetFrame()
+  sf:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+  sf:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", RAIL, 0)
+  -- Hover: Craft paints the thumb with `accent` (grey, shared by menus and selects); ours gets
+  -- the palette's muted teal. At rest `secondary` (Kit) and gold while dragging stay.
+  local thumb, thumbTex = scroll._scrollThumb, scroll._thumbTex   -- Craft's back-compat aliases
+  if thumb and thumbTex then
+    thumb:HookScript("OnEnter", function() thumbTex:SetColorTexture(C.muted.r, C.muted.g, C.muted.b, 1) end)
+  end
   local child = scroll:GetScrollChild()
   child:SetHeight(1)
   P.scroll, P.child = scroll, child

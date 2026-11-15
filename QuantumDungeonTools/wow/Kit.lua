@@ -124,6 +124,10 @@ function Kit:Init()
       foreground = C.cream, mutedForeground = C.muted,
       popover = C.panel, popoverForeground = C.cream,
       border = C.hairline, destructive = C.red,
+      -- Scroll rails (Craft.ScrollBar: thumb = secondary, track = secondary at 30 %): the palette's
+      -- idle teal instead of Craft's grey. Nothing else of ours uses `secondary` (no secondary
+      -- Button/Badge variants).
+      secondary = C.tickIdle,
     },
   })
   -- Registered first, so module callbacks (Kit:OnThemeChange) see the new fonts.
