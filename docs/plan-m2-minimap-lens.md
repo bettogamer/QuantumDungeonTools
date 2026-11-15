@@ -46,7 +46,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast elegida, punto 8), AppLens |
 | **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
 | **F2** | Núcleo de la lente | ✅ cerrada (2026-11-15): OK del owner en las tres configuraciones (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
-| **F3** | Convivencia con otros UI | 🟡 en código (2026-11-15), falta la prueba in-game (§F3) | dueño `other`, vigilante de setters, reaplicar solo lo que derivó, ceder a las 4 correcciones en 10 s, toast LensAviso una vez por sesión |
+| **F3** | Convivencia con otros UI | ✅ cerrada (2026-11-15): pruebas A y B ok con EUI; C sin aviso porque el minimapa estaba despegado (correcto) | dueño `other`, vigilante de setters, reaplicar solo lo que derivó, ceder a las 4 correcciones en 10 s, toast LensAviso una vez por sesión |
 | **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
 | **F5** | Página del módulo + ajustes | ⬜ PENDIENTE | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
 
@@ -418,6 +418,18 @@ Al terminar: `/reload` y escribir «listo» con el sí/no de cada pregunta. El a
 (`lua scripts/read-check-lens.lua`; esperado en B: `foreign >= 5`, `reapplied = 4`, `yielded = true`;
 en C: `held = false`, `warned = [pinned]`).
 
+### Resultados in-game de F3 (owner, 2026-11-15, EllesmereUIMinimap)
+
+34. **Avisos (A):** los dos toasts salen y se cierran solos (owner: «todo ok»).
+35. **Modo suave (B), hecha con EUI encendido:** cada `/run Minimap:SetSize(140,140)` provocó
+    además el reanclaje de EUI (18 escrituras ajenas). La lente repuso tamaño y ancla 6 veces y
+    luego cedió con el toast (`yielded = true`, `last = yield anchor,size (SetPoint)`). Fueron 6
+    correcciones y no 4 porque las pisadas iban espaciadas y salían de la ventana de 10 s.
+36. **Minimapa pegado (C):** no salió el aviso porque **el minimapa seguía despegado** desde F2: la
+    lente creció en el centro (`held = true` en las dos aperturas). Es el comportamiento esperado.
+    El aviso «pegado» queda sin ver in-game; se puede comprobar cuando se quiera pegándolo en el
+    modo desbloqueo de EUI (opcional).
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
@@ -440,5 +452,6 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** prueba in-game de F3 (guion de §F3) y, con su OK, F4 (disparadores y ciclo de
-vida) en sesión nueva. Recargar AGENTS.md + este plan (§F1 gotchas, §F2, §F3).
+**Siguiente:** F4 (disparadores y ciclo de vida: atajo en `Bindings.xml`, botón lupa solo en
+instancia, cierre al salir de la instancia y al abrir el Modo edición), en sesión nueva. Recargar
+AGENTS.md + este plan (§F1 gotchas 9 y 17 de Modo edición, §F2, §F3).
