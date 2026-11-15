@@ -335,13 +335,12 @@ tenga las mismas notas en los dos idiomas), página en `wow/MainWindow.lua` (tar
 `Weave.tween`); `check f2` gana «page news». Descartado el primer intento (generar la página desde
 el CHANGELOG, `895ca62`): demasiado texto. **«Buscar ajustes» APLAZADO** (~9 opciones en 2 páginas
 no lo justifican; se retoma con Minimap Lens u otro módulo; sin caja en la ventana hasta entonces).
-Fix (owner, 2026-11-14): la fila activa del sidebar no tenía la barra oro de 2 px del artboard →
-apaño propio en `MainWindow.lua` (`markActive`) + **FR-154 de Craft** (`activeBar`); quitarlo al
-re-vendorear.
+Fila activa del sidebar (owner, 2026-11-14): el diseño se alinea con shadcn (FR-154 de Craft cerrado
+sin adopción): solo el lavado, con el margen del grupo, sin barra oro; lienzo v62 (de paso, fuera la
+caja «Buscar ajustes» de los artboards). Sin apaño en el código.
 
 **Guion Novedades + barra (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 22/22;
-«page news» dice «1 versions, 10/10 items»). (1) `/qdt` → la fila Inicio lleva la barra oro a la
-izquierda; Instance Tracker, Ajustes generales y Novedades también al elegirlas (una sola a la vez).
+«page news» dice «1 versions, 10/10 items»). (1) `/qdt` → la fila activa solo con el lavado oro, sin barra.
 (2) Novedades: una tarjeta «En desarrollo · SIN PUBLICAR · 10 cambios» abierta, chevron oro hacia
 abajo. (3) Filas: título en crema (y «/qdt» como etiqueta en «Ventana principal»), detalle en gris
 pequeño, partido sin cortarse. (4) Clic en la cabecera: se pliega animada, chevron gris a la derecha;
