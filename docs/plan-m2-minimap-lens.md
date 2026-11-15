@@ -44,7 +44,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | Fase | Feature | Estado | Nota |
 |------|---------|--------|------|
 | **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast / B chat, punto 8 sin cerrar), AppLens |
-| **F1** | Sondas de Forever (`/qdt check m2`) | 🔨 EN CURSO: sonda escrita y desplegada (2026-11-15), **esperando la sesión de pruebas del owner** | §F1 «Guion»: sin otro UI, con EllesmereUI y con ElvUI |
+| **F1** | Sondas de Forever (`/qdt check m2`) | ✅ fuera de mazmorra en las 3 configuraciones (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-26 en §F1; **pendiente la decisión del owner sobre mover la lente con EUI** |
 | **F2** | Núcleo de la lente | ⬜ PENDIENTE | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
 | **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
@@ -253,6 +253,11 @@ después de F2.
     no son para uso externo. El salto de vuelta tras un `SetPoint` puro, sin cambio de tamaño, no
     está localizado del todo (sin verificar).
 
+26. **Reprueba con EUI completa (pasos 1-8):** 0 diferencias al restaurar en la ronda (ya sin tocar
+    los iconos), `off` con 1 diferencia de subpíxel, el Modo edición no cambia la lente y en combate
+    abre y cierra sin bloqueos. El `SetPoint` al centro también se deshace en combate. Con EUI el
+    zoom **no** sobrevive al `/reload` (EUI repone su zoom guardado en el PEW).
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
@@ -286,7 +291,10 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** F1. El owner corre el guion de §F1 (bloque A en las tres configuraciones; el
-bloque B en la run agrupada) y avisa. El agente lee el volcado con `scripts/read-check-m2.lua`,
-rellena «Gotchas in-game» y cierra el punto 9 (límites). Si una sonda contradice el diseño,
-se vuelve al artboard antes de F2. Punto 8 (toast o chat) sigue abierto para el owner.
+**Siguiente:** F2, en sesión nueva. Recargar AGENTS.md + este plan (§F1 «Gotchas in-game», 1-26).
+Reglas que salen de F1 para el núcleo: `SetSize` ×factor + **un paso de zoom** (nunca `SetScale`
+ni tamaño sin zoom); máscara 130937 + `GetMinimapShape` = `SQUARE` solo sin otro UI (restaurar
+con 186178); **guardar el zoom original en la DB** y reponerlo tras `/reload`/logout (gotcha 16);
+la lente no sobrevive a recargas ni a pantallas de carga; posición propia por defecto (en su sitio
+la tapa el rastreador de misiones); con EUI no tocar los iconos LibDBIcon; todo vale en combate.
+Antes de F2: decisión del owner sobre EUI (la lente no se mueve ahí) y punto 8 (toast o chat).
