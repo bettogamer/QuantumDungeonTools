@@ -9,6 +9,8 @@ local function loadAddon()
   local ns = wow.newNS()
   wow.loadModule("QuantumDungeonTools/core/Brand.lua", "QuantumDungeonTools", ns)   -- before wow/, as in the .toc
   wow.loadModule("QuantumDungeonTools/modules/InstanceTracker/core/Settings.lua", "QuantumDungeonTools", ns)
+  wow.loadModule("QuantumDungeonTools/core/Style.lua", "QuantumDungeonTools", ns)
+  wow.loadModule("QuantumDungeonTools/modules/MinimapLens/core/Lens.lua", "QuantumDungeonTools", ns)
   wow.loadModule("QuantumDungeonTools/wow/Bootstrap.lua", "QuantumDungeonTools", ns)
   return ns, wow._frames[1]
 end
@@ -20,6 +22,8 @@ describe("Bootstrap (capa wow/)", function()
     assert_eq(ns.db.enabled, true, "default enabled=true")
     assert_eq(ns.db.instanceTracker.autoShow, true, "default autoShow=true")
     assert_eq(#ns.db.instanceTracker.history, 0, "historial vacío")
+    assert_eq(ns.db.minimapLens.size, 2.6, "Minimap Lens: tamaño por defecto")
+    assert_eq(ns.db.minimapLens.opacity, 1.0, "Minimap Lens: opacidad por defecto")
   end)
 
   it("no pisa los ajustes guardados del usuario", function()

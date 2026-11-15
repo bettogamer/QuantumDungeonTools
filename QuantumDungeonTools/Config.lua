@@ -65,6 +65,8 @@ SlashCmdList.QDT = function(msg)
     ns.CheckF1:Run((msg:gsub("^check f1%s*", "")))
   elseif msg == "check m2" or msg:find("^check m2 ") then
     ns.CheckM2:Run((msg:gsub("^check m2%s*", "")))
+  elseif msg == "lens" then
+    ns.MinimapLensUI:Toggle()   -- M2 F2: interim trigger (F4 adds the binding and the button)
   elseif msg == "minimap" then
     local shown = not ns.Minimap:IsShown()
     ns.Minimap:SetShown(shown)

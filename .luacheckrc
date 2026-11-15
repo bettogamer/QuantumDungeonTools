@@ -84,7 +84,11 @@ files = {
         },
     },
 
-    -- Minimap Lens (plan M2). F1 probes (CheckM2.lua): Minimap setters, LibDBIcon, tracking,
+    -- Minimap Lens (plan M2). core/ is pure (F2: lens state, limits, snapshot checks).
+    ["QuantumDungeonTools/modules/MinimapLens/core/"] = {
+        globals = {},
+    },
+    -- F1 probes (CheckM2.lua): Minimap setters, LibDBIcon, tracking,
     -- edit mode; GetMinimapShape is WRITTEN (square lens) and BINDING_* name the probe binding.
     ["QuantumDungeonTools/modules/MinimapLens/wow/"] = {
         globals = {

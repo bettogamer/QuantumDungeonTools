@@ -45,7 +45,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 |------|---------|--------|------|
 | **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast / B chat, punto 8 sin cerrar), AppLens |
 | **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
-| **F2** | Núcleo de la lente | ⬜ PENDIENTE | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
+| **F2** | Núcleo de la lente | 🟡 en código (2026-11-15), falta la prueba in-game (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
 | **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
 | **F5** | Página del módulo + ajustes | ⬜ PENDIENTE | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
@@ -319,6 +319,40 @@ después de F2.
     configuraciones.
 
 
+## F2 — Núcleo (2026-11-15)
+
+Código: `modules/MinimapLens/core/Lens.lua` (puro, `tests/modules/MinimapLens/Lens_spec.lua`) y
+`modules/MinimapLens/wow/Lens.lua` (`ns.MinimapLensUI`: `On`/`Off`/`Toggle`/`SetOpacity`).
+Disparador provisional `/qdt lens` (F4 trae atajo, lupa y cierre al salir). DB
+`minimapLens = { size, opacity, pos?, saved? }`, aditiva (sin subir `DB_VERSION`).
+
+Decisiones del agente (punto 9): **tamaño 2,6×** el lado original (artboard LensActiva: 440 px
+sobre 170), límites 1,5×-3,5× en pasos de 0,1 y nunca más del 85 % del alto de pantalla;
+**opacidad 100 %** (límites 40-100 %). Posición por defecto: centro de la pantalla +80/−30
+(el centro del cuadrado del artboard, escalado al alto de UIParent). Contorno: 1 px oscuro
+0,75 + 2 px Secundario (`muted`) 0,85 + 1 px oscuro 0,6, hijo del Minimap (se funde con él).
+Entrada y salida: fundido de la alpha del Minimap con `Weave.tween` (0,2 s), nunca del tamaño.
+Se cierra sola en `PLAYER_LEAVING_WORLD` (recarga, pantalla de carga, logout); si el cliente
+cae con la lente puesta, el zoom original guardado se repone en el siguiente login.
+Movimiento: a +0,6 s (pasada la ventana de reanclaje de EUI) se lee el ancla; si no aguantó, se
+reintenta una vez y se mira al fotograma siguiente → `MinimapLensUI.moveHeld` (el aviso es F3).
+
+Autoprueba: cada on/off/move deja `QuantumDungeonToolsDB._checkLens.{on,off,move}` (dueño,
+lado, zoom, ancla, plan, `held`, diferencias al restaurar con tolerancia 0,5).
+
+### Guion de prueba (owner, fuera de mazmorra, ~3 min por configuración)
+
+Configuraciones: **sin otro UI** y **solo ElvUI** (con EUI, si da tiempo, con el minimapa despegado).
+1. `/reload`, `/qdt lens`. 👁 El mapa aparece **fundiéndose** en el centro-derecha, **cuadrado**,
+   con el **contorno azul claro** fino y sin el aro de Blizzard; un paso más cerca; los iconos de
+   addons en el borde del cuadrado.
+2. `/qdt lens` otra vez. 👁 Se funde y vuelve a su esquina, **redondo y con su aro** (sin otro UI).
+3. `/qdt lens`, pegarle a un bicho, `/qdt lens` en combate: abre/cierra sin errores de BugSack.
+4. `/qdt lens` y `/reload` con la lente puesta: vuelve el minimapa normal y con el **mismo zoom**
+   que antes de abrirla.
+Al terminar, `/reload` y avisar: el agente lee `_checkLens` (esperado: `off.diffs = 0`,
+`move.held = true`, `on.mask = true` solo sin otro UI).
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
@@ -331,7 +365,7 @@ después de F2.
 | 6 | Ocultar rastreo de recursos | **owner** | opción apagada por defecto | ✅ así (2026-11-15) |
 | 7 | Soporte de EllesmereUI/ElvUI | **owner** | modo suave + aviso único | ✅ así (2026-11-15) |
 | 8 | Aviso de convivencia: ¿chat o toast? | **owner** | toast como el de fin de run | ⬜ (en el lienzo) |
-| 9 | Valores por defecto y límites de tamaño y opacidad | agente (tras F1) | ~2× el original, opacidad 100 % | ⬜ |
+| 9 | Valores por defecto y límites de tamaño y opacidad | agente (tras F1) | ~2× el original, opacidad 100 % | ✅ 2,6× (1,5-3,5×, ≤85 % del alto), opacidad 100 % (40-100 %), §F2 |
 | 10 | Revisar FarmMode/MountMapMove (guardan y restauran el ancla) | agente | `addon-scout` antes de F2 si F1 da sorpresas | ⬜ |
 | 11 | Lente con EllesmereUI cuando el minimapa está pegado (snap) en su modo desbloqueo | **owner** | intentar mover, comprobar en el siguiente fotograma y, si se deshizo, crecer en su sitio y avisar | ✅ así: solo un **aviso** de que con el minimapa pegado no se puede mover; lo pegado al minimapa se mueve con la lente (2026-11-15) |
 
@@ -341,12 +375,6 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** F2, en sesión nueva. Recargar AGENTS.md + este plan (§F1 «Gotchas in-game», 1-31).
-Reglas que salen de F1 para el núcleo: `SetSize` ×factor + **un paso de zoom** (nunca `SetScale`
-ni tamaño sin zoom); máscara 130937 + `GetMinimapShape` = `SQUARE` solo sin otro UI (restaurar
-con 186178); **guardar el zoom original en la DB** y reponerlo tras `/reload`/logout (gotcha 16);
-la lente no sobrevive a recargas ni a pantallas de carga; posición propia por defecto (en su sitio
-la tapa el rastreador de misiones); con EUI no tocar los iconos LibDBIcon; todo vale en combate; tras mover, comprobar en el
-siguiente fotograma si la posición aguanta (con EUI y el minimapa pegado no aguanta → aviso).
-Decisión EUI cerrada (punto 11: aviso si el minimapa está pegado). Punto 8 (toast o chat) se
-decide antes de F3, que es donde vive el aviso.
+**Siguiente:** prueba in-game de F2 (guion en §F2) y, con su OK, F3 (convivencia) en sesión
+nueva. Antes de F3, el owner decide el punto 8 (toast o chat), que es donde vive el aviso de
+«minimapa pegado en EllesmereUI» (`MinimapLensUI.moveHeld == false`).

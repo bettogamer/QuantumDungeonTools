@@ -45,6 +45,9 @@ function ns.InitDB()
   it.records = it.records or {}     -- F3: PB per dungeon + difficulty (additive, no migration)
   it.trash = it.trash or {}         -- F4c: trash per dungeon (instanceID), learned from clean runs
   it.hourly = it.hourly or {}       -- F5: instances entered in the last hour, account-wide (additive)
+  -- Module: Minimap Lens (plan M2 F2): size, opacity (+ pos, saved zoom); additive.
+  db.minimapLens = db.minimapLens or {}
+  ns.MinimapLens.applyDefaults(db.minimapLens)
 
   ns.db = db
 end
@@ -86,6 +89,7 @@ f:SetScript("OnEvent", function(_, event, arg1)
       if ns.InstanceAlertsUI then ns.InstanceAlertsUI:Init() end
       if ns.CheckF1 then ns.CheckF1:Init() end   -- re-arms the F1 passive log if it is on
     end
+    if ns.MinimapLensUI then ns.MinimapLensUI:Init() end   -- puts back a zoom left by a crash
     if ns.CheckM2 then ns.CheckM2:Init() end   -- M2 F1 probes: re-arms if the probe lens was on
     ns.version = ns.resolveVersion(C_AddOns.GetAddOnMetadata(ADDON, "Version"))
     print(L.MSG_LOADED:format(ns.Brand.title(), ns.version))

@@ -2,6 +2,15 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado: SemVer.
 
+## [Unreleased]
+
+### Añadido
+
+- **Minimap Lens, núcleo (M2 F2, en desarrollo y oculto tras «PRONTO»):** `/qdt lens` agranda el
+  minimapa real a un cuadrado de 2,6× su lado, en su propia posición, un paso de zoom más cerca,
+  con el contorno QDT en lugar del aro de Blizzard y los iconos de addons alrededor; al apagarla
+  (o al recargar / pantalla de carga) todo vuelve como estaba, también en combate.
+
 ## [0.1.0-beta.1] - 2026-11-15
 
 ### Cambiado

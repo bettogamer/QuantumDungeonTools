@@ -22,6 +22,7 @@ L.HELP_LINES   = {
   "/qdt history -- opens the run history",
   "/qdt auto -- open the window automatically inside dungeons (on/off)",
   "/qdt minimap -- show/hide the minimap icon",
+  "/qdt lens -- Minimap Lens on/off (dev, M2)",
   "/qdt info -- version",
   "/qdt check f1 [label | off] -- Forever probes snapshot (dev)",
   "/qdt check f2 -- widget and Craft self-test (dev)",
@@ -135,6 +136,9 @@ L.CHECK_M2_RESET      = "check m2: data cleared."
 L.CHECK_M2_BUSY       = "check m2: a step is still running (or the lens is on)."
 L.CHECK_M2_FAIL       = "check m2: could not apply the lens (see the dump)."
 L.CHECK_M2_USAGE      = "check m2 [ab | on | off | alpha | combat | reset]"
+
+-- Minimap Lens (plan M2 F2)
+L.LENS_FAIL           = "Minimap Lens: could not change the minimap (%s)."
 
 -- Main window (plan M1 F6b)
 L.MW_HOME          = "Home"
@@ -268,6 +272,7 @@ if locale == "esES" or locale == "esMX" then
     "/qdt history -- abre el historial de runs",
     "/qdt auto -- abrir la ventana sola al entrar en mazmorras (sí/no)",
     "/qdt minimap -- mostrar/ocultar el icono del minimapa",
+    "/qdt lens -- Minimap Lens encendida/apagada (dev, M2)",
     "/qdt info -- versión",
     "/qdt check f1 [etiqueta | off] -- foto de las sondas de Forever (dev)",
     "/qdt check f2 -- autoprueba del widget y de Craft (dev)",
@@ -367,6 +372,8 @@ if locale == "esES" or locale == "esMX" then
   L.CHECK_M2_RESET      = "check m2: datos borrados."
   L.CHECK_M2_BUSY       = "check m2: hay un paso en marcha (o la lente está encendida)."
   L.CHECK_M2_FAIL       = "check m2: no se pudo aplicar la lente (ver el volcado)."
+
+  L.LENS_FAIL           = "Minimap Lens: no se pudo cambiar el minimapa (%s)."
 
   L.CHECK_F1_SAVED  = "check f1: foto %d guardada (%s)."
   L.CHECK_F1_LOCK   = "lockout: %s/%s muertos, %d filas de jefe"
