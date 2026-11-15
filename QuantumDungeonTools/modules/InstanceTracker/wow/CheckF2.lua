@@ -116,9 +116,13 @@ function C:Run()
   local icon = LibStub and LibStub("LibDBIcon-1.0", true)
   local btn = icon and icon:GetMinimapButton(ADDON)
   local tex = btn and btn.icon and btn.icon:GetTexture()
-  check("minimap icon", btn ~= nil and tex ~= nil and btn:IsShown() == ns.Minimap:IsShown(),
-    btn and (tostring(tex) .. ", shown " .. tostring(btn:IsShown()) .. ", setting " .. tostring(ns.Minimap:IsShown()))
-      or "no LibDBIcon button")
+  -- A minimap button collector (EllesmereUI's flyout) may hide or re-parent it while the setting
+  -- says shown: that is fine; switched off it must be hidden.
+  local setting = ns.Minimap:IsShown()
+  local parent = btn and btn:GetParent()
+  check("minimap icon", btn ~= nil and tex ~= nil and (setting or not btn:IsShown()),
+    btn and (tostring(tex) .. ", shown " .. tostring(btn:IsShown()) .. ", setting " .. tostring(setting)
+      .. ", parent " .. tostring(parent and parent:GetName())) or "no LibDBIcon button")
 
   -- XP APIs in Forever (informative: the widget hides the XP bar when atMax).
   local xp = ns.InstanceTracker:XPSnapshot()
