@@ -157,6 +157,7 @@ L.LENS_TIP_OFF        = "put the minimap back"
 L.LENS_TIP_KEY        = "Key"
 L.LENS_TIP_NO_KEY     = "not set"
 L.LENS_TIP_HINT       = "Set it in Options > Keybindings > AddOns > Quantum Dungeon Tools."
+L.LENS_PREVIEW        = "Minimap Lens: magnifier preview outside instances %s (until /reload)."
 
 -- Main window (plan M1 F6b)
 L.MW_HOME          = "Home"
@@ -407,6 +408,7 @@ if locale == "esES" or locale == "esMX" then
   L.LENS_TIP_KEY        = "Atajo"
   L.LENS_TIP_NO_KEY     = "sin asignar"
   L.LENS_TIP_HINT       = "Asígnalo en Opciones › Atajos › AddOns › Quantum Dungeon Tools."
+  L.LENS_PREVIEW        = "Minimap Lens: vista previa de la lupa fuera de instancias %s (hasta /reload)."
 
   L.CHECK_F1_SAVED  = "check f1: foto %d guardada (%s)."
   L.CHECK_F1_LOCK   = "lockout: %s/%s muertos, %d filas de jefe"

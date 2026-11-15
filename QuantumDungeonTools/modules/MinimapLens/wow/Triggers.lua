@@ -32,6 +32,7 @@ local button, fade
 local target = 0          -- alpha the button is heading to
 local inside            -- last IsInInstance() read (nil = unknown)
 local openedInside      -- the lens that is on was opened inside an instance
+local preview = false   -- /qdt lens button: shown outside an instance too (until /reload)
 
 local function UI() return ns.MinimapLensUI end
 
@@ -154,7 +155,7 @@ end
 -- In an instance, or while the lens is on (so the button can close it).
 local function update()
   if not button then return end
-  local want = inside == true or UI():IsOn()
+  local want = inside == true or preview or UI():IsOn()
   if want then place() end
   paint()
   if want and target ~= 1 then fadeTo(1) elseif not want and target ~= 0 then fadeTo(0) end
@@ -214,6 +215,13 @@ events:SetScript("OnEvent", function(_, event)
     update()
   end
 end)
+
+-- Preview of the magnifier outside an instance (/qdt lens button): toggles, gone on /reload.
+function T:Preview()
+  preview = not preview
+  update()
+  return preview
+end
 
 function T:Init()
   build()

@@ -68,6 +68,8 @@ SlashCmdList.QDT = function(msg)
   elseif msg == "lens" or msg == "lens bind" then
     -- "lens bind" is what Bindings.xml runs (the self-check tells the two apart).
     ns.MinimapLensTriggers:Toggle(msg == "lens bind" and "bind" or "slash")
+  elseif msg == "lens button" then
+    say(L.LENS_PREVIEW:format(ns.MinimapLensTriggers:Preview() and L.MSG_ON or L.MSG_OFF))
   elseif msg:find("^lens notice") then
     if not ns.MinimapLensUI:PreviewNotice((msg:gsub("^lens notice%s*", ""))) then say(L.LENS_NOTICE_USAGE) end
   elseif msg == "minimap" then

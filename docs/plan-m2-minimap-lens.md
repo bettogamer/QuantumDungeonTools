@@ -471,11 +471,14 @@ Código: `modules/MinimapLens/wow/Triggers.lua` (`ns.MinimapLensTriggers`), `Bin
    «Clic · devolver el minimapa a su sitio» y tu tecla? Clic en la lupa: ❓ ¿se cierra la lente y la
    lupa se va con un fundido?
 3. Con la lente abierta, abre el **Modo edición**: ❓ ¿se cierra la lente?
+4. `/qdt lens button` (vista previa: la lupa fuera de instancia, hasta `/reload`): ❓ ¿sale la lupa
+   **gris** abajo a la derecha del aro? Pasa el ratón con y sin atajo: ❓ ¿el tooltip coincide con
+   el artboard LensReposo? Clic: abre; clic: cierra y la lupa sigue gris en el aro.
 
-**En la run agrupada (basta entrar por la puerta, sin hacer la mazmorra):**
-4. Al entrar: ❓ ¿sale la lupa **gris** abajo a la derecha del aro? Pasa el ratón con y sin atajo:
-   ❓ ¿el tooltip coincide con el artboard LensReposo? Clic: abre; clic: cierra.
-5. Abre la lente y sal por la puerta: ❓ ¿fuera ya no hay lente ni lupa?
+**En la run agrupada** (el owner no puede entrar en mazmorras por ahora, 2026-11-15; basta
+entrar por la puerta):
+5. Al entrar: ❓ ¿sale la lupa sola, sin la vista previa?
+6. Abre la lente y sal por la puerta: ❓ ¿fuera ya no hay lente ni lupa?
 
 Al terminar, `/reload` y «listo» con el sí/no. El agente lee `triggers` (esperado:
 `opens = [bind, …, button]`, `closes = [button, editmode, …]`).
@@ -502,6 +505,6 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** prueba in-game de F4 (guion §F4: los pasos 1-3 fuera, el 4-5 en la run
-agrupada). Con el OK fuera, F5 (página del módulo + ajustes) en sesión nueva. Recargar AGENTS.md +
+**Siguiente:** prueba in-game de F4 (guion §F4: los pasos 1-4 fuera; el 5-6 a la run
+agrupada, que no bloquea F5). Con el OK fuera, F5 (página del módulo + ajustes) en sesión nueva. Recargar AGENTS.md +
 este plan (§F0 artboard AppLens, §F2 límites, §F4).
