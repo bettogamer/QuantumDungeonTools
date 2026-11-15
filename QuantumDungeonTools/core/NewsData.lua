@@ -8,7 +8,7 @@ local _, ns = ...
 
 ns.NewsData = {
   {
-    unreleased = true,
+    version = "0.1.0-beta.1", date = "2026-11-15",
     es = {
       "Vista previa del widget: en los ajustes del Instance Tracker, el widget en curso, completado "
         .. "o en tu primera vez, y cada ajuste se ve en él al momento.",

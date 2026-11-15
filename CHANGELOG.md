@@ -2,10 +2,12 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado: SemVer.
 
-## [Unreleased]
+## [0.1.0-beta.1] - 2026-11-15
 
 ### Cambiado
 
+- **Craft v2.51.0 vendoreada** (FR-152 badge «PRONTO» en la fila del sidebar, FR-153 contenido de
+  `Craft.Tabs` con rect): sustituye a la v2.50.0 de la entrada siguiente.
 - **Barras con la textura BettoBar** (Craft v2.50.0, re-vendoreada): el relleno de la barra de tiempo,
   los segmentos de jefe y las capas de la barra de XP usan la textura teñida con su color de la paleta,
   y va dentro del borde de 1px, como en el diseño (antes lo tapaba).
