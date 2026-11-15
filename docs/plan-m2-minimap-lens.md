@@ -47,7 +47,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
 | **F2** | Núcleo de la lente | ✅ cerrada (2026-11-15): OK del owner en las tres configuraciones (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ✅ cerrada (2026-11-15): pruebas A y B ok con EUI; C sin aviso porque el minimapa estaba despegado (correcto) | dueño `other`, vigilante de setters, reaplicar solo lo que derivó, ceder a las 4 correcciones en 10 s, toast LensAviso una vez por sesión |
-| **F4** | Disparadores y ciclo de vida | 🟡 en código (2026-11-15); falta la prueba in-game (§F4) | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
+| **F4** | Disparadores y ciclo de vida | ✅ cerrada fuera de mazmorra (2026-11-15); pasos 5-6 a la run agrupada (§F4) | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
 | **F5** | Página del módulo + ajustes | ⬜ PENDIENTE | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
 
 > Fuera de este hito por decisión previa: **flecha o posición del jugador** (no hay datos en
@@ -494,6 +494,10 @@ Al terminar, `/reload` y «listo» con el sí/no. El agente lee `triggers` (espe
     la tecla (`opens` sin `bind`): repetir.
 39. **Tooltip casi transparente con EUI** (se leía el rastreador de misiones detrás): fondo navy
     propio bajo el NineSlice (`wow/Minimap.lua`), también para el tooltip del icono QDT.
+40. **Repetición (owner: «todo ok»):** la fila «Minimap Lens» sale entera; con la tecla asignada
+    (`,`) abre y cierra (`opens`/`closes` acaban en `bind`); el tooltip, sólido, enseña la tecla.
+    **F4 cerrada fuera de mazmorra.** Pendiente para la run agrupada: pasos 5-6 (la lupa sale sola
+    al entrar; al salir por la puerta no quedan ni lente ni lupa).
 
 ## Puntos abiertos
 
@@ -517,6 +521,5 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** prueba in-game de F4 (guion §F4: los pasos 1-4 fuera; el 5-6 a la run
-agrupada, que no bloquea F5). Con el OK fuera, F5 (página del módulo + ajustes) en sesión nueva. Recargar AGENTS.md +
+**Siguiente:** F5 (página del módulo + ajustes) en sesión nueva. Recargar AGENTS.md +
 este plan (§F0 artboard AppLens, §F2 límites, §F4).
