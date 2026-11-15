@@ -258,6 +258,15 @@ después de F2.
     abre y cierra sin bloqueos. El `SetPoint` al centro también se deshace en combate. Con EUI el
     zoom **no** sobrevive al `/reload` (EUI repone su zoom guardado en el PEW).
 
+27. **El módulo de minimapa de EUI no se puede apagar en caliente** (addon-scout): ningún comando
+    de chat lo conmuta (`/eui`, `/unlock`, `/rl`… en `EllesmereUI.lua:3836-3938`) y
+    `profile.minimap.enabled` es nominal (`EUI_Minimap_Apply.lua:85` lo fuerza a `true`; la rama
+    «disabled» dice «only a reload hands control back to Blizzard»). Tampoco expone ninguna
+    función para soltarlo (los globales `_EMM_*` solo reaplican). La única vía es la de su propio
+    botón de encendido del panel: `C_AddOns.DisableAddOn("EllesmereUIMinimap")` + `/reload`. Es
+    seguro, porque el core no depende del módulo (`EllesmereUIMinimap.toc:8`), pero es permanente
+    hasta reactivarlo, no algo para la duración de la lente.
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
