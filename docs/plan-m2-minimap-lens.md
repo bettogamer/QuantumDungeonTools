@@ -353,6 +353,15 @@ Configuraciones: **sin otro UI** y **solo ElvUI** (con EUI, si da tiempo, con el
 Al terminar, `/reload` y avisar: el agente lee `_checkLens` (esperado: `off.diffs = 0`,
 `move.held = true`, `on.mask = true` solo sin otro UI).
 
+### Resultados in-game de F2
+
+*EllesmereUIMinimap, minimapa despegado en su modo desbloqueo (owner, 2026-11-15; `lua scripts/read-check-lens.lua`):*
+32. **Funciona:** la lente se centra y ya no arrastra nada más. Las diferencias al restaurar son 0.
+    `move.retried = true`, `held = true`: el reanclaje de EUI al cambiar el tamaño deshizo el primer
+    `SetPoint`, y el reintento a +0,6 s aguantó. **El reintento es necesario y queda así.**
+33. Con EUI, el lado original es 255 (Blizzard ~198) y UIParent mide ~1242 de alto, así que la lente
+    sale a 663 (2,6×) y la posición por defecto a +138/−52. El tamaño se revisa con el deslizador de F5.
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
