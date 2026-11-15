@@ -14,7 +14,7 @@ ns.Kit = Kit
 local THEME_NAME = "QuantumDungeonTools"
 
 local Craft
-local ctx
+local ctx, menuCtx
 local fontOf = {}   -- FontString -> Style.FONT entry (re-applied on theme / font-metrics change)
 local api           -- the table Kit:Get() hands out
 
@@ -109,33 +109,38 @@ function Kit:Init()
   Craft = LibStub and LibStub("Craft-2.0", true)
   if not Craft then return nil end
   local C = ns.Style.C
-  ctx = Craft.Theme.context(THEME_NAME, {
-    font = "bettogeo", headingFont = "bettogeo",
-    overrides = {
-      fontFlags = "OUTLINE, SLUG",   -- vector (Slug) outline: thinner and crisper than bitmap OUTLINE
-      -- No regular weight anywhere (core/Style.lua): Craft overlays (tooltip) read `font`, so
-      -- the body token is BettoGeo Medium too (owner, 2026-11-13).
-      font = Craft.mediaPath .. "BettoGeo-Medium.ttf",
-      primary = C.gold, primaryForeground = C.panel,             -- Forever gold on navy (9.7:1)
-      sidebarPrimary = C.gold, sidebarPrimaryForeground = C.panel,
-      -- Main window sidebar (F6b, artboard Inicio): darker navy, active row in gold.
-      sidebar = C.sidebar, sidebarForeground = C.cream, sidebarBorder = C.hairline,
-      sidebarAccent = C.sidebarActive, sidebarAccentForeground = C.gold,
-      foreground = C.cream, mutedForeground = C.muted,
-      popover = C.panel, popoverForeground = C.cream,
-      border = C.hairline, destructive = C.red,
-      -- Scroll rails (Craft.ScrollBar: thumb = secondary, track = secondary at 30 %): the palette's
-      -- idle teal instead of Craft's grey. Nothing else of ours uses `secondary` (no secondary
-      -- Button/Badge variants).
-      secondary = C.tickIdle,
-    },
-  })
+  local overrides = {
+    fontFlags = "OUTLINE, SLUG",   -- vector (Slug) outline: thinner and crisper than bitmap OUTLINE
+    -- No regular weight anywhere (core/Style.lua): Craft overlays (tooltip) read `font`, so
+    -- the body token is BettoGeo Medium too (owner, 2026-11-13).
+    font = Craft.mediaPath .. "BettoGeo-Medium.ttf",
+    primary = C.gold, primaryForeground = C.panel,             -- Forever gold on navy (9.7:1)
+    sidebarPrimary = C.gold, sidebarPrimaryForeground = C.panel,
+    -- Main window sidebar (F6b, artboard Inicio): darker navy, active row in gold.
+    sidebar = C.sidebar, sidebarForeground = C.cream, sidebarBorder = C.hairline,
+    sidebarAccent = C.sidebarActive, sidebarAccentForeground = C.gold,
+    foreground = C.cream, mutedForeground = C.muted,
+    popover = C.panel, popoverForeground = C.cream,
+    border = C.hairline, destructive = C.red,
+    -- Scroll rails (Craft.ScrollBar: thumb = secondary, track = secondary at 30 %): the palette's
+    -- idle teal instead of Craft's grey. Nothing else of ours uses `secondary` (no secondary
+    -- Button/Badge variants).
+    secondary = C.tickIdle,
+  }
+  ctx = Craft.Theme.context(THEME_NAME, { font = "bettogeo", headingFont = "bettogeo", overrides = overrides })
+  -- Menus (minimap right click, F6e): the artboard lights the hovered row with an 8 % gold wash.
+  -- Craft.Menu paints its hover with `accent`, which the ScrollBar thumb also uses on hover, so
+  -- the wash lives in a menu-only context instead of the main one.
+  local menuOverrides = { accent = C.menuHover, accentForeground = C.cream }
+  for k, v in pairs(overrides) do menuOverrides[k] = menuOverrides[k] or v end
+  menuCtx = Craft.Theme.context(THEME_NAME .. "Menu", { font = "bettogeo", headingFont = "bettogeo",
+    overrides = menuOverrides })
   -- Registered first, so module callbacks (Kit:OnThemeChange) see the new fonts.
   ctx:register(function()
     for fs in pairs(fontOf) do applyFont(fs) end
   end)
   api = {
-    Craft = Craft, ctx = ctx, newText = newText, setText = setText, setColor = setColor,
+    Craft = Craft, ctx = ctx, menuCtx = menuCtx, newText = newText, setText = setText, setColor = setColor,
     applyFontOf = applyFontOf, newBorder = newBorder, colorBorder = colorBorder,
     newTag = newTag, setTag = setTag,
   }

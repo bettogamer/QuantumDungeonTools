@@ -118,7 +118,7 @@ local function openMenu(anchor)
     ns.MainWindow:Toggle("home")   -- no Craft menu: the left click's action
     return
   end
-  menu = menu or kit.Craft.Menu:Create({ width = 180, theme = kit.ctx, fontFlags = "" })
+  menu = menu or kit.Craft.Menu:Create({ width = 180, theme = kit.menuCtx or kit.ctx, fontFlags = "" })
   menu:SetItems(menuItems())
   menu:Open(anchor, { point = "TOPRIGHT", relativePoint = "BOTTOMLEFT", x = 8, y = 8 })
 end

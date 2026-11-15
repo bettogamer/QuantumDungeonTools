@@ -53,6 +53,7 @@ C.mutedTag    = Style.rgba(HEX.muted, 0.35)     -- SOON tag border
 -- "navy + black 22 %" and "gold 8 % on it" are pre-composited here from the same roles.
 C.sidebar       = Style.over(C.panel, { r = 0, g = 0, b = 0 }, 0.22)
 C.sidebarActive = Style.over(C.sidebar, C.gold, 0.08)
+C.menuHover     = Style.over(C.panel, C.gold, 0.08)     -- hovered menu row (artboard "Icono del minimapa")
 Style.C = C
 
 -- Semantic tones the view models speak -> color.
