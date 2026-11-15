@@ -614,20 +614,20 @@ function combatStep(s)
   selfWriting = false
   s.combat.move = okM or tostring(eM)
   saveState(s, "combat:applied")
-  -- Tracking and CVar writes with the SAME value (no-op) to see whether they throw in combat.
-  if C_Minimap and C_Minimap.GetTrackingInfo and C_Minimap.SetTracking then
-    local okI, info = pcall(C_Minimap.GetTrackingInfo, 1)
-    if okI and type(info) == "table" and not issecretvalue(info.active) then
-      local okT, eT = pcall(C_Minimap.SetTracking, 1, info.active and true or false)
-      s.combat.setTracking = okT or tostring(eT)
-    end
-  end
-  if GetCVar and SetCVar then
-    local okC, eC = pcall(SetCVar, "minimapTrackingShowAll", GetCVar("minimapTrackingShowAll"))
-    s.combat.setCVar = okC or tostring(eC)
-  end
   C_Timer.After(3, function()
     s.combat.inLockdownAtRestore = enc(InCombatLockdown())
+    -- Tracking and CVar writes with the SAME value (no-op) to see whether they throw in combat.
+    if C_Minimap and C_Minimap.GetTrackingInfo and C_Minimap.SetTracking then
+      local okI, info = pcall(C_Minimap.GetTrackingInfo, 1)
+      if okI and type(info) == "table" and not issecretvalue(info.active) then
+        local okT, eT = pcall(C_Minimap.SetTracking, 1, info.active and true or false)
+        s.combat.setTracking = okT or tostring(eT)
+      end
+    end
+    if GetCVar and SetCVar then
+      local okC, eC = pcall(SetCVar, "minimapTrackingShowAll", GetCVar("minimapTrackingShowAll"))
+      s.combat.setCVar = okC or tostring(eC)
+    end
     s.combat.restore = restore(s)
     saveState(s, "combat:restored")
     if s.combatBaseline then s.combat.diff = diff(s.combatBaseline, readState("combat:check")) end

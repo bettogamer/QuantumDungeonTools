@@ -196,6 +196,11 @@ los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prue
    `SetStaticPOIArrowTexture`; sí `SetIconScale` y `SetArchBlobRingScalar`. EUI ya define
    `GetMinimapShape` = `SQUARE` y usa la máscara 130937. Rastreo: 25 tipos (en este personaje,
    «Find Minerals» 2580 activo).
+10. **Combate (paso 5): sin bloqueos.** En `PLAYER_REGEN_DISABLED`, `InCombatLockdown()` todavía
+   da `false`; la restauración a +3 s corrió **con lockdown `true`** (`SetSize`/`ClearAllPoints`/
+   `SetPoint`/`SetZoom`/`SetAlpha`/`SetScale` y `Show` del aro) sin error ni `ADDON_ACTION_BLOCKED`.
+   EUI solo reancla al salir de combate (+0,7 s tras `REGEN_ENABLED`), sin tocar el tamaño.
+   `SetTracking`/`SetCVar` se probaron antes del lockdown: no cuentan (la sonda los pasa a +3 s).
 9. Modo edición: **ningún** `EditMode.Enter`/`Exit` registrado (falta confirmar que se abrió el de Blizzard).
 
 
