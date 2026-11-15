@@ -671,6 +671,47 @@ function combatStep(s)
   end)
 end
 
+-- What is really inside the Minimap (children + regions) and whether an addon can create a
+-- SECOND Minimap-type view (owner idea: move only "the map", not the frame with everything).
+local function describe(f)
+  local okN, n = call(f, "GetName")
+  local okT, t = call(f, "GetObjectType")
+  local okW, w, h = call(f, "GetSize")
+  local row = ("%s [%s] %s shown=%s"):format(okN and tostring(n) or "?", okT and tostring(t) or "?",
+    okW and (tostring(enc(w)) .. "x" .. tostring(enc(h))) or "?", tostring(val(f, "IsShown")))
+  local okL, layer = call(f, "GetDrawLayer")
+  if okL then row = row .. " layer=" .. tostring(layer) end
+  local okX, tex = call(f, "GetTexture")
+  if okX and tex ~= nil then row = row .. " tex=" .. tostring(enc(tex)) end
+  local okA, atlas = call(f, "GetAtlas")
+  if okA and atlas ~= nil then row = row .. " atlas=" .. tostring(enc(atlas)) end
+  local pts = readPoints(f)
+  return row .. " pts=" .. table.concat(pts, " ; ")
+end
+
+local function tree(s)
+  local t = { children = {}, regions = {}, type = val(Minimap, "GetObjectType") }
+  local okC, kids = pcall(function() return { Minimap:GetChildren() } end)
+  for _, k in ipairs(okC and kids or {}) do t.children[#t.children + 1] = describe(k) end
+  local okR, regs = pcall(function() return { Minimap:GetRegions() } end)
+  for _, r in ipairs(okR and regs or {}) do t.regions[#t.regions + 1] = describe(r) end
+  local okV, view = pcall(CreateFrame, "Minimap", nil, UIParent)
+  t.secondView = okV and ("created: " .. tostring(val(view, "GetObjectType"))) or ("error: " .. tostring(view))
+  s.tree = t
+  if okV and view then
+    pcall(function()
+      view:SetSize(300, 300)
+      view:SetPoint("CENTER", UIParent, "CENTER", -350, 0)
+      view:Show()
+    end)
+    t.secondZoom = val(view, "GetZoom")
+    C_Timer.After(1, function() t.secondShown = val(view, "IsVisible") end)
+    C_Timer.After(8, function() pcall(view.Hide, view) end)
+  end
+  say(("check m2 tree: %d children, %d regions, second view: %s"):format(#t.children, #t.regions,
+    tostring(t.secondView)))
+end
+
 function C:Init()
   local s = run(false)
   if s and (s.lensOn or s.combatArmed) then arm() end
@@ -698,6 +739,8 @@ function C:Run(arg)
     lensOn(s)
   elseif arg == "off" or arg == "toggle" then
     lensOff(s)
+  elseif arg == "tree" then
+    tree(s)
   elseif arg == "alpha" then
     if not live then return say(L.CHECK_M2_NOT_ON) end
     local a = select(2, call(Minimap, "GetAlpha"))

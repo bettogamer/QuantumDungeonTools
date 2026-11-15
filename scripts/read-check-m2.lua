@@ -110,6 +110,15 @@ for _, cfg in ipairs(sorted(c.runs)) do
     list(cb.diff, "    diff ")
   end
 
+  if r.tree then
+    local t = r.tree
+    print("tree: Minimap type=" .. tostring(t.type) .. "  second view: " .. tostring(t.secondView)
+      .. "  zoom=" .. tostring(t.secondZoom) .. " visible=" .. tostring(t.secondShown))
+    print("  children:")
+    list(t.children, "    ")
+    print("  regions:")
+    list(t.regions, "    ")
+  end
   print("writes by others (method | writer = count):")
   for _, k in ipairs(sorted(r.counts)) do
     if not k:find("| QDT$") then print("    " .. k .. " = " .. r.counts[k]) end
