@@ -203,6 +203,39 @@ los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prue
    `SetTracking`/`SetCVar` se probaron antes del lockdown: no cuentan (la sonda los pasa a +3 s).
 9. Modo edición: **ningún** `EditMode.Enter`/`Exit` registrado (falta confirmar que se abrió el de Blizzard).
 
+*Configuración sin otro UI (Blizzard, 2026-11-15; pasos 1-5 completos, con capturas del owner):*
+11. **Ronda perfecta:** 0 diferencias al restaurar en tamaño y en escala, 0 errores, y nadie más
+    escribe en el Minimap (solo `SetZoom` de `Blizzard_Minimap` cuando el owner usó la rueda).
+12. **Mover sí funciona:** `SetPoint` al centro se mantiene hasta +30 s. Las **esquinas
+    cuadradas pintan terreno y pines**, los iconos de LibDBIcon se colocan en el borde del
+    cuadrado y las coordenadas siguen al mapa. Al restaurar con la máscara 186178, el mapa
+    vuelve **redondo y con su aro**, igual que antes.
+13. **En su sitio no sirve:** el Minimap de Blizzard crece desde su centro (CENTER del
+    contenedor), así que se sale de la pantalla por arriba y por la derecha y **la lista de
+    misiones lo tapa**. La lente necesita una posición propia por defecto, no la esquina.
+14. **Parpadeo: ninguna variante parpadea** (ni aquí ni con EUI). La variante A (sin tocar el zoom)
+    deja el terreno sin pintar, B y C pintan bien, D (`SetScale`) agranda también el aro y los iconos.
+    **Regla: `SetSize` + un paso de zoom.**
+15. **Radio de visión:** aquí solo depende del zoom (zoom 0 = 233 yd, 1 = 200, 2 = 167) y no del
+    tamaño. Es **la misma zona, más grande**; el cuadrado añade las esquinas. (El 150/120 de EUI
+    queda sin explicar.)
+16. **El zoom SOBREVIVE al `/reload`** (el cliente lo recuerda): con la lente puesta, el
+    `/reload` deja el zoom en 1, la foto de después de recargar toma 1 como «original» y al apagar
+    queda en 1 en vez de 0. **F2 tiene que guardar el zoom original en la DB** y reponerlo tras un
+    `/reload` o un cierre de sesión con la lente puesta. Tamaño, máscara y aro sí vuelven solos.
+17. **Modo edición:** `EventRegistry` `EditMode.Enter`/`Exit` llegan, y con la lente puesta el
+    Modo edición **no cambia** ni el tamaño ni el ancla del Minimap. Aun así se mantiene cerrarla
+    al entrar (decisión del diseño).
+18. **Combate completo:** la segunda pasada empezó ya en lockdown. Abrir, mover, cerrar,
+    `SetTracking` y `SetCVar` (mismo valor) funcionan **con `InCombatLockdown()` = true**, sin
+    `ADDON_ACTION_BLOCKED`.
+19. **Zoom con EUI:** aquí el paso de zoom se mantiene hasta +30 s, así que el regreso a 0 de
+    la configuración EUI (gotcha 6) **lo provoca EUI** (probablemente con un método cacheado que
+    el hook no ve).
+20. **Fallo de la sonda (alpha):** la ronda bajaba la alpha a 0.5 y la subía en el mismo
+    fotograma, así que nunca se llegó a pintar. Para la pregunta visual se usa
+    `on` + `alpha`.
+
 
 ## Puntos abiertos
 
