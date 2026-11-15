@@ -236,6 +236,17 @@ los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prue
     fotograma, así que nunca se llegó a pintar. Para la pregunta visual se usa
     `on` + `alpha`.
 
+*Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
+21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
+    `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
+    Ninguna variante parpadea (owner: «se ve igual que sin addons»).
+22. **Crece hacia abajo y a la izquierda** (ancla `TOPRIGHT` de `ElvUI_MinimapHolder`, 175,6 →
+    351,1 px) y **mover funciona**: el `SetPoint` al centro aguanta hasta +30 s. ElvUI ya define
+    `GetMinimapShape` = `SQUARE`; la sonda no toca su máscara.
+23. **El zoom también sobrevive al `/reload` con ElvUI:** el zoom de partida ya era 1, heredado de la
+    prueba sin otro UI, y la recarga con la lente lo dejó en 2. Confirma el gotcha 16 en las tres
+    configuraciones.
+
 
 ## Puntos abiertos
 
