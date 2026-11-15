@@ -250,6 +250,7 @@ local function buildPreview(body)
   for i, id in ipairs(PREVIEW_STATES) do tabs[i] = { id = id, label = L.IT_P_STATES[id] } end
   P.previewState = PREVIEW_STATES[1]
   local bar = Craft.Tabs:Create(body, { variant = "default", fill = true, defaultTab = P.previewState,
+    theme = kit.tabsCtx,
     tabs = tabs, onTabChange = function(id)
       P.previewState = id
       startPreview()

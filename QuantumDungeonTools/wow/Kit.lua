@@ -14,7 +14,7 @@ ns.Kit = Kit
 local THEME_NAME = "QuantumDungeonTools"
 
 local Craft
-local ctx, menuCtx
+local ctx, menuCtx, tabsCtx
 local fontOf = {}   -- FontString -> Style.FONT entry (re-applied on theme / font-metrics change)
 local api           -- the table Kit:Get() hands out
 
@@ -135,12 +135,19 @@ function Kit:Init()
   for k, v in pairs(overrides) do menuOverrides[k] = menuOverrides[k] or v end
   menuCtx = Craft.Theme.context(THEME_NAME .. "Menu", { font = "bettogeo", headingFont = "bettogeo",
     overrides = menuOverrides })
+  -- Segmented tabs (F6f preview states, Craft.Tabs "default"): the bar is `muted`, Craft's grey,
+  -- which other components may share; the palette's bar track lives in a tabs-only context.
+  local tabsOverrides = { muted = C.track }
+  for k, v in pairs(overrides) do tabsOverrides[k] = tabsOverrides[k] or v end
+  tabsCtx = Craft.Theme.context(THEME_NAME .. "Tabs", { font = "bettogeo", headingFont = "bettogeo",
+    overrides = tabsOverrides })
   -- Registered first, so module callbacks (Kit:OnThemeChange) see the new fonts.
   ctx:register(function()
     for fs in pairs(fontOf) do applyFont(fs) end
   end)
   api = {
-    Craft = Craft, ctx = ctx, menuCtx = menuCtx, newText = newText, setText = setText, setColor = setColor,
+    Craft = Craft, ctx = ctx, menuCtx = menuCtx, tabsCtx = tabsCtx,
+    newText = newText, setText = setText, setColor = setColor,
     applyFontOf = applyFontOf, newBorder = newBorder, colorBorder = colorBorder,
     newTag = newTag, setTag = setTag,
   }

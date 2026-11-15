@@ -1163,7 +1163,17 @@ end
 
 -- Preview (F6f, artboard «Resumen con vista previa»): the real widget, re-parented into `host`
 -- (centered, clipped by it) and painted from a Demo scenario with the current settings. No drag,
--- no right-click hide, no ping buttons while it lasts. UI:Preview(nil) puts it back where it was.
+-- no right-click hide, no ping buttons and no hover detail while it lasts (the full layout stops
+-- taking the mouse; the compact one keeps it for its boss panel). UI:Preview(nil) puts it back.
+local function fullMouse(on)
+  if W.hover.SetMouseMotionEnabled then
+    W.hover:SetMouseMotionEnabled(on)
+  else
+    W.hover:EnableMouse(on)
+  end
+  W.head:EnableMouse(on)
+end
+
 function UI:Preview(host, state)
   if not ctx then return false end
   if host then
@@ -1174,11 +1184,13 @@ function UI:Preview(host, state)
     root:SetFrameStrata(host:GetFrameStrata())
     root:SetFrameLevel(host:GetFrameLevel() + 5)
     root:SetClampedToScreen(false)
+    fullMouse(false)
     root:ClearAllPoints()
     root:SetPoint("CENTER", host, "CENTER", 0, 0)
   elseif preview then
     preview = nil
     hidePanel(true)
+    fullMouse(true)
     root:SetParent(UIParent)
     root:SetFrameStrata("MEDIUM")
     root:SetClampedToScreen(true)
