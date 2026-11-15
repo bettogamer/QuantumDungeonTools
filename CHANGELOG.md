@@ -12,6 +12,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Añadido
 
+- **Icono del minimapa** (hito M1 F6e): clic abre la ventana principal, mayús+clic el Historial de
+  runs y clic derecho un menú (Instance Tracker, Historial, Ajustes generales, Ocultar el icono);
+  se arrastra por el borde del minimapa. Nueva página **Ajustes generales** con su interruptor y
+  `/qdt minimap` para mostrarlo u ocultarlo.
 - **Avisos de instancias y toast de fin de run** (hito M1 F5b/F5c): aviso rojo «Límite de
   instancias: 10/10» con el tiempo hasta el siguiente hueco (al entrar en la décima, al unirte a un
   grupo estando en 10/10 y cuando el juego rechaza la entrada); franja ámbar al entrar en la 8.ª y
