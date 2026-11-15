@@ -341,11 +341,12 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** F2, en sesión nueva. Recargar AGENTS.md + este plan (§F1 «Gotchas in-game», 1-26).
+**Siguiente:** F2, en sesión nueva. Recargar AGENTS.md + este plan (§F1 «Gotchas in-game», 1-31).
 Reglas que salen de F1 para el núcleo: `SetSize` ×factor + **un paso de zoom** (nunca `SetScale`
 ni tamaño sin zoom); máscara 130937 + `GetMinimapShape` = `SQUARE` solo sin otro UI (restaurar
 con 186178); **guardar el zoom original en la DB** y reponerlo tras `/reload`/logout (gotcha 16);
 la lente no sobrevive a recargas ni a pantallas de carga; posición propia por defecto (en su sitio
-la tapa el rastreador de misiones); con EUI no tocar los iconos LibDBIcon; todo vale en combate.
+la tapa el rastreador de misiones); con EUI no tocar los iconos LibDBIcon; todo vale en combate; tras mover, comprobar en el
+siguiente fotograma si la posición aguanta (con EUI y el minimapa pegado no aguanta → aviso).
 Decisión EUI cerrada (punto 11: aviso si el minimapa está pegado). Punto 8 (toast o chat) se
 decide antes de F3, que es donde vive el aviso.
