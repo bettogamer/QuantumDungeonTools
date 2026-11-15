@@ -280,6 +280,14 @@ después de F2.
     `SetPoint` fuera de esa ventana aguanta. La sonda lo prueba (`tour:moved+0.1/+0.7/moved2`)
     y apunta la cadena de llamadas.
 
+29. **Veredicto: con EUI la lente NO se puede mover** (sonda con cadena de llamadas, 2026-11-15).
+    Cada `SetPoint` propio se deshace **en el mismo fotograma**: lo hace la propagación de anclajes
+    del modo desbloqueo (`EUI_UnlockMode_Positions.lua:1766-1768`, rama «Standard CENTER
+    positioning», disparada por el hook de `SetPoint`), y el segundo intento a +1 s también.
+    La hipótesis del 28 queda descartada. Hay dos salidas: la lente crece en su sitio con EUI
+    (opción A) o el jugador desactiva EllesmereUIMinimap (botón «Usar el minimapa de Blizzard,
+    recarga»). Ambas son decisión del owner.
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
