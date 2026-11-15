@@ -233,8 +233,13 @@ local function writer()
   if selfWriting then return "QDT" end
   local ok, st = pcall(debugstack, 3, 8, 0)
   if not ok or type(st) ~= "string" then return "?" end
-  for addon in st:gmatch("AddOns[/\\]([^/\\]+)") do
-    if addon ~= "QuantumDungeonTools" then return addon end
+  -- addon + file:line of the first foreign frame (which EUI file re-anchors, F1 retest)
+  for line in st:gmatch("[^\n]+") do
+    local addon, rest = line:match("AddOns[/\\]([^/\\]+)[/\\](.*)")
+    if addon and addon ~= "QuantumDungeonTools" then
+      local file, num = rest:match("([^/\\\"%]]+%.lua)\"?%]?:(%d+)")
+      return file and (addon .. " " .. file .. ":" .. num) or addon
+    end
   end
   return (st:match("^[^\n]*") or "?"):sub(1, 80)
 end
@@ -512,6 +517,15 @@ local function tour(s)
   push(s.states, before, STATES_MAX)
   if not apply(s, LENS) then busy = false return say(L.CHECK_M2_FAIL) end
   after(s, "tour:size", { 0, 1, 2, 5 })
+  -- Zoom every second: pins down WHEN it falls back (EUI, gotcha 6) even with no hooked writer.
+  local lastZoom = val(Minimap, "GetZoom")
+  for t = 1, 30 do
+    C_Timer.After(t, function()
+      local z = val(Minimap, "GetZoom")
+      if z ~= lastZoom then note(s, ("ZOOM %s -> %s at +%ds"):format(tostring(lastZoom), tostring(z), t)) end
+      lastZoom = z
+    end)
+  end
   C_Timer.After(6, function()
     selfWriting = true; pcall(Minimap.SetAlpha, Minimap, 0.5); selfWriting = false
     saveState(s, "tour:alpha0.5")

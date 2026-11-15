@@ -236,6 +236,10 @@ los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prue
     fotograma, así que nunca se llegó a pintar. Para la pregunta visual se usa
     `on` + `alpha`.
 
+*Opacidad (owner, 2026-11-15):* con `on` + `alpha`, la alpha 0.5 atenúa todo (terreno, pines e
+iconos). **Mazmorra: aplazada** (owner: «primero que funcione fuera»); el bloque B se corre
+después de F2.
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
