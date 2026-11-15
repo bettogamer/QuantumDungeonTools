@@ -63,6 +63,8 @@ SlashCmdList.QDT = function(msg)
     ns.CheckF2:Run()
   elseif msg == "check f1" or msg:find("^check f1 ") then
     ns.CheckF1:Run((msg:gsub("^check f1%s*", "")))
+  elseif msg == "check m2" or msg:find("^check m2 ") then
+    ns.CheckM2:Run((msg:gsub("^check m2%s*", "")))
   elseif msg == "minimap" then
     local shown = not ns.Minimap:IsShown()
     ns.Minimap:SetShown(shown)

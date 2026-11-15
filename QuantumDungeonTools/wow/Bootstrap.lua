@@ -86,6 +86,7 @@ f:SetScript("OnEvent", function(_, event, arg1)
       if ns.InstanceAlertsUI then ns.InstanceAlertsUI:Init() end
       if ns.CheckF1 then ns.CheckF1:Init() end   -- re-arms the F1 passive log if it is on
     end
+    if ns.CheckM2 then ns.CheckM2:Init() end   -- M2 F1 probes: re-arms if the probe lens was on
     ns.version = ns.resolveVersion(C_AddOns.GetAddOnMetadata(ADDON, "Version"))
     print(L.MSG_LOADED:format(ns.Brand.title(), ns.version))
   end

@@ -43,8 +43,8 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 
 | Fase | Feature | Estado | Nota |
 |------|---------|--------|------|
-| **F0** | Diseño en el lienzo | 🔨 EN CURSO: 5 artboards publicados (lienzo v71, 2026-11-15), **esperando el OK del owner** | página «Minimap Lens»: LensReposo, LensActiva, LensMover, LensAviso (A toast / B chat), AppLens (lleva el sidebar sin PRONTO); **sin código hasta el OK** |
-| **F1** | Sondas de Forever (`/qdt check m2`) | ⬜ PENDIENTE | §F1: sin otro UI, con EllesmereUI y con ElvUI |
+| **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast / B chat, punto 8 sin cerrar), AppLens |
+| **F1** | Sondas de Forever (`/qdt check m2`) | 🔨 EN CURSO: sonda escrita y desplegada (2026-11-15), **esperando la sesión de pruebas del owner** | §F1 «Guion»: sin otro UI, con EllesmereUI y con ElvUI |
 | **F2** | Núcleo de la lente | ⬜ PENDIENTE | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
 | **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
@@ -122,6 +122,50 @@ de pruebas (memoria «pruebas in-game agrupadas»). Lo esencial:
 - Modo edición: ¿repone los anclajes de `MinimapContainer` con la lente activa?
 - Restauración exacta: anclajes, tamaño, escala, zoom, alpha, posiciones de LibDBIcon y rastreo.
 
+### Guion de la sesión de pruebas (owner)
+
+Código: `modules/MinimapLens/wow/CheckM2.lua` + `Bindings.xml`. Vuelca a
+`QuantumDungeonToolsDB._checkM2.runs[cfg]`, separado por configuración (la detecta sola:
+`none`, `eui`, `elvui`). Lo lee el agente con `lua scripts/read-check-m2.lua [--log]`; el owner
+solo responde las preguntas **visuales** (👁) de abajo. Mientras está armada, la sonda apunta
+quién escribe en el minimapa: hooks de solo lectura más `debugstack`.
+
+**Bloque A, fuera de mazmorra (~4 min por configuración, tres veces).** Configuraciones:
+1. **sin otro UI** (EllesmereUIMinimap y ElvUI desactivados), 2. **solo EllesmereUIMinimap**,
+3. **solo ElvUI**.
+1. `/reload` con la configuración puesta.
+2. `/qdt check m2`: ronda de ~36 s, sin tocar el minimapa. A los 8 s el mapa salta al centro
+   de la pantalla; es parte de la prueba. Al terminar, el chat dice «Diferencias al restaurar:
+   tamaño 0, escala 0. Errores: 0» si todo vuelve bien.
+   👁 (solo sin otro UI) ¿las **esquinas** del mapa cuadrado pintan terreno y pines, o salen
+   vacías? 👁 Hacia los 6 s el mapa baja un instante al 50 %: ¿se atenúa también el terreno?
+3. `/qdt check m2 ab`: cuatro variantes de 3 s (A, B, C, D, las anuncia el chat).
+   👁 ¿Cuál **parpadea** al crecer o al volver? ¿Cuál deja el **terreno viejo**
+   (borroso o sin rellenar)?
+4. `/qdt check m2 on`. Luego abrir y cerrar el **Modo edición**, hacer `/reload` (la lente
+   vuelve a abrirse sola al segundo) y `/qdt check m2 off`.
+   👁 (solo sin otro UI) Al apagar, ¿el borde **redondo** y el aro quedan como antes?
+5. `/qdt check m2 combat` y pegarle a un bicho: la lente se abre y se cierra dentro del
+   combate. El chat da «aplicar true, restaurar true» si funciona.
+6. Solo la primera vez: Teclado › Atajos › AddOns. 👁 ¿Aparece «Quantum Dungeon Tools ›
+   Minimap Lens (probe)»? Asignarle una tecla y pulsarla dos veces: abre y cierra la lente.
+
+**Bloque B, en mazmorra (una vez, en la run agrupada; con la configuración que se juegue).**
+`/qdt check m2 on` **antes** de entrar → entrar (pantalla de carga: lo que haga EllesmereUI
+justo ahí) → un pull con la lente puesta → `/qdt check m2 off` dentro.
+
+Al terminar, `/reload` (para que se escriba el volcado) y avisar. `/qdt check m2 reset` lo borra.
+
+**Qué responde cada paso** (sondas de los docs 22 y 23): ronda → S1 (tamaño, zoom y radio de
+visión a +0/1/2/5/10/30 s, auto-reset del zoom), S3 alpha, S4 `SetScale`, S8 restauración,
+`GetMinimapShape` + `Refresh` de LibDBIcon (radio de cada icono contra medio ancho), máscara
+cuadrada. `ab` → parpadeo y empujón de zoom. `on` + `/reload` → restauración tras recargar,
+Modo edición y escrituras ajenas en PEW y al salir de combate (si alguien encoge la lente, la
+sonda la reaplica una vez y anota `STOMPED`). `combat` → S10 (`SetSize`/`SetPoint`/`SetTracking`/
+`SetCVar` en combate, `ADDON_ACTION_BLOCKED`). Estático → API (`SetBlipTexture`…), anclajes de
+los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prueba de
+`SetParent` (S7 del doc 22), porque la lente no reparenta, y la segunda vista del mapa (S9).
+
 **Gotchas in-game:** _(se rellena en F1)_
 
 ## Puntos abiertos
@@ -145,5 +189,7 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** F0. Leer el lienzo (memoria `referencia-diseno-instance-tracker`), crear la página
-«Minimap Lens» con los 6 artboards de §F0, publicarla y esperar el OK del owner.
+**Siguiente:** F1. El owner corre el guion de §F1 (bloque A en las tres configuraciones; el
+bloque B en la run agrupada) y avisa. El agente lee el volcado con `scripts/read-check-m2.lua`,
+rellena «Gotchas in-game» y cierra el punto 9 (límites). Si una sonda contradice el diseño,
+se vuelve al artboard antes de F2. Punto 8 (toast o chat) sigue abierto para el owner.
