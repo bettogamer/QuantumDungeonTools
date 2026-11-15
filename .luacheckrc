@@ -52,6 +52,8 @@ files = {
             "QuantumDungeonToolsDB",
             -- Main window (MainWindow.lua, plan M1 F6b)
             "time", "ReloadUI",
+            -- Minimap icon (Minimap.lua, plan M1 F6e): LibDBIcon button, own tooltip
+            "LibStub", "IsShiftKeyDown", "_G",
         },
     },
 

@@ -6,7 +6,7 @@
 -- demo state of the widget builds with a non-zero size, and what the XP APIs answer in Forever
 -- (max level, rested). Dumps to QuantumDungeonToolsDB._checkF2 (reader: scripts/read-check-f2.lua)
 -- and prints only the failures. Leaves the widget as it found it (demo off).
-local _, ns = ...
+local ADDON, ns = ...
 local L = ns.L
 local issecretvalue = ns.issecretvalue
 
@@ -111,6 +111,14 @@ function C:Run()
     if before ~= "history" then pcall(Page.ShowTab, Page, before) end
     if not wasShown and MW:IsShown() then MW:Toggle() end
   end
+
+  -- F6e: the LibDBIcon button exists, carries our icon and its visibility follows the setting.
+  local icon = LibStub and LibStub("LibDBIcon-1.0", true)
+  local btn = icon and icon:GetMinimapButton(ADDON)
+  local tex = btn and btn.icon and btn.icon:GetTexture()
+  check("minimap icon", btn ~= nil and tex ~= nil and btn:IsShown() == ns.Minimap:IsShown(),
+    btn and (tostring(tex) .. ", shown " .. tostring(btn:IsShown()) .. ", setting " .. tostring(ns.Minimap:IsShown()))
+      or "no LibDBIcon button")
 
   -- XP APIs in Forever (informative: the widget hides the XP bar when atMax).
   local xp = ns.InstanceTracker:XPSnapshot()

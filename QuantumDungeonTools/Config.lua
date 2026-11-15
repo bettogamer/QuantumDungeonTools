@@ -63,6 +63,10 @@ SlashCmdList.QDT = function(msg)
     ns.CheckF2:Run()
   elseif msg == "check f1" or msg:find("^check f1 ") then
     ns.CheckF1:Run((msg:gsub("^check f1%s*", "")))
+  elseif msg == "minimap" then
+    local shown = not ns.Minimap:IsShown()
+    ns.Minimap:SetShown(shown)
+    say(L.MM_TOGGLED:format(shown and L.MSG_ON or L.MSG_OFF))
   elseif msg == "info" then
     info()
   else

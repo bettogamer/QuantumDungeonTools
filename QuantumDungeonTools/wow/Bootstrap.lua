@@ -31,6 +31,9 @@ function ns.InitDB()
 
   -- Defaults without clobbering what is there (0 and false are valid values -> compare to nil)
   if db.enabled == nil then db.enabled = true end
+  -- Minimap icon (F6e): LibDBIcon's own table { hide, minimapPos }, additive. Shown by default.
+  db.minimap = db.minimap or {}
+  if db.minimap.hide == nil then db.minimap.hide = false end
   -- Module: Instance Tracker
   db.instanceTracker = db.instanceTracker or {}
   local it = db.instanceTracker
@@ -73,6 +76,7 @@ f:SetScript("OnEvent", function(_, event, arg1)
     -- World loaded: the addon UI kit (Craft theme context) first, then the modules (each one
     -- injects the real game deps into its pure core and builds its UI on the kit).
     if ns.Kit then ns.Kit:Init() end
+    if ns.Minimap then ns.Minimap:Init() end   -- addon-level: there even with every module off
     -- Module switch (main window, F6c): read once here, applied by a reload. Off = no events,
     -- no widget, no alerts; its page and data stay.
     ns.itLoaded = ns.InstanceSettings.isOn(ns.db.instanceTracker)

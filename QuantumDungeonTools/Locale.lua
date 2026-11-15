@@ -21,6 +21,7 @@ L.HELP_LINES   = {
   "/qdt new -- forget the current run and start a new one",
   "/qdt history -- opens the run history",
   "/qdt auto -- open the window automatically inside dungeons (on/off)",
+  "/qdt minimap -- show/hide the minimap icon",
   "/qdt info -- version",
   "/qdt check f1 [label | off] -- Forever probes snapshot (dev)",
   "/qdt check f2 -- widget and Craft self-test (dev)",
@@ -128,7 +129,15 @@ L.MW_SOON_TIP      = "Coming soon"
 L.MW_SOON_TITLE    = "Coming soon"
 L.MW_SOON_DESC     = "This page arrives in a future version."
 L.MW_GENERAL       = "General settings"
-L.MW_GENERAL_SUB   = "What applies to the whole addon."
+L.MW_GENERAL_SUB   = "What applies to the whole addon, not to one module."
+L.MW_G_MINIMAP     = "MINIMAP"
+L.MW_G_ICON        = "Minimap icon"
+L.MW_G_ICON_HINT   = "Click: Home · Shift+click: History · drag it along the minimap edge"
+L.MM_HISTORY       = "Run history"
+L.MM_HIDE          = "Hide the icon"
+L.MM_TOGGLED       = "Minimap icon: %s (/qdt minimap)."
+L.MM_TIP_LINES     = { { "Click", "open the window" }, { "Shift+click", "run history" },
+  { "Right click", "menu" }, { "Drag", "move the icon" } }
 L.MW_NEWS          = "What's new"
 L.MW_NEWS_SUB      = "What changed in each version."
 L.MW_RELOAD        = "Reload UI"
@@ -231,6 +240,7 @@ if locale == "esES" or locale == "esMX" then
     "/qdt new -- olvidar la run actual y empezar otra",
     "/qdt history -- abre el historial de runs",
     "/qdt auto -- abrir la ventana sola al entrar en mazmorras (sí/no)",
+    "/qdt minimap -- mostrar/ocultar el icono del minimapa",
     "/qdt info -- versión",
     "/qdt check f1 [etiqueta | off] -- foto de las sondas de Forever (dev)",
     "/qdt check f2 -- autoprueba del widget y de Craft (dev)",
@@ -334,7 +344,15 @@ if locale == "esES" or locale == "esMX" then
   L.MW_SOON_TITLE    = "Muy pronto"
   L.MW_SOON_DESC     = "Esta página llega en una próxima versión."
   L.MW_GENERAL       = "Ajustes generales"
-  L.MW_GENERAL_SUB   = "Lo que vale para todo el addon."
+  L.MW_GENERAL_SUB   = "Lo que vale para todo el addon, no para un módulo."
+  L.MW_G_MINIMAP     = "MINIMAPA"
+  L.MW_G_ICON        = "Icono del minimapa"
+  L.MW_G_ICON_HINT   = "Clic: Inicio · Mayús+clic: Historial · arrástralo por el borde del minimapa"
+  L.MM_HISTORY       = "Historial de runs"
+  L.MM_HIDE          = "Ocultar el icono"
+  L.MM_TOGGLED       = "Icono del minimapa: %s (/qdt minimap)."
+  L.MM_TIP_LINES     = { { "Clic", "abrir la ventana" }, { "Mayús+clic", "Historial de runs" },
+    { "Clic derecho", "menú" }, { "Arrastrar", "mover el icono" } }
   L.MW_NEWS          = "Novedades"
   L.MW_NEWS_SUB      = "Qué cambió en cada versión."
   L.MW_RELOAD        = "Recargar UI"

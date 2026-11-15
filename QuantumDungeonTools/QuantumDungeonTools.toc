@@ -94,4 +94,5 @@ modules\InstanceTracker\wow\Page.lua
 modules\InstanceTracker\wow\CheckF1.lua
 modules\InstanceTracker\wow\CheckF2.lua
 wow\MainWindow.lua
+wow\Minimap.lua
 Config.lua

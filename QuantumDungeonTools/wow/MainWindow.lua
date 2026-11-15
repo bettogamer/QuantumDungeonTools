@@ -282,6 +282,56 @@ local function buildHome(container)
 end
 
 ------------------------------------------------------------------------------
+-- General settings (F6e, artboard "Ajustes generales"): MINIMAP > the icon switch
+------------------------------------------------------------------------------
+local DOT_MASK = [[Interface\CharacterFrame\TempPortraitAlphaMask]]
+
+local function buildGeneral(container)
+  local page = newPage(container, "general")
+  local rule = pageHeader(page, L.MW_GENERAL, L.MW_GENERAL_SUB, L.MW_GENERAL)
+  local card = box(page, nil, C.hairline)
+  card:SetPoint("TOPLEFT", section(page, L.MW_G_MINIMAP, rule), "BOTTOMLEFT", 0, -10)
+  card:SetPoint("RIGHT", page, "RIGHT", -WIN.padX, 0)
+  card:SetHeight(WIN.cardH)
+
+  -- Gold dot = changed from its default (default: icon shown).
+  local dot = card:CreateTexture(nil, "ARTWORK")
+  dot:SetSize(WIN.dot, WIN.dot)
+  kit.setColor(dot, C.gold)
+  local mask = card:CreateMaskTexture()
+  mask:SetTexture(DOT_MASK, "CLAMPTOBLACKADDITIONAL", "CLAMPTOBLACKADDITIONAL")
+  mask:SetAllPoints(dot)
+  dot:AddMaskTexture(mask)
+  dot:SetPoint("LEFT", WIN.cardPadX, 0)
+
+  local MM = ns.Minimap
+  local silent = false
+  local sw = Craft.Switch:Create(card, { checked = MM:IsShown(),
+    onChange = function(v) if not silent then MM:SetShown(v) end end })
+  sw:GetFrame():SetPoint("RIGHT", card, "RIGHT", -WIN.cardPadX, 0)
+  local cmd = text(card, FONT.winRowSub, C.tickIdle)
+  cmd:SetPoint("RIGHT", sw:GetFrame(), "LEFT", -14, 0)
+  cmd:SetText("/qdt minimap")
+  local name = text(card, FONT.winModule, C.cream)
+  name:SetPoint("BOTTOMLEFT", card, "LEFT", WIN.cardPadX + WIN.dot + 14, 1)
+  name:SetPoint("RIGHT", cmd, "LEFT", -14, 0)
+  name:SetText(L.MW_G_ICON)
+  local hint = text(card, FONT.winRowSub, C.muted)
+  hint:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -2)
+  hint:SetPoint("RIGHT", cmd, "LEFT", -14, 0)
+  hint:SetText(L.MW_G_ICON_HINT)
+
+  local function sync(shown)
+    silent = true
+    if sw:GetChecked() ~= shown then sw:SetChecked(shown) end
+    silent = false
+    dot:SetShown(not shown)
+  end
+  MM:OnChange(sync)
+  sync(MM:IsShown())
+end
+
+------------------------------------------------------------------------------
 -- Home: the NOW card
 ------------------------------------------------------------------------------
 function MW:RefreshHome()
@@ -405,7 +455,7 @@ local function buildMain(content)
   else
     placeholder(body, "it", L.IT_TITLE, L.MW_IT_DESC)
   end
-  placeholder(body, "general", L.MW_GENERAL, L.MW_GENERAL_SUB)
+  buildGeneral(body)
   placeholder(body, "news", L.MW_NEWS, L.MW_NEWS_SUB)
 end
 

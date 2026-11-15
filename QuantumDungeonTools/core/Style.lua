@@ -104,6 +104,20 @@ Style.WIN = scale({
   nowH = 66, openRowH = 44, openColGap = 48, moduleH = 44, moduleGap = 8,
 })
 
+-- General settings page (F6e, artboard "Ajustes generales"): a card of one two-line setting.
+Style.WIN.cardH = math.floor(56 * Style.GEO + 0.5)   -- padding 12 + 14 title + 2 + 11 hint + 12 (+ air)
+Style.WIN.cardPadX = math.floor(16 * Style.GEO + 0.5)
+Style.WIN.dot = 5                                     -- gold "changed from its default" dot
+
+-- Minimap icon tooltip (F6e, artboard "Icono del minimapa", SMRT pattern): the button's OWN
+-- GameTooltip with Inter (Craft media) and the icon off its left edge.
+Style.TIP = {
+  icon = [[Interface\Icons\INV_Misc_PocketWatch_01]],   -- provisional Blizzard icon (owner, 2026-11-14)
+  logo = 48,
+  titleFont = "Inter-Bold.ttf", titleSize = 14,
+  lineFont = "Inter-Regular.ttf", lineSize = 12,
+}
+
 -- Font weights map BettoGeo files: 500/600 medium, 700 bold. No regular: with OUTLINE it reads
 -- too thin over the game (owner, 2026-11-12). `flags` overrides the theme outline
 -- ("OUTLINE, SLUG") for one element; "" = no outline (solid panels).
