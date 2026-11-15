@@ -151,7 +151,41 @@ end
 function Tab:RefreshHour()
   if not P.hourNum then return end
   local h = Hourly.snapshot(db().hourly, time())
-  P.hourNum:SetText(("%d/%d"):format(h.count, h.limit))
+  local s = ("%d/%d"):format(h.count, h.limit)
+  P.hourNum:SetText(s)
+  P.footHourNum:SetText(s)
+end
+
+-- The bar at the window's minimum width does not hold the three filters and the hour count:
+-- the selects shrink (dungeon first) down to their minimum, then the hour count moves to the
+-- footer. Measured, so it follows the font.
+local function layoutBar()
+  local w = P.bar and P.bar:GetWidth() or 0
+  if w <= 0 then return end
+  local labels = 0
+  for _, fs in ipairs(P.filterLabels) do labels = labels + fs:GetStringWidth() end
+  local fixed = labels + 3 * S.histLabelGap + 2 * S.histGroupGap
+  local hourW = S.histGroupGap + P.hourLabel:GetStringWidth() + 4 + P.hourNum:GetStringWidth()
+  local want = { S.histDungeonW, S.histDiffW, S.histCharW }
+  local min = { S.histDungeonMin, S.histDiffMin, S.histCharMin }
+  local function fit(room)
+    local widths, sum = {}, 0
+    for i = 1, 3 do widths[i] = want[i]; sum = sum + want[i] end
+    for i = 1, 3 do   -- shrink in order until it fits
+      if sum <= room then break end
+      local cut = math.min(widths[i] - min[i], sum - room)
+      widths[i], sum = widths[i] - cut, sum - cut
+    end
+    return widths, sum <= room
+  end
+  local widths, ok = fit(w - fixed - hourW)
+  local inBar = ok
+  if not ok then widths = fit(w - fixed) end
+  for i, sel in ipairs(P.selects) do sel:GetFrame():SetWidth(widths[i]) end
+  P.hourLabel:SetShown(inBar)
+  P.hourNum:SetShown(inBar)
+  P.footHour:SetShown(not inBar)
+  P.footHourNum:SetShown(not inBar)
 end
 
 local function signature(list)
@@ -181,6 +215,7 @@ function Tab:Refresh()
   P.empty:SetShown(n == 0)
   P.footLeft:SetText(History.footer(History.summary(f), FOOT_L))
   self:RefreshHour()
+  layoutBar()
 end
 
 -- Clock tick of the page (only while the tab is on screen): the hour count moves with time,
@@ -201,6 +236,7 @@ local function filter(bar, anchor, key, labelText, width)
     lbl:SetPoint("LEFT", bar, "LEFT", 0, 0)
   end
   lbl:SetText(labelText)
+  P.filterLabels[#P.filterLabels + 1] = lbl
   local sel = Craft.Select:Create(bar, { options = { { value = ALL, label = labelText } }, value = ALL,
     size = "sm", width = width, onSelect = function(v)
       filters[key] = v
@@ -208,6 +244,7 @@ local function filter(bar, anchor, key, labelText, width)
       if P.scroll then P.scroll:ScrollToTop() end
     end })
   sel:GetFrame():SetPoint("LEFT", lbl, "RIGHT", S.histLabelGap, 0)
+  P.selects[#P.selects + 1] = sel
   return sel
 end
 
@@ -226,6 +263,7 @@ function Tab:Build(pane, blocks)
   bar:SetPoint("TOPLEFT")
   bar:SetPoint("TOPRIGHT")
   bar:SetHeight(S.histBarH)
+  P.bar, P.filterLabels, P.selects = bar, {}, {}
   local rule = B.hline(bar)
   rule:SetPoint("BOTTOMLEFT")
   rule:SetPoint("BOTTOMRIGHT")
@@ -237,6 +275,8 @@ function Tab:Build(pane, blocks)
   local hour = B.text(bar, FONT.winSub, C.muted)
   hour:SetPoint("RIGHT", P.hourNum, "LEFT", -4, 0)
   hour:SetText(L.IT_H_HOUR)
+  P.hourLabel = hour
+  bar:SetScript("OnSizeChanged", layoutBar)
 
   -- Column header (outside the scroll: it stays put)
   local head = CreateFrame("Frame", nil, pane)
@@ -267,6 +307,14 @@ function Tab:Build(pane, blocks)
   local kept = B.text(foot, FONT.winRowSub, C.muted, "RIGHT")
   kept:SetPoint("RIGHT", foot, "RIGHT", -S.histPadX, 0)
   kept:SetText(L.IT_H_KEPT:format(History.MAX))
+  -- The hour count when the bar has no room for it (layoutBar), centered between both texts.
+  P.footHour = B.text(foot, FONT.winRowSub, C.muted)
+  P.footHour:SetPoint("RIGHT", foot, "CENTER", -2, 0)
+  P.footHour:SetText(L.IT_H_HOUR)
+  P.footHourNum = B.text(foot, FONT.histHead, C.gold)
+  P.footHourNum:SetPoint("LEFT", foot, "CENTER", 2, 0)
+  P.footHour:Hide()
+  P.footHourNum:Hide()
 
   -- Table
   local scroll = Craft.Scroll:Create(pane, {})
