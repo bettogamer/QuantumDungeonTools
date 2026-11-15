@@ -299,6 +299,14 @@ después de F2.
     en su sitio y avisa una vez («el minimapa está pegado en EllesmereUI: despégalo en su modo
     desbloqueo para mover la lente»). Así se evita acoplarse a la DB de EUI.
 
+31. **No hay «mapa» separado que mover, ni segunda vista** (`/qdt check m2 tree`, EUI, 2026-11-15).
+    `CreateFrame("Minimap")` lanza `Unknown frame type 'Minimap'`; la línea «Lua Taint:
+    QuantumDungeonTools» del chat es parte de ese mismo mensaje de error y no es un taint aparte.
+    El terreno y los pines los pinta el propio marco `Minimap`: sus únicas regiones son 2
+    FontStrings. Los 38 hijos son adornos: el aro, 3 marcos de borde de EUI a tamaño completo,
+    los botones de EUI y de Blizzard y los iconos LibDBIcon/GuildMap. Mover un hijo movería
+    solo ese adorno. **Descarta la idea del owner (mover solo el mapa) y confirma la S9 del doc 22.**
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
