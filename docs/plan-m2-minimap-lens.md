@@ -240,6 +240,19 @@ los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prue
 iconos). **Mazmorra: aplazada** (owner: «primero que funcione fuera»); el bloque B se corre
 después de F2.
 
+*Reprueba con EUI (2026-11-15, sonda con `archivo:línea` y zoom por segundo):*
+24. **El zoom se mantiene hasta +30 s.** El regreso a 0 del gotcha 6 no se repite: lo más probable
+    es el «Auto Zoom Reset» de EUI, que se arma con zoom manual. El gotcha 19 queda corregido.
+25. **Quién la devuelve a la esquina** (addon-scout, código de EUI): el Minimap está registrado
+    en su modo desbloqueo como `EBS_Minimap` (`EUI_Minimap_Lifecycle.lua:568-576`). El núcleo engancha
+    `OnSizeChanged` (`EUI_UnlockMode_Anchors.lua:1612`) → `NotifyElementResized` (:1179, con
+    throttle de 0,05 s y una repetición de cola cada ≤0,5 s) → `ApplyCenterPosition`
+    (`EUI_UnlockMode_Positions.lua:2289`, escribe en :2411-2412). Recoloca desde la posición
+    guardada de EUI, en su borde de crecimiento. **No hay API pública para cederle el Minimap a
+    otro addon.** Solo hay campos internos (`EllesmereUI._layoutBarResizing`, `UM.isUnlocked`) que
+    no son para uso externo. El salto de vuelta tras un `SetPoint` puro, sin cambio de tamaño, no
+    está localizado del todo (sin verificar).
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
