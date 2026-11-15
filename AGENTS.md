@@ -76,7 +76,7 @@ Módulo nuevo = `modules/<Nombre>/{core,wow}/` + sus líneas en el `.toc` + su b
 |------|------------|------|
 | Lenguaje | Lua 5.1 | sandbox WoW: sin `io`/`socket`/`os.time`/`require` externo |
 | Interface (TOC) | `## Interface: 16001` | WoW Forever 1.60.x (motor de 12.1.5: aplican secret values), una sola `.toc`; **elige la base de datos de taintlint** — mantenerla al día. Instalación local: `F:\Games\World of Warcraft\_forever_\Interface\AddOns` |
-| Libs vendoreadas | LibStub (minor 2), Weave v0.10.0, **Craft v2.51.0** (build 53, @`e8ccb1b`) | READ-ONLY en `libs/` (tabla en `libs/README.md`); Craft con contexto de tema propio `QuantumDungeonTools` (FR-104) |
+| Libs vendoreadas | LibStub (minor 2), CallbackHandler-1.0 (8), LibDataBroker-1.1 (4), LibDBIcon-1.0 (57; icono del minimapa, owner 2026-11-14), Weave v0.10.0, **Craft v2.51.0** (build 53, @`e8ccb1b`) | READ-ONLY en `libs/` (tabla en `libs/README.md`); Craft con contexto de tema propio `QuantumDungeonTools` (FR-104) |
 | Integraciones | ninguna | `## Dependencies` / `## OptionalDeps` |
 | Lint | luacheck (`.luacheckrc`) + taintlint | doc 03 del estándar |
 | Estándar | AddonTemplate `v1.2.0` | la versión contra la que se escribió este repo; `/check-conformance` la compara con la vigente |

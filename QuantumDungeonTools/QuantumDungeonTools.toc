@@ -9,12 +9,15 @@
 ## Category: Other
 ## X-Website: https://github.com/bettogamer/QuantumDungeonTools
 
-# Vendored libs (read-only) -- versions in libs/README.md. Order: LibStub -> Weave -> Craft
-# (Craft Reactive.lua needs Weave loaded first).
+# Vendored libs (read-only) -- versions in libs/README.md. Order: LibStub -> CallbackHandler ->
+# LibDataBroker -> LibDBIcon (minimap icon) -> Weave -> Craft (Craft Reactive.lua needs Weave first).
 libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+libs\LibDBIcon-1.0\lib.xml
 libs\Weave\Weave.xml
 
-# Craft v2.50.0 (Craft-2.0, build 52). media/ resolves by _hostName
+# Craft v2.51.0 (Craft-2.0, build 53). media/ resolves by _hostName
 # (Interface\AddOns\QuantumDungeonTools\libs\Craft\media\). Mirror order of Craft.toc.
 libs\Craft\Craft.lua
 libs\Craft\Reactive.lua
