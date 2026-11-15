@@ -1105,6 +1105,14 @@ function UI:Render()
     w, h = renderFull(View.withLines(v, Settings.lines(db())))   -- the lines turned off (F6c)
   end
   root:SetSize(w, math.max(1, h))
+  if preview then   -- centered; the compact bar near the top, so its hover panel fits below
+    root:ClearAllPoints()
+    if compact then
+      root:SetPoint("TOP", preview.host, "TOP", 0, -S.previewCompactTop)
+    else
+      root:SetPoint("CENTER", preview.host, "CENTER", 0, 0)
+    end
+  end
   self:SyncPings()
 end
 
@@ -1185,8 +1193,6 @@ function UI:Preview(host, state)
     root:SetFrameLevel(host:GetFrameLevel() + 5)
     root:SetClampedToScreen(false)
     fullMouse(false)
-    root:ClearAllPoints()
-    root:SetPoint("CENTER", host, "CENTER", 0, 0)
   elseif preview then
     preview = nil
     hidePanel(true)

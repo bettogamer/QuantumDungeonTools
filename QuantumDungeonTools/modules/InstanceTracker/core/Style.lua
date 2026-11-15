@@ -105,6 +105,7 @@ local SIZE = {
   previewH    = 360, -- preview box
   previewBottom = 14, -- preview box -> settings grid
   previewNote = 10,  -- caption inset (left 12 / bottom 10)
+  previewCompactTop = 40, -- compact bar from the box top: its boss panel opens below, inside the box
   -- History tab (F6d, artboard «Instance Tracker · Historial»).
   histBarH    = 52,  -- filter bar (padding 12 + 28 select + 12)
   histLabelGap = 8,  -- filter label -> its select (gap 8)
