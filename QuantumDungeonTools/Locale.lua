@@ -140,6 +140,10 @@ L.MM_TIP_LINES     = { { "Click", "open the window" }, { "Shift+click", "run his
   { "Right click", "menu" }, { "Drag", "move the icon" } }
 L.MW_NEWS          = "What's new"
 L.MW_NEWS_SUB      = "What changed in each version."
+L.MW_NEWS_DEV      = "In development"
+L.MW_NEWS_UNREL    = "NOT RELEASED"
+L.MW_NEWS_MORE     = "Showing the %d latest versions."
+L.MW_NEWS_EMPTY    = "Nothing to show yet."
 L.MW_RELOAD        = "Reload UI"
 L.MW_CLOSE         = "Close"
 L.MW_NOW           = "NOW"
@@ -355,6 +359,10 @@ if locale == "esES" or locale == "esMX" then
     { "Clic derecho", "menú" }, { "Arrastrar", "mover el icono" } }
   L.MW_NEWS          = "Novedades"
   L.MW_NEWS_SUB      = "Qué cambió en cada versión."
+  L.MW_NEWS_DEV      = "En desarrollo"
+  L.MW_NEWS_UNREL    = "SIN PUBLICAR"
+  L.MW_NEWS_MORE     = "Se muestran las %d últimas versiones."
+  L.MW_NEWS_EMPTY    = "Aún no hay novedades."
   L.MW_RELOAD        = "Recargar UI"
   L.MW_CLOSE         = "Cerrar"
   L.MW_NOW           = "AHORA"

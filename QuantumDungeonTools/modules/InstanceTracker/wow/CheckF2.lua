@@ -109,6 +109,10 @@ function C:Run()
     check("page history", okH and hs.built and hs.cols == 9 and hs.shown == hs.filtered,
       okH and (hs.cols .. " cols, " .. hs.shown .. "/" .. hs.filtered .. " rows, " .. hs.saved .. " saved") or errH)
     if before ~= "history" then pcall(Page.ShowTab, Page, before) end
+    -- What's new: one wrapped line per item of core/NewsData.lua (generated from the CHANGELOG).
+    local nsn = MW.NewsSnapshot and MW:NewsSnapshot()
+    check("page news", nsn and nsn.items > 0 and nsn.items == nsn.expected,
+      nsn and (nsn.versions .. " versions, " .. nsn.items .. "/" .. nsn.expected .. " items") or "no snapshot")
     if not wasShown and MW:IsShown() then MW:Toggle() end
   end
 

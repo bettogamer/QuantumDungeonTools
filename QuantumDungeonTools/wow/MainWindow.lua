@@ -286,6 +286,18 @@ end
 ------------------------------------------------------------------------------
 local DOT_MASK = [[Interface\CharacterFrame\TempPortraitAlphaMask]]
 
+-- A round 5 px dot (circle mask over a solid texture).
+local function newDot(parent, color)
+  local dot = parent:CreateTexture(nil, "ARTWORK")
+  dot:SetSize(WIN.dot, WIN.dot)
+  kit.setColor(dot, color)
+  local mask = parent:CreateMaskTexture()
+  mask:SetTexture(DOT_MASK, "CLAMPTOBLACKADDITIONAL", "CLAMPTOBLACKADDITIONAL")
+  mask:SetAllPoints(dot)
+  dot:AddMaskTexture(mask)
+  return dot
+end
+
 local function buildGeneral(container)
   local page = newPage(container, "general")
   local rule = pageHeader(page, L.MW_GENERAL, L.MW_GENERAL_SUB, L.MW_GENERAL)
@@ -295,13 +307,7 @@ local function buildGeneral(container)
   card:SetHeight(WIN.cardH)
 
   -- Gold dot = changed from its default (default: icon shown).
-  local dot = card:CreateTexture(nil, "ARTWORK")
-  dot:SetSize(WIN.dot, WIN.dot)
-  kit.setColor(dot, C.gold)
-  local mask = card:CreateMaskTexture()
-  mask:SetTexture(DOT_MASK, "CLAMPTOBLACKADDITIONAL", "CLAMPTOBLACKADDITIONAL")
-  mask:SetAllPoints(dot)
-  dot:AddMaskTexture(mask)
+  local dot = newDot(card, C.gold)
   dot:SetPoint("LEFT", WIN.cardPadX, 0)
 
   local MM = ns.Minimap
@@ -329,6 +335,114 @@ local function buildGeneral(container)
   end
   MM:OnChange(sync)
   sync(MM:IsShown())
+end
+
+------------------------------------------------------------------------------
+-- What's new (artboard "Novedades"): core/NewsData.lua, generated from CHANGELOG.md
+-- (scripts/gen-news.lua). One block per version, newest first; inside, a section label with
+-- its dot and the wrapped items. Static text: built once, re-wrapped when the window resizes.
+------------------------------------------------------------------------------
+local RAIL = 8   -- Craft.Scroll's rail (Craft px): it goes into the page margin
+
+local function buildNews(container)
+  local page = newPage(container, "news")
+  local rule = pageHeader(page, L.MW_NEWS, L.MW_NEWS_SUB, L.MW_NEWS)
+  local data = ns.NewsData or {}
+  local versions = ns.News.recent(data.versions)
+  if #versions == 0 then
+    local empty = Craft.Empty:Create(page, { title = L.MW_NEWS_EMPTY, icon = "file-text" })
+    local f = empty:GetFrame()
+    f:SetPoint("TOPLEFT", rule, "BOTTOMLEFT", 0, -WIN.gap)
+    f:SetPoint("RIGHT", page, "RIGHT", -WIN.padX, 0)
+    return
+  end
+  local N, News = Style.NEWS, ns.News
+
+  local scroll = Craft.Scroll:Create(page, {})
+  local sf = scroll:GetFrame()
+  sf:SetPoint("TOPLEFT", rule, "BOTTOMLEFT", 0, 0)
+  sf:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -WIN.padX + RAIL, 0)
+  local thumb, thumbTex = scroll._scrollThumb, scroll._thumbTex   -- same hover as IT › Summary
+  if thumb and thumbTex then
+    thumb:HookScript("OnEnter", function() thumbTex:SetColorTexture(C.muted.r, C.muted.g, C.muted.b, 1) end)
+  end
+  local child = scroll:GetScrollChild()
+  child:SetHeight(1)
+
+  -- Vertical chain: each region hangs from the previous one; `x` is its own left inset.
+  local prev, prevX = nil, 0
+  local function place(region, gap, x)
+    if prev then
+      region:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", x - prevX, -gap)
+    else
+      region:SetPoint("TOPLEFT", child, "TOPLEFT", x, -gap)
+    end
+    prev, prevX = region, x
+  end
+
+  local wraps = {}   -- item FontStrings: width = min(pane - indent, maxW)
+  local LH = { dev = L.MW_NEWS_DEV, unreleased = L.MW_NEWS_UNREL, months = L.IT_H_MONTHS }
+  local open = Style.code("text")
+  for vi, v in ipairs(versions) do
+    local title, tagText, tone = News.header(v, LH)
+    local head = text(child, FONT.winNewsVer, C.cream)
+    head:SetText(title)
+    place(head, vi == 1 and N.top or N.versionGap, 0)
+    if tagText then
+      local tag = kit.newTag(child, FONT.winTag, 5, 1)
+      kit.setTag(tag, tagText, tone == "gold" and C.gold or C.muted, tone == "gold" and C.goldTag or C.mutedTag)
+      tag:SetPoint("LEFT", head, "RIGHT", N.tagGap, 0)
+    end
+    for _, s in ipairs(v.sections) do
+      local lbl = text(child, FONT.winSection, C.muted)
+      lbl:SetText(News.heading(s.name))
+      place(lbl, N.sectionGap, N.indent)
+      local dot = newDot(child, News.dotTone(s.name) == "gold" and C.gold or C.muted)
+      dot:SetPoint("RIGHT", lbl, "LEFT", -(N.indent - WIN.dot), 0)   -- dot at the margin, 8 px gap
+      for ii, it in ipairs(s.items) do
+        local fs = text(child, FONT.winRow, C.muted)
+        fs:SetWordWrap(true)
+        fs:SetSpacing(N.spacing)
+        fs:SetText(News.line(it, open, "|r"))
+        place(fs, ii == 1 and N.labelGap or N.itemGap, N.indent)
+        wraps[#wraps + 1] = fs
+      end
+    end
+  end
+  local expected = 0
+  for _, v in ipairs(versions) do
+    for _, s in ipairs(v.sections) do expected = expected + #s.items end
+  end
+  MW.newsProbe = { versions = #versions, items = #wraps, expected = expected }
+  if data.more then
+    local more = text(child, FONT.winRowSub, C.tickIdle)
+    more:SetText(L.MW_NEWS_MORE:format(News.MAX))
+    place(more, N.sectionGap, 0)
+  end
+  local last = prev
+
+  -- Re-wrap on a width change only; the wrapped height is measured a frame later (a FontString
+  -- re-lays its lines after SetWidth), so setting the child's height never re-enters here.
+  local lastW
+  local function measure()
+    local top, bottom = child:GetTop(), last:GetBottom()
+    if top and bottom then child:SetHeight(math.max(1, top - bottom + N.bottom)) end
+  end
+  local function fit()
+    local w = child:GetWidth()
+    if not w or w <= 0 or w == lastW then return end
+    lastW = w
+    local iw = math.min(w - N.indent, N.maxW)
+    for _, fs in ipairs(wraps) do fs:SetWidth(iw) end
+    C_Timer.After(0, measure)
+  end
+  child:SetScript("OnSizeChanged", fit)
+  page:HookScript("OnShow", function() fit(); C_Timer.After(0, measure) end)
+end
+
+-- For /qdt check f2: what the What's new page built (nil before the window is built).
+function MW:NewsSnapshot()
+  return MW.newsProbe
 end
 
 ------------------------------------------------------------------------------
@@ -456,7 +570,7 @@ local function buildMain(content)
     placeholder(body, "it", L.IT_TITLE, L.MW_IT_DESC)
   end
   buildGeneral(body)
-  placeholder(body, "news", L.MW_NEWS, L.MW_NEWS_SUB)
+  buildNews(body)
 end
 
 local function build()

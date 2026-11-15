@@ -70,6 +70,8 @@ Locale.lua
 core\Format.lua
 core\Brand.lua
 core\Style.lua
+core\News.lua
+core\NewsData.lua
 wow\Bootstrap.lua
 wow\Kit.lua
 modules\InstanceTracker\core\Run.lua

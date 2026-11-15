@@ -324,8 +324,27 @@ aquí. (7) Inicio › «Historial de runs» › Abrir → también.
 
 **Guion F6e (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 21/21; «minimap icon» dice «<textura>, shown …, setting true, parent …»; con EllesmereUIMinimap el botón vive en su desplegable de botones y puede salir «shown false»: es correcto). (1) Icono reloj de bolsillo en el borde del minimapa con el aro dorado; se arrastra por el borde y la posición sobrevive a `/reload`. (2) Ratón encima: tooltip navy con el reloj de 48 px a su izquierda, «Quantum» en mar y «Dungeon Tools» en oro, 4 líneas (Clic · Mayús+clic · Clic derecho · Arrastrar), letra Inter. (3) Clic = abre/cierra en Inicio; mayús+clic = IT › Historial. (4) Clic derecho = menú con Instance Tracker, Historial de runs, separador, Ajustes generales, Ocultar el icono; cada uno hace lo suyo. (5) Ajustes generales: grupo MINIMAPA con «Icono del minimapa», ayuda, `/qdt minimap` y el interruptor; apagarlo oculta el icono y sale el punto oro; `/qdt minimap` lo vuelve a mostrar y el interruptor se enciende solo. (6) «Ocultar el icono» del menú: lo mismo.
 
-Abiertos para preguntar al owner cuando toque (no bloquean F6b): «Buscar ajustes» (filtrar por nombre)
-y contenido de «Novedades» — propuesta: dejarlos para después de F6e; «Pug ×4» del artboard — hoy
+Decididos (owner, 2026-11-14): **«Novedades» se genera del CHANGELOG** (script en `scripts/` →
+Lua de datos commiteado; la página pinta las últimas versiones por apartado; una sola fuente de
+texto, se regenera en cada release). Diseño OK del owner (lienzo v59, artboard «Novedades»; texto
+solo en español, tope 5 versiones). ✅ código (2026-11-14): `core/News.lua` (parser puro + specs),
+`scripts/gen-news.lua` → `core/NewsData.lua` (**regenerar tras editar el CHANGELOG**: `lua
+scripts/gen-news.lua`), página en `wow/MainWindow.lua`; `check f2` gana «page news». Elecciones
+del agente: el título de la viñeta va en crema pero con el mismo peso que el cuerpo (un FontString
+no mezcla pesos); un paréntesis justo antes de «:» (hito, versión de lib) se quita; el pie «Se
+muestran las 5 últimas versiones» solo sale si hay más; «|» se escapa. Pendiente de vista in-game.
+
+**Guion Novedades (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 22/22; «page news»
+dice «1 versions, 15/15 items»). (1) `/qdt` → Novedades (abajo en el sidebar, marcada en oro).
+(2) Cabecera «En desarrollo» con la etiqueta SIN PUBLICAR en oro. (3) CAMBIADO (punto gris) y AÑADIDO
+(punto oro); cada viñeta con su título en crema y el resto en gris, partida en varias líneas sin
+cortarse por la derecha; «Barras con la textura BettoBar. El relleno…» sin «(Craft v2.50.0…)».
+(4) La rueda desplaza la lista hasta la última viñeta (`/qdt check f1 …`) sin cortarla. (5) Estrechar
+la ventana: las viñetas se re-parten y el scroll sigue llegando al final. (6) La viñeta
+`/qdt it demo <live | done | first | compact | off>` enseña las barras verticales. **«Buscar ajustes»
+APLAZADO** (~9 opciones en 2 páginas no lo justifican; se retoma con Minimap Lens u otro módulo;
+sin caja en la ventana hasta entonces).
+Abierto aún: «Pug ×4» del artboard — hoy
 la columna Grupo pinta los nombres (sin reino) porque no hay forma fiable de distinguir un pug.
 
 **Entregado (v1.0)** → release del hito.
