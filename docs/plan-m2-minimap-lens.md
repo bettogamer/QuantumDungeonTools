@@ -21,10 +21,13 @@ Investigación previa al diseño (2026-11-15, solo lectura de código, **nada me
   terreno con un empujón de zoom. **No se copia:** el modal, tomar la tecla M, ocultar a ciegas,
   el polling ni restaurar sin `pcall`.
 - `docs/22-minimap-coexistencia.md`: el parpadeo con EllesmereUI/ElvUI. No es un bucle de hooks:
-  gana el último que escribe. Los dos reaplican tamaño y zoom en `PLAYER_ENTERING_WORLD`
-  (justo al entrar en la mazmorra) y al salir de combate. Los dos hacen su propio empujón de
-  zoom, y ElvUI devuelve el zoom a 0 con un temporizador. Ninguno ofrece un flag para prestar
-  el minimapa, y EUI deshace cualquier `SetParent`.
+  gana el último que escribe. **EllesmereUI** reaplica tamaño, máscara y zoom en
+  `PLAYER_ENTERING_WORLD` (justo al entrar en la mazmorra) y al salir de combate, y deshace
+  cualquier `SetParent`. **ElvUI v16.01**, verificado en local (2026-11-15): NO reaplica en PEW
+  ni al salir de combate (solo al cambiar sus opciones). Su «Reiniciar zoom» es opcional y viene
+  apagado por defecto, aunque el asistente de instalación lo enciende a 5 s. El minimapa crece
+  desde la esquina superior derecha de `ElvUI_MinimapHolder`, el global que delata a ElvUI.
+  Ninguno de los dos ofrece un flag para prestar el minimapa.
 - `docs/23-minimap-iconos-y-config.md`: en Forever el árbol es `MinimapCluster` > `MinimapContainer`
   > `Minimap`, con Modo edición. El aro (`MinimapBackdrop`) mide 215×226 fijo. Los botones de
   Blizzard (zona, rastreo, correo, calendario, cola, compartimento de addons) cuelgan del
@@ -40,7 +43,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 
 | Fase | Feature | Estado | Nota |
 |------|---------|--------|------|
-| **F0** | Diseño en el lienzo | 🔨 EN CURSO | página «Minimap Lens» del lienzo; **sin código hasta el OK del owner** (§F0) |
+| **F0** | Diseño en el lienzo | 🔨 EN CURSO: 5 artboards publicados (lienzo v71, 2026-11-15), **esperando el OK del owner** | página «Minimap Lens»: LensReposo, LensActiva, LensMover, LensAviso (A toast / B chat), AppLens (lleva el sidebar sin PRONTO); **sin código hasta el OK** |
 | **F1** | Sondas de Forever (`/qdt check m2`) | ⬜ PENDIENTE | §F1: sin otro UI, con EllesmereUI y con ElvUI |
 | **F2** | Núcleo de la lente | ⬜ PENDIENTE | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
@@ -73,8 +76,8 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 - Rastreo: interruptor **«Ocultar hierbas y minas mientras la lente está activa», apagado por
   defecto**. Guarda lo que tenía el jugador y lo restaura al apagar la lente o al cerrar sesión.
 - Otros UI (EllesmereUI, ElvUI): **soporte con modo suave**. Se detecta quién manda en el
-  minimapa, se reaplica tras él sin pelear y, si aun así pisa, se avisa una vez. ElvUI hay que
-  instalarlo para la prueba de F1.
+  minimapa, se reaplica tras él sin pelear y, si aun así pisa, se avisa una vez. ElvUI v16.01
+  ya está instalado en `_forever_` (owner, 2026-11-15; su `.toc` declara 16001).
 
 **Artboards** (página nueva «Minimap Lens», paleta B, componentes shadcn de Craft, contornos y
 transparencias del HUD; memorias de estilo):
