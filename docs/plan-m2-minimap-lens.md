@@ -393,24 +393,30 @@ Código: `core/Lens.lua` (`ownerName`, `newReferee`, `drift`, `plan("other")`; t
   (`moveHeld == false`; con EUI explica cómo despegarlo). Sin el motor de avisos, línea de chat.
   El botón «Ajustes de la lente» del artboard llega con la página de F5 (`ShowNotice` ya admite
   `action`).
-- Autoprueba: `_checkLens.coexist = { foreign, reapplied, yielded, last }` por lente
+- Autoprueba: `_checkLens.history` = las 10 últimas lentes `{ owner, held, foreign, reapplied, yielded, warned, last }`
   (`lua scripts/read-check-lens.lua`).
 
-### Guion de prueba (owner, fuera de mazmorra)
+### Guion de prueba (owner, fuera de mazmorra) — versión 2, más simple
 
-1. `/reload`, `/qdt lens notice soft` y luego `/qdt lens notice pinned`. 👁 Toast arriba al centro:
-   lupa y título dorados «Minimap Lens en modo suave», texto arena, botón «Entendido»; se va solo
-   a los 8 s o con un clic.
-2. **Sin otro UI** (o ElvUI): `/qdt lens` y, con la lente puesta, pegar **cinco veces seguidas**
-   (una cada ~1 s) `/run Minimap:SetSize(140,140)`. 👁 Las cuatro primeras el mapa encoge y a
-   ~0,6 s vuelve grande; a la quinta se queda pequeño y sale el toast «modo suave». `/qdt lens`
-   para cerrar.
-3. **EllesmereUI con el minimapa despegado:** `/qdt lens`, pegarle a un bicho y salir de combate.
-   👁 La lente sigue en el centro (si EUI la devuelve a su esquina, vuelve al centro en ~1 s).
-4. **EllesmereUI con el minimapa pegado:** `/qdt lens`. 👁 Crece en su esquina y, a ~0,6 s, sale
-   el toast «minimapa pegado» (una sola vez: cerrar y abrir la lente no lo repite).
-Al terminar, `/reload` y avisar: el agente lee `_checkLens.coexist` (esperado tras el paso 2:
-`foreign >= 5`, `reapplied = 4`, `yielded = true`).
+El primer intento (2026-11-15) no se pudo leer: cada apertura de la lente borraba los datos de la
+anterior. Ahora se guardan las 10 últimas (`_checkLens.history`). Un paso = una pregunta de sí/no.
+
+**Prueba A — los avisos (cualquier configuración).** `/reload`. Escribe `/qdt lens notice soft`.
+❓ ¿Sale arriba al centro un cuadro azul con borde dorado, una lupa y «Minimap Lens en modo suave»,
+y se va solo a los ~8 s? Luego `/qdt lens notice pinned`: ❓ ¿sale el mismo cuadro con otro texto?
+
+**Prueba B — que la lente aguante (desactiva EllesmereUIMinimap o usa ElvUI).** `/reload`,
+`/qdt lens`. Escribe **una** vez `/run Minimap:SetSize(140,140)`. ❓ ¿El mapa se hace pequeño y,
+en menos de un segundo, vuelve a ser grande solo? Repítelo 4 veces más (5 en total, sin esperar
+mucho entre una y otra). ❓ ¿La última vez se queda pequeño y sale el aviso «modo suave»?
+Cierra con `/qdt lens`.
+
+**Prueba C — EllesmereUI con el minimapa pegado.** `/reload`, `/qdt lens`. ❓ ¿Sale el aviso
+«El minimapa está pegado en EllesmereUI…»?
+
+Al terminar: `/reload` y escribir «listo» con el sí/no de cada pregunta. El agente lee el resto
+(`lua scripts/read-check-lens.lua`; esperado en B: `foreign >= 5`, `reapplied = 4`, `yielded = true`;
+en C: `held = false`, `warned = [pinned]`).
 
 ## Puntos abiertos
 

@@ -19,7 +19,7 @@ assert(loadfile(path, "t", env))()
 local db = env.QuantumDungeonToolsDB or {}
 local c = db._checkLens
 if not c then print("no _checkLens (use /qdt lens and /reload)") return end
-for _, k in ipairs({ "on", "move", "coexist", "off" }) do
+for _, k in ipairs({ "on", "move", "off" }) do
   local t = c[k]
   if t then
     local keys = {}
@@ -31,6 +31,11 @@ for _, k in ipairs({ "on", "move", "coexist", "off" }) do
   else
     print(k .. ": -")
   end
+end
+for i, e in ipairs(c.history or {}) do
+  print(("lens %d: owner=%s held=%s foreign=%s reapplied=%s yielded=%s warned=[%s] last=%s"):format(i,
+    tostring(e.owner), tostring(e.held), tostring(e.foreign), tostring(e.reapplied), tostring(e.yielded),
+    tostring(e.warned), tostring(e.last)))
 end
 local ml = db.minimapLens or {}
 print(("minimapLens: size=%s opacity=%s saved=%s"):format(tostring(ml.size), tostring(ml.opacity),

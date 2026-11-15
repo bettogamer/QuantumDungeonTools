@@ -46,6 +46,7 @@ local referee           -- Lens.newReferee() of the current lens
 local maskDirty = false -- someone else called SetMaskTexture (there is no getter to compare)
 local watchToken = 0    -- debounces the reapply after a burst of foreign writes
 local warned = {}       -- warnings already shown this session (soft, pinned)
+local current           -- self-check entry of the lens that is on (_checkLens.history)
 
 local function db() return ns.db and ns.db.minimapLens end
 
@@ -266,6 +267,7 @@ local function ownerLabel(owner) return Lens.ownerName(owner) or L.LENS_OTHER_UI
 function UI:Warn(kind, owner)
   if warned[kind] then return end
   warned[kind] = true
+  if snap and current then current.warned = current.warned .. kind .. " " end
   local body
   if kind == "pinned" then
     body = owner == "eui" and L.LENS_PINNED_EUI or L.LENS_PINNED:format(ownerLabel(owner))
@@ -281,16 +283,25 @@ function UI:Warn(kind, owner)
   if not ok or not shown then ns.say(body) end
 end
 
-local function coexist(fields)
+-- Self-check of F3: one entry per lens in _checkLens.history (the last HISTORY), so a test of
+-- several steps is still readable after them. coexist(fields) updates the current one.
+local HISTORY = 10
+
+local function newEntry(owner)
   local root = QuantumDungeonToolsDB
-  if type(root) ~= "table" or type(root._checkLens) ~= "table" then return nil end
-  local c = root._checkLens.coexist
-  if not c then
-    c = { foreign = 0, reapplied = 0, yielded = false, last = "" }
-    root._checkLens.coexist = c
-  end
-  for k, v in pairs(fields) do c[k] = v end
-  return c
+  if type(root) ~= "table" or type(root._checkLens) ~= "table" then current = nil; return end
+  local h = root._checkLens.history or {}
+  root._checkLens.history = h
+  root._checkLens.coexist = nil   -- F3 first cut kept only the last lens
+  current = { owner = owner, foreign = 0, reapplied = 0, yielded = false, warned = "", last = "" }
+  h[#h + 1] = current
+  while #h > HISTORY do table.remove(h, 1) end
+end
+
+local function coexist(fields)
+  if not current then return nil end
+  for k, v in pairs(fields) do current[k] = v end
+  return current
 end
 
 -- What the lens should look like right now (see Lens.drift).
@@ -383,6 +394,7 @@ local function checkMove(my)
     UI.moveHeld = held
     settled = true
     dump("move", { held = held, retried = retried })
+    coexist({ held = held })
     if not held then UI:Warn("pinned", snap.owner) end
   end
   C_Timer.After(MOVE_CHECK, function()
@@ -478,9 +490,7 @@ function UI:On()
     point = s.pos.point, x = s.pos.x, y = s.pos.y, mask = s.plan.mask, icons = s.plan.icons,
     ring = s.backdropShown,
     shape = type(GetMinimapShape) == "function" and select(2, pcall(GetMinimapShape)) or "nil" })
-  if type(QuantumDungeonToolsDB) == "table" and QuantumDungeonToolsDB._checkLens then
-    QuantumDungeonToolsDB._checkLens.coexist = nil   -- F3 counts per lens
-  end
+  newEntry(s.owner)
   fadeTo(Lens.clamp(d.opacity, Lens.OPACITY))
   checkMove(token)
   return true
