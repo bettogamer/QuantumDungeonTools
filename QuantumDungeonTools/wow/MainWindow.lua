@@ -328,9 +328,12 @@ local function buildSidebar(content)
     items = {
       { id = "home", label = L.MW_HOME, icon = "house" },
       { id = "it", label = L.IT_TITLE, icon = "timer", section = L.MW_DUNGEONS },
-      -- Craft rows take no badge: SOON goes in the tooltip here and as a tag on Home (FR-152).
+      -- SOON as the row's trailing badge (Craft FR-152), same tag as on the Home card.
       { id = "lens", label = L.MW_LENS, icon = "map", section = L.MW_DUNGEONS, disabled = true,
-        tooltip = L.MW_SOON_TIP },
+        tooltip = L.MW_SOON_TIP,
+        badge = { text = L.MW_SOON, variant = "outline", fontSize = FONT.winTag.size,
+          fontWeight = FONT.winTag.weight, fontFlags = FONT.winTag.flags, paddingX = 3, paddingY = 1,
+          textColor = C.tickIdle, borderColor = C.mutedTag } },
     },
     onSelect = function(id) MW:Navigate(id) end,
   })

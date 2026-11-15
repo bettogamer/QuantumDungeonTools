@@ -404,30 +404,19 @@ function Page:Build(page, blocks)
   local head = B.header(page, L.IT_TITLE, L.IT_P_SUB, L.IT_P_KICKER:format(L.IT_P_SUMMARY))
   head.rule:Hide()   -- the tab bar draws the line here
 
-  -- Craft.Tabs is only the bar here: its content frames never got a rect in-game (GetRect nil,
-  -- nothing inside painted; check f2 probe 2026-11-14), so the tab pages are our own frames
-  -- under the bar, switched in onTabChange.
-  local panes = {}
-  local function showPane(id)
-    for pid, f in pairs(panes) do f:SetShown(pid == id) end
-    head.kicker:SetText(L.IT_P_KICKER:format(id == "history" and L.IT_P_HISTORY or L.IT_P_SUMMARY))
-  end
   local tabs = Craft.Tabs:Create(page, {
     variant = "line", defaultTab = "summary",
     tabs = { { id = "summary", label = L.IT_P_SUMMARY }, { id = "history", label = L.IT_P_HISTORY } },
-    onTabChange = function(id) showPane(id) end,
+    onTabChange = function(id)
+      head.kicker:SetText(L.IT_P_KICKER:format(id == "history" and L.IT_P_HISTORY or L.IT_P_SUMMARY))
+    end,
   })
   local tf = tabs:GetFrame()
   tf:SetPoint("TOPLEFT", head.sub, "BOTTOMLEFT", 0, -12)
-  tf:SetPoint("RIGHT", page, "RIGHT", -B.padX, 0)
-  tf:SetHeight(S.pageTabsH)
+  tf:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -B.padX, 0)
   P.tabs = tabs
-  for _, id in ipairs({ "summary", "history" }) do
-    local f = CreateFrame("Frame", nil, page)
-    f:SetPoint("TOPLEFT", tf, "BOTTOMLEFT", 0, 0)
-    f:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -B.padX, 0)
-    panes[id] = f
-  end
+  -- Built hidden: the content frames keep their rect since Craft 2.51.0 (FR-153).
+  local panes = { summary = tabs:GetContentFrame("summary"), history = tabs:GetContentFrame("history") }
   P.panes = panes
 
   buildSummary(panes.summary, function() tabs:SetActiveTab("history") end)
@@ -438,7 +427,6 @@ function Page:Build(page, blocks)
   local ef = empty:GetFrame()
   ef:SetPoint("TOPLEFT", panes.history, "TOPLEFT", 0, -S.pageTop)
   ef:SetPoint("RIGHT", panes.history, "RIGHT", 0, 0)
-  showPane("summary")
 
   self:OnModuleChange(refreshModule)
   refreshModule()

@@ -80,7 +80,6 @@ local SIZE = {
   toastStatKV = 2,   -- stat label <-> value
   toastClockGap = 10, -- big clock <-> delta
   -- Module page of the main window (F6c, artboard «Instance Tracker · Resumen»).
-  pageTabsH   = 30,  -- Craft.Tabs "line" bar is 32 px unscaled: 30 * GEO = 32
   pageTop     = 16,  -- tab bar -> first block label
   pageLabelGap = 10, -- block label -> its card
   pageBlockGap = 16, -- card -> next block label (gap 10 + margin-top 6)
