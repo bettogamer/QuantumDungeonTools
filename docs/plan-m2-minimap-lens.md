@@ -483,6 +483,18 @@ entrar por la puerta):
 Al terminar, `/reload` y «listo» con el sí/no. El agente lee `triggers` (esperado:
 `opens = [bind, …, button]`, `closes = [button, editmode, …]`).
 
+### Resultados in-game de F4 (owner, 2026-11-15, EllesmereUIMinimap, fuera de mazmorra)
+
+37. **Pasos 1, 3 y 4 ok.** Sin lupa fuera de instancia; el Modo edición cierra la lente
+    (`closes = [button, editmode, …]`); la vista previa pinta la lupa en la esquina del cuadrado de
+    EUI y abre/cierra con clic.
+38. **Atajos (paso 2, no):** Forever no pinta las cabeceras de `Bindings.xml` dentro de la
+    categoría AddOns (Pawn tampoco sale con la suya): el atajo cae suelto y el nombre largo se
+    cortaba. Nombre → «Minimap Lens» y la pista del tooltip apunta a esa fila. No se llegó a pulsar
+    la tecla (`opens` sin `bind`): repetir.
+39. **Tooltip casi transparente con EUI** (se leía el rastreador de misiones detrás): fondo navy
+    propio bajo el NineSlice (`wow/Minimap.lua`), también para el tooltip del icono QDT.
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |

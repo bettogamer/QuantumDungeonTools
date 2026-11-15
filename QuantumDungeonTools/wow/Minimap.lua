@@ -33,6 +33,12 @@ local function getTooltip()
   local TIP, C = ns.Style.TIP, ns.Style.C
   tooltip = CreateFrame("GameTooltip", TOOLTIP_NAME, UIParent, "GameTooltipTemplate")
   -- Navy panel + hairline like the window; older templates without NineSlice keep the default.
+  -- A UI that reskins tooltips (EllesmereUI) can leave the NineSlice see-through: our own navy
+  -- fill underneath keeps it solid either way (seen in-game, plan M2 F4).
+  local fill = tooltip:CreateTexture(nil, "BACKGROUND", nil, -8)
+  fill:SetPoint("TOPLEFT", 1, -1)
+  fill:SetPoint("BOTTOMRIGHT", -1, 1)
+  fill:SetColorTexture(C.panel.r, C.panel.g, C.panel.b, 0.96)
   if tooltip.NineSlice then
     pcall(function()
       tooltip.NineSlice:SetCenterColor(C.panel.r, C.panel.g, C.panel.b, 0.96)
