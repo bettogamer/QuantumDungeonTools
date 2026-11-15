@@ -39,6 +39,9 @@ jobs:
       - name: luac -p (5.1) over every addon file, vendored libs excluded
         run: |
           find QuantumDungeonTools -name '*.lua' -not -path '*/libs/*' -print0 | xargs -0 -n1 luac -p
+      - name: check-upvalues (60-upvalue limit of Lua 5.1)
+        run: |
+          lua scripts/check-upvalues.lua $(find QuantumDungeonTools -name '*.lua' -not -path '*/libs/*')
 
   # ── Nivel M/L: correr el suite en el Lua de destino. Borrar SOLO en nivel S. ─────────
   test:
@@ -75,7 +78,7 @@ jobs:
       #     de veredicto sin que cambie el repo no es reproducible.
       #   * NUNCA `git clone` + build de HEAD sin pin (lo que hacían weave y loom): cualquier
       #     commit de taintlint cambia el resultado y se pierden las anotaciones del PR.
-      - uses: bettogamer/taintlint@v0
+      - uses: bettogamer/taintlint@v0.5.0
         with:
           path: QuantumDungeonTools            # ← carpeta del addon (o su .toc). NUNCA un .lua suelto:
                                    #   el `## Interface:` del .toc elige la base de datos del
@@ -89,7 +92,7 @@ jobs:
           # min-severity: warning  # default; el gate estándar de doc 03
           # target: 12.1.5         # analizar contra OTRO build (default: el del .toc). Para
                                    #   ver qué rompe el próximo parche — no como gate diario.
-          # version: 0.5.0         # pin de repos con release (default: latest)
+          version: 0.5.0           # pin: repo con release (0.1.0-beta.1)
       # Addon con deuda pre-12.0: congelarla UNA vez en local
       # (`npx taintlint . --update-baseline`) y commitear taintlint-baseline.json —
       # CI solo fallará con hallazgos NUEVOS. Ver taintlint/docs/ACTION.md.

@@ -220,7 +220,7 @@ describe("InstanceTrackerView: ping al jefe (punto 7)", function()
   end)
 
   it("macro: limpia el objetivo, busca el nombre exacto, ping solo a hostil vivo, devuelve el objetivo", function()
-    -- Sin /cleartarget, con el jefe fuera de vista el ping caía en el objetivo previo (owner, in-game).
+    -- Without /cleartarget, with the boss out of sight the ping fell on the previous target (owner, in-game).
     assert_eq(View.pingMacro("The Abandoned"),
       "/cleartarget\n/targetexact The Abandoned\n/ping [@target,exists,harm,nodead] attack\n/targetlasttarget")
     assert_eq(View.pingMacro("Rath'mael"):match("\n/targetexact (.-)\n"), "Rath'mael")

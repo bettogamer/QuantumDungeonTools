@@ -482,14 +482,26 @@ Pendiente, en este orden:
 
 ## Checklist de cierre del hito
 
-- [ ] CI en verde y corriendo los tests (el job `test` cubre `tests/**`).
-- [ ] Deploy + `/qdt check <fase>` en verde antes de cada prueba in-game.
-- [ ] `/check-conformance` corrido.
-- [ ] Poda de AGENTS.md (≤150 líneas, estado con fecha, Craft/Weave/LibStub en §4).
-- [ ] Memoria podada.
-- [ ] UI revisada por `ui-critic` (F2, F4, F6).
-- [ ] `Siguiente:` escrito aquí antes de proponer cortar sesión.
-- [ ] Release v1.0 con el ritual de doc 04.
+- [ ] CI en verde y corriendo los tests: ⬜ el repo aún no tiene remote (CI nunca ha corrido). En local
+      todo verde (2026-11-15): 195 specs, luacheck 0/0 en 55 archivos, taintlint 0/0/0, check-upvalues
+      ok (max 55); `ci.yml` gana check-upvalues y pinea taintlint v0.5.0.
+- [x] Deploy + `/qdt check <fase>` en verde antes de cada prueba in-game.
+- [x] `/check-conformance` corrido (2026-11-15, `docs/20-conformidad-beta1.md`): arreglado lo de antes de
+      la beta (AGENTS.md §1/§8/§10, CI, CHANGELOG, comentarios en español); deuda declarada en AGENTS.md
+      §10 (sin ADR, sin bloque vendored-libs).
+- [x] Poda de AGENTS.md (150 líneas, estado 2026-11-15).
+- [x] Memoria podada (2026-11-15: solo reglas y feedback; + «sin trailers de IA»).
+- [x] UI revisada: **sin `ui-critic`** (owner, 2026-11-15: el diseño entero está en el lienzo y cada
+      pantalla se cotejó con su artboard in-game).
+- [x] `Siguiente:` escrito (abajo).
+- [ ] Release: **beta `0.1.0-beta.1`** (owner, 2026-11-15) con el ritual de doc 04, ruta D (subida manual
+      a CurseForge, `docs/curseforge/upload.md`); la v1.0 sale tras los bugs que reporten.
+
+**Siguiente (2026-11-15):** el owner crea el proyecto en CurseForge (ficha en `docs/curseforge/upload.md`:
+categoría, logo, Project ID), sube `dist/QuantumDungeonTools-v0.1.0-beta.1.zip` como **Beta** con
+`docs/curseforge/changelog.md`, y la guild la prueba (bugs por los comentarios de CurseForge). Tras la
+aprobación: crear el remote y `git push origin main v0.1.0-beta.1`. La run de pruebas en mazmorra de
+abajo sigue abierta: la cubren los betatesters y el owner.
 
 **Siguiente (2026-11-13, noche):** (1) **hecho: tabla de mazmorras integrada.** `Run` recibe
 `deps.resolve(instanceID, name)` (Tracker → `Dungeons.find` + `db.instanceTracker.learned`, que

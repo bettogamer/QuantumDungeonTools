@@ -1,0 +1,8 @@
+Copyright (c) 2026 Alberto Gomez. All Rights Reserved.
+
+Quantum Dungeon Tools may be downloaded and used to play World of Warcraft. No part of its own
+code, art or text may be copied, modified, redistributed or published elsewhere without the
+written permission of the author.
+
+The third-party libraries bundled in QuantumDungeonTools/libs/ (LibStub, CallbackHandler-1.0,
+LibDataBroker-1.1, LibDBIcon-1.0, Weave, Craft) keep their own licenses.

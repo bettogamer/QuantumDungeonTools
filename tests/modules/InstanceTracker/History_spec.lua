@@ -112,7 +112,7 @@ describe("InstanceHistory", function()
     local free = 800 - 8 - 8 * 8
     assert_eq(cols[1].w, math.floor(free * 1.1 / 8))
     assert_eq(cols[9].w, math.floor(free * 1.5 / 8))
-    -- la última acaba en el borde derecho menos el padding (±1 px de redondeo)
+    -- the last one ends at the right edge minus the padding (±1 px of rounding)
     local right = cols[9].x + cols[9].w
     assert_true(right >= 795 and right <= 796)
     -- nunca anchos negativos
