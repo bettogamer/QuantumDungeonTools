@@ -175,8 +175,8 @@ los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prue
    del diseño basta.
 2. **EUI reancla el Minimap en cada cambio de tamaño o escala** (`ClearAllPoints`/`SetPoint`
    desde el core «EllesmereUI», su sistema de anclajes): conserva la esquina superior derecha
-   (CENTER 971,490 → 844,362 al doblar). **El `SetPoint` propio al centro lo deshizo en menos de
-   2 s.** Con EUI, la lente no se puede mover libremente: crece desde la esquina de EUI.
+   (CENTER 971,490 → 844,362 al doblar). **El `SetPoint` propio al centro lo deshizo en el mismo
+   fotograma: el owner no lo llegó a ver, ni en la ronda ni en combate.** Con EUI, la lente no se puede mover libremente: crece desde la esquina de EUI.
 3. **EUI no pisa la lente mientras se juega:** no hubo escrituras suyas durante la ronda ni
    con la lente puesta. Sí reaplica (`SetParent`/`SetScale(1)`/`SetSize(255)`/máscara/zoom) en
    tres ráfagas, de 2,3 a 4 s **después del PEW del `/reload`**. Pisó la lente que la sonda había
