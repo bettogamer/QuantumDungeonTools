@@ -300,9 +300,11 @@ local function snapshotLive()
   }
 end
 
+-- EllesmereUIMinimap owns the LibDBIcon buttons (hides them in its drawer): Refresh would Show
+-- them and leave them shown after the restore (measured with EUI, 2026-11-15). Hands off there.
 local function refreshIcons()
   local icon = libIcon()
-  if not icon then return end
+  if not icon or configKey():find("eui", 1, true) then return end
   local ok, list = pcall(icon.GetButtonList, icon)
   if not ok or type(list) ~= "table" then return end
   for _, name in ipairs(list) do pcall(icon.Refresh, icon, name) end

@@ -166,7 +166,38 @@ sonda la reaplica una vez y anota `STOMPED`). `combat` → S10 (`SetSize`/`SetPo
 los botones de Blizzard, lista de rastreo y atajo. **Descartado de F1:** la prueba de
 `SetParent` (S7 del doc 22), porque la lente no reparenta, y la segunda vista del mapa (S9).
 
-**Gotchas in-game:** _(se rellena en F1)_
+**Gotchas in-game** (volcado `_checkM2`, Forever 1.60.1 build 70938):
+
+*Configuración EllesmereUIMinimap (2026-11-15; pasos 1-4, falta el 5 de combate):*
+1. **Repintado: agrandar sin tocar el zoom deja el terreno viejo.** La variante A (`SetSize` solo)
+   pintó un cuadrante. Con un paso de zoom (B) o con el empujón (C) se repinta, sin parpadeo
+   visible. `SetScale` (D) repinta solo. La lente siempre mueve el zoom al agrandar; con el paso
+   del diseño basta.
+2. **EUI reancla el Minimap en cada cambio de tamaño o escala** (`ClearAllPoints`/`SetPoint`
+   desde el core «EllesmereUI», su sistema de anclajes): conserva la esquina superior derecha
+   (CENTER 971,490 → 844,362 al doblar). **El `SetPoint` propio al centro lo deshizo en menos de
+   2 s.** Con EUI, la lente no se puede mover libremente: crece desde la esquina de EUI.
+3. **EUI no pisa la lente mientras se juega:** no hubo escrituras suyas durante la ronda ni
+   con la lente puesta. Sí reaplica (`SetParent`/`SetScale(1)`/`SetSize(255)`/máscara/zoom) en
+   tres ráfagas, de 2,3 a 4 s **después del PEW del `/reload`**. Pisó la lente que la sonda había
+   reabierto a +1 s. Regla para F2: la lente **no sobrevive** a un `/reload` ni a una pantalla
+   de carga (con EUI, reabrirla exigiría esperar a que EUI acabe).
+4. **Iconos LibDBIcon con EUI:** EUI los esconde (`shown=false`, alpha 0, cajón propio). El
+   `Refresh` de LibDBIcon los fuerza visibles en el borde (radio ~177 con mitad 127) y siguen
+   visibles tras restaurar. **Con EUI no se tocan los iconos** (la sonda ya no lo hace).
+5. **Restauración exacta:** `off` deja 1 diferencia, de subpíxel (971,47 → 971,5, reanclaje de
+   EUI). El `/reload` con la lente puesta devuelve el tamaño original solo.
+6. **Zoom:** el paso de zoom se mantuvo hasta +10 s, pero a +29 s estaba en 0 y **ningún setter
+   enganchado lo escribió**. El temporizador de EUI solo se arma con zoom manual. Origen sin
+   aclarar; se vuelve a mirar en «sin otro UI».
+7. `C_Minimap.GetViewRadius` **no sirve como medida:** con el mismo tamaño y zoom 0 dio 150 y
+   después 233. Se descarta.
+8. API: **no existen** `SetBlipTexture`, `SetPlayerTexture` ni `SetPOIArrowTexture`/
+   `SetStaticPOIArrowTexture`; sí `SetIconScale` y `SetArchBlobRingScalar`. EUI ya define
+   `GetMinimapShape` = `SQUARE` y usa la máscara 130937. Rastreo: 25 tipos (en este personaje,
+   «Find Minerals» 2580 activo).
+9. Modo edición: **ningún** `EditMode.Enter`/`Exit` registrado (falta confirmar que se abrió el de Blizzard).
+
 
 ## Puntos abiertos
 
