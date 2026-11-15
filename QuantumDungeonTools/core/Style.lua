@@ -127,6 +127,7 @@ Style.TIP = {
   logo = 48,
   titleFont = "Inter-Bold.ttf", titleSize = 14,
   lineFont = "Inter-Regular.ttf", lineSize = 12,
+  footSize = 11,   -- hint under the lines (artboard LensReposo)
 }
 
 -- Font weights map BettoGeo files: 500/600 medium, 700 bold. No regular: with OUTLINE it reads

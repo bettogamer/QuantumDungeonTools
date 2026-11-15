@@ -40,3 +40,10 @@ end
 local ml = db.minimapLens or {}
 print(("minimapLens: size=%s opacity=%s saved=%s"):format(tostring(ml.size), tostring(ml.opacity),
   ml.saved and tostring(ml.saved.zoom) or "nil"))
+local tr = c.triggers
+if tr then
+  print(("triggers (F4): inside=%s shown=%s opens=[%s] closes=[%s]"):format(tostring(tr.inside),
+    tostring(tr.shown), table.concat(tr.opens or {}, ","), table.concat(tr.closes or {}, ",")))
+else
+  print("triggers (F4): -")
+end

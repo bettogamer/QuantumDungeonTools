@@ -182,3 +182,24 @@ function Lens.takePendingZoom(db)
   db.saved = nil
   return type(z) == "number" and z or nil
 end
+
+------------------------------------------------------------------------------
+-- Triggers (plan M2 F4)
+------------------------------------------------------------------------------
+-- Magnifier button spot, as the offset of its centre from the Minimap's CENTER (artboards
+-- LensReposo / LensActiva). Round minimap: on the ring, bottom right (the artboard's 34 px
+-- button on a 170 px map sits at +80/-54). Square minimap (the lens itself, ElvUI, EUI): on the
+-- bottom-right corner. Whole UI units.
+Lens.BUTTON_ROUND = { x = 80 / 170, y = -54 / 170 }
+function Lens.buttonOffset(w, h, square)
+  if type(w) ~= "number" or type(h) ~= "number" then return 0, 0 end
+  if square then return math.floor(w / 2 + 0.5), -math.floor(h / 2 + 0.5) end
+  return math.floor(w * Lens.BUTTON_ROUND.x + 0.5), math.floor(h * Lens.BUTTON_ROUND.y + 0.5)
+end
+
+-- Closing on leaving the instance: a loading screen already closes the lens
+-- (PLAYER_LEAVING_WORLD); this covers a zone change without one. Only a lens opened inside an
+-- instance closes (one opened outside to try it stays). Unknown (nil) never closes.
+function Lens.leftInstance(openedInside, inside)
+  return openedInside == true and inside == false
+end

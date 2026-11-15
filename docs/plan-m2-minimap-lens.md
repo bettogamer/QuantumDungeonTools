@@ -47,7 +47,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
 | **F2** | Núcleo de la lente | ✅ cerrada (2026-11-15): OK del owner en las tres configuraciones (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ✅ cerrada (2026-11-15): pruebas A y B ok con EUI; C sin aviso porque el minimapa estaba despegado (correcto) | dueño `other`, vigilante de setters, reaplicar solo lo que derivó, ceder a las 4 correcciones en 10 s, toast LensAviso una vez por sesión |
-| **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
+| **F4** | Disparadores y ciclo de vida | 🟡 en código (2026-11-15); falta la prueba in-game (§F4) | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
 | **F5** | Página del módulo + ajustes | ⬜ PENDIENTE | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
 
 > Fuera de este hito por decisión previa: **flecha o posición del jugador** (no hay datos en
@@ -430,6 +430,56 @@ en C: `held = false`, `warned = [pinned]`).
     El aviso «pegado» queda sin ver in-game; se puede comprobar cuando se quiera pegándolo en el
     modo desbloqueo de EUI (opcional).
 
+## F4 — Disparadores y ciclo de vida (2026-11-15)
+
+Código: `modules/MinimapLens/wow/Triggers.lua` (`ns.MinimapLensTriggers`), `Bindings.xml`,
+`core/Lens.lua` (`buttonOffset`, `leftInstance`; tests en `Lens_spec.lua`), `wow/Lens.lua`
+(`UI:OnChange`, que avisa al pasar a encendida, al empezar el fundido de salida y al terminar) y
+`wow/Minimap.lua` (`Minimap:ShowTip`: el mismo tooltip que el del icono QDT, aquí sin logo).
+
+- **Atajo:** `QDT_LENS` en Opciones › Atajos › AddOns › Quantum Dungeon Tools, sin tecla. Ejecuta
+  `/qdt lens bind` (el XML no ve `ns`, y así la autoprueba distingue atajo y comando). La sonda
+  `QDT_LENS_PROBE` de F1 desaparece; `/qdt check m2 toggle` sigue funcionando.
+- **Lupa** (LensReposo/LensActiva): botón redondo de 34 px, navy, aro de 2 px. Apagada: aro
+  `tickIdle` y zoom-in en `muted`. Encendida: aro y zoom-out en oro, con halo oro al 22 %.
+  Iconos `zoom-in`/`zoom-out` del atlas de Craft y discos con `shape_circle` de Craft. Va pegada al
+  aro abajo a la derecha (+80/−54 sobre 170, en proporción) o, si el minimapa es cuadrado (la
+  lente, ElvUI, EUI), en la esquina inferior derecha. Se recoloca en `OnSizeChanged` del Minimap.
+  Entra y sale con fundido de 0,15 s.
+- **Cuándo se ve (decisión del agente):** dentro de una instancia **o mientras la lente está
+  puesta**, para poder cerrarla con un clic si se abrió fuera con el atajo o con `/qdt lens`.
+  Es hija del Minimap: se mueve, se atenúa y se oculta con él (si EUI esconde el minimapa con su
+  Visibility, también la lupa).
+- **Tooltip:** «Minimap Lens» en oro; «Clic · agrandar el minimapa» (o «devolver el minimapa a su
+  sitio»); «Atajo · <tecla>» o «sin asignar» + la pista de dónde asignarlo.
+- **Cierres:** pantalla de carga, recarga y cierre de sesión ya cerraban (F2). Nuevo: al cambiar
+  de zona **sin** pantalla de carga, si la lente se abrió dentro de una instancia y ya no se está
+  en una (`Lens.leftInstance`; una lente abierta fuera no se cierra). Y al entrar en el **Modo
+  edición** (`EventRegistry` `EditMode.Enter`, gotcha 17).
+- Autoprueba: `_checkLens.triggers = { inside, shown, opens, closes }` (las 10 últimas, con el
+  origen: `button`, `bind`, `slash`, `left`, `editmode`). `lua scripts/read-check-lens.lua`.
+- **Ojo para una release:** la lupa aparece en instancia aunque el módulo siga tras el «PRONTO».
+  Si se corta una beta antes de F5, hay que esconderla.
+
+### Guion de prueba (owner)
+
+**Fuera de mazmorra (~3 min).** `/reload`.
+1. ❓ ¿El minimapa **no** tiene lupa? (fuera de instancia no debe salir).
+2. Opciones › Atajos › AddOns: ❓ ¿sale «Quantum Dungeon Tools › Minimap Lens: agrandar / devolver
+   el minimapa» (ya no la «(probe)»)? Asígnale una tecla y púlsala: ❓ ¿se abre la lente y aparece la
+   lupa **dorada** en la esquina inferior derecha del cuadrado? Pasa el ratón: ❓ ¿el tooltip dice
+   «Clic · devolver el minimapa a su sitio» y tu tecla? Clic en la lupa: ❓ ¿se cierra la lente y la
+   lupa se va con un fundido?
+3. Con la lente abierta, abre el **Modo edición**: ❓ ¿se cierra la lente?
+
+**En la run agrupada (basta entrar por la puerta, sin hacer la mazmorra):**
+4. Al entrar: ❓ ¿sale la lupa **gris** abajo a la derecha del aro? Pasa el ratón con y sin atajo:
+   ❓ ¿el tooltip coincide con el artboard LensReposo? Clic: abre; clic: cierra.
+5. Abre la lente y sal por la puerta: ❓ ¿fuera ya no hay lente ni lupa?
+
+Al terminar, `/reload` y «listo» con el sí/no. El agente lee `triggers` (esperado:
+`opens = [bind, …, button]`, `closes = [button, editmode, …]`).
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
@@ -452,6 +502,6 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** F4 (disparadores y ciclo de vida: atajo en `Bindings.xml`, botón lupa solo en
-instancia, cierre al salir de la instancia y al abrir el Modo edición), en sesión nueva. Recargar
-AGENTS.md + este plan (§F1 gotchas 9 y 17 de Modo edición, §F2, §F3).
+**Siguiente:** prueba in-game de F4 (guion §F4: los pasos 1-3 fuera, el 4-5 en la run
+agrupada). Con el OK fuera, F5 (página del módulo + ajustes) en sesión nueva. Recargar AGENTS.md +
+este plan (§F0 artboard AppLens, §F2 límites, §F4).

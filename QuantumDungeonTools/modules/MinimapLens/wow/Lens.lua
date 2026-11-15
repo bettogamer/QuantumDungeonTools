@@ -11,7 +11,8 @@
 --
 -- The lens does not survive a reload or a loading screen (gotcha 3): PLAYER_LEAVING_WORLD
 -- restores it. The original zoom also lives in the DB while it is on (gotcha 16).
--- Triggers (binding, magnifier button, auto-close on leaving the instance) are F4.
+-- Triggers (binding, magnifier button, auto-close) live in Triggers.lua (F4): they listen
+-- through UI:OnChange.
 --
 -- Coexistence (F3, soft mode): hooks on the Minimap's setters see every write that is not ours
 -- (`writing` marks ours). Once the lens has settled (the move check is done), a foreign write
@@ -47,8 +48,14 @@ local maskDirty = false -- someone else called SetMaskTexture (there is no gette
 local watchToken = 0    -- debounces the reapply after a burst of foreign writes
 local warned = {}       -- warnings already shown this session (soft, pinned)
 local current           -- self-check entry of the lens that is on (_checkLens.history)
+local listeners = {}    -- fn(on) after every on/off (the magnifier button, F4)
 
 local function db() return ns.db and ns.db.minimapLens end
+
+local function notify()
+  local on = snap ~= nil and not leaving
+  for _, fn in ipairs(listeners) do pcall(fn, on) end
+end
 
 local function call(obj, method, ...)
   local fn = obj and obj[method]
@@ -463,6 +470,7 @@ function UI:On()
     leaving = false
     token = token + 1
     fadeTo(Lens.clamp(db().opacity, Lens.OPACITY))
+    notify()
     return true
   end
   local s, why = takeSnapshot()
@@ -493,6 +501,7 @@ function UI:On()
   newEntry(s.owner)
   fadeTo(Lens.clamp(d.opacity, Lens.OPACITY))
   checkMove(token)
+  notify()
   return true
 end
 
@@ -515,12 +524,14 @@ function UI:Off(instant)
     local diff = restoreDiff(s)
     dump("off", { ok = ok, err = not ok and tostring(e) or nil, instant = instant and true or false,
       diffs = #diff, diff = table.concat(diff, " | ") })
+    notify()
   end
   if instant or not Weave then return finish() end
   if leaving then return true end
   leaving = true
   token = token + 1
   fadeTo(0, finish)
+  notify()   -- the button turns off as the fade starts
   return true
 end
 
@@ -528,6 +539,12 @@ function UI:Toggle()
   if self:IsOn() then return self:Off() end
   return self:On()
 end
+
+-- fn(on) runs after every change of state (on, starting to fade out, off).
+function UI:OnChange(fn) listeners[#listeners + 1] = fn end
+
+-- The lens's square right now (side, or nil when off): where the magnifier goes.
+function UI:Side() return snap and not leaving and snap.side or nil end
 
 -- Opacity slider (F5): live while on.
 function UI:SetOpacity(v)

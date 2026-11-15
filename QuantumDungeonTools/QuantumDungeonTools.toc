@@ -97,6 +97,7 @@ modules\InstanceTracker\wow\CheckF1.lua
 modules\InstanceTracker\wow\CheckF2.lua
 modules\MinimapLens\core\Lens.lua
 modules\MinimapLens\wow\Lens.lua
+modules\MinimapLens\wow\Triggers.lua
 modules\MinimapLens\wow\CheckM2.lua
 wow\MainWindow.lua
 wow\Minimap.lua

@@ -149,6 +149,14 @@ L.LENS_PINNED         = "%s holds the minimap in place, so the lens grows there.
 L.LENS_OTHER_UI       = "Another addon"
 L.LENS_GOT_IT         = "Got it"
 L.LENS_NOTICE_USAGE   = "lens notice <soft | pinned>"
+-- Triggers (plan M2 F4, artboard LensReposo)
+L.LENS_BINDING        = "Minimap Lens: enlarge / put back the minimap"
+L.LENS_TIP_CLICK      = "Click"
+L.LENS_TIP_ON         = "enlarge the minimap"
+L.LENS_TIP_OFF        = "put the minimap back"
+L.LENS_TIP_KEY        = "Key"
+L.LENS_TIP_NO_KEY     = "not set"
+L.LENS_TIP_HINT       = "Set it in Options > Keybindings > AddOns > Quantum Dungeon Tools."
 
 -- Main window (plan M1 F6b)
 L.MW_HOME          = "Home"
@@ -392,6 +400,13 @@ if locale == "esES" or locale == "esMX" then
   L.LENS_PINNED         = "%s sujeta el minimapa en su sitio, así que la lente crece ahí."
   L.LENS_OTHER_UI       = "Otro addon"
   L.LENS_GOT_IT         = "Entendido"
+  L.LENS_BINDING        = "Minimap Lens: agrandar / devolver el minimapa"
+  L.LENS_TIP_CLICK      = "Clic"
+  L.LENS_TIP_ON         = "agrandar el minimapa"
+  L.LENS_TIP_OFF        = "devolver el minimapa a su sitio"
+  L.LENS_TIP_KEY        = "Atajo"
+  L.LENS_TIP_NO_KEY     = "sin asignar"
+  L.LENS_TIP_HINT       = "Asígnalo en Opciones › Atajos › AddOns › Quantum Dungeon Tools."
 
   L.CHECK_F1_SAVED  = "check f1: foto %d guardada (%s)."
   L.CHECK_F1_LOCK   = "lockout: %s/%s muertos, %d filas de jefe"

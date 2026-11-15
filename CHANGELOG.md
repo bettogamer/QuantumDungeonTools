@@ -14,6 +14,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
   colocar el minimapa con la lente puesta, la lente repone solo lo que cambió, sin pelear; si
   insiste, cede y avisa una vez con un toast. También avisa si el minimapa está pegado en
   EllesmereUI y la lente no se puede mover.
+- **Minimap Lens, disparadores (M2 F4):** atajo de teclado en Opciones › Atajos › AddOns ›
+  Quantum Dungeon Tools (sin tecla por defecto) y botón lupa pegado al minimapa, que solo aparece
+  dentro de una instancia (o con la lente puesta) y enseña en su tooltip el atajo asignado. La
+  lente se cierra sola al salir de la instancia y al abrir el Modo edición.
 
 ## [0.1.0-beta.1] - 2026-11-15
 

@@ -40,6 +40,7 @@ local function getTooltip()
     end)
   end
   local logo = CreateFrame("Frame", nil, tooltip)
+  tooltip.logo = logo
   logo:SetSize(TIP.logo, TIP.logo)
   logo:SetPoint("RIGHT", tooltip, "LEFT", 0, 0)
   local tex = logo:CreateTexture(nil, "ARTWORK")
@@ -62,7 +63,8 @@ end
 
 -- Lines are created lazily by AddLine, so the fonts go on afterwards. Without Craft the
 -- tooltip keeps the client's font.
-local function applyFonts(tip)
+-- `foot`: index of a last, smaller line (the hint under the lens's lines).
+local function applyFonts(tip, foot)
   local Craft = LibStub and LibStub("Craft-2.0", true)
   local media = Craft and Craft.mediaPath
   if not media then return end
@@ -71,25 +73,39 @@ local function applyFonts(tip)
     local line = _G[TOOLTIP_NAME .. "TextLeft" .. i]
     if line then
       if i == 1 then line:SetFont(media .. TIP.titleFont, TIP.titleSize, "")
+      elseif i == foot then line:SetFont(media .. TIP.lineFont, TIP.footSize, "")
       else line:SetFont(media .. TIP.lineFont, TIP.lineSize, "") end
     end
   end
 end
 
-local function showTooltip(owner)
+-- title: text with its own color codes; pairs: { { key, value } }; opts = { logo = bool,
+-- titleColor = rgb, foot = muted hint line }.
+local function showTip(owner, title, pairs_, opts)
+  opts = opts or {}
   local tip = getTooltip()
   local point, rel, relPoint = tooltipAnchor(owner)
   tip:SetOwner(owner, "ANCHOR_NONE")
   tip:ClearAllPoints()
   tip:SetPoint(point, rel, relPoint)
-  tip:AddLine(ns.Brand.title())
+  tip.logo:SetShown(opts.logo ~= false)
+  local tc = opts.titleColor
+  if tc then tip:AddLine(title, tc.r, tc.g, tc.b) else tip:AddLine(title) end
   local key, cream = ns.Style.code("muted"), ns.Style.C.cream
-  for _, pair in ipairs(L.MM_TIP_LINES) do
+  for _, pair in ipairs(pairs_) do
     tip:AddLine(key .. pair[1] .. "|r · " .. pair[2], cream.r, cream.g, cream.b)
   end
-  applyFonts(tip)
+  local foot
+  if opts.foot then
+    local m = ns.Style.C.muted
+    tip:AddLine(opts.foot, m.r, m.g, m.b, true)
+    foot = tip:NumLines()
+  end
+  applyFonts(tip, foot)
   tip:Show()
 end
+
+local function showTooltip(owner) showTip(owner, ns.Brand.title(), L.MM_TIP_LINES) end
 
 ------------------------------------------------------------------------------
 -- Right-click menu (Craft.Menu, rebuilt on every open)
@@ -138,6 +154,10 @@ end
 -- API
 ------------------------------------------------------------------------------
 function Minimap:IsShown() return not db().hide end
+
+-- The same tooltip for other QDT buttons on the minimap (the Minimap Lens magnifier, plan M2 F4).
+function Minimap:ShowTip(owner, title, pairs_, opts) showTip(owner, title, pairs_, opts) end
+function Minimap:HideTip() if tooltip then tooltip:Hide() end end
 
 -- `fn(shown)` runs after every change (the General page switch follows /qdt minimap and the menu).
 function Minimap:OnChange(fn) listeners[#listeners + 1] = fn end

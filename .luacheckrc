@@ -89,14 +89,15 @@ files = {
         globals = {},
     },
     -- F1 probes (CheckM2.lua): Minimap setters, LibDBIcon, tracking,
-    -- edit mode; GetMinimapShape is WRITTEN (square lens) and BINDING_* name the probe binding.
+    -- edit mode; GetMinimapShape is WRITTEN (square lens) and BINDING_* name the lens binding (F4).
     ["QuantumDungeonTools/modules/MinimapLens/wow/"] = {
         globals = {
             "CreateFrame", "UIParent", "C_Timer", "C_AddOns", "C_Minimap", "GetTime", "InCombatLockdown",
             "Minimap", "MinimapCluster", "GetMinimapShape", "hooksecurefunc", "debugstack",
             "GetBuildInfo", "GetCVar", "SetCVar", "GetBindingKey", "EventRegistry",
             "issecrettable", "LibStub", "_G", "QuantumDungeonToolsDB",
-            "BINDING_HEADER_QDT", "BINDING_NAME_QDT_LENS_PROBE",
+            "GetBindingText", "IsInInstance",
+            "BINDING_HEADER_QDT", "BINDING_NAME_QDT_LENS",
         },
     },
 

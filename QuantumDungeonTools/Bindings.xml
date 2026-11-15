@@ -1,6 +1,7 @@
-<!-- Key Bindings > AddOns. Plan M2 F1 probe: toggles the probe lens (F4 replaces it with the real lens). -->
+<!-- Key Bindings > AddOns > Quantum Dungeon Tools (plan M2 F4). No key by default (owner, point 2).
+     Names: BINDING_HEADER_QDT / BINDING_NAME_QDT_LENS in modules/MinimapLens/wow/Triggers.lua. -->
 <Bindings>
-  <Binding name="QDT_LENS_PROBE" header="QDT" category="ADDONS">
-    SlashCmdList.QDT("check m2 toggle")
+  <Binding name="QDT_LENS" header="QDT" category="ADDONS">
+    SlashCmdList.QDT("lens bind")
   </Binding>
 </Bindings>

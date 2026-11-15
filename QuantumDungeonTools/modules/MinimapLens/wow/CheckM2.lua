@@ -35,9 +35,8 @@ local ANCHORED = { "Minimap", "MinimapContainer", "MinimapBackdrop", "ZoneTextBu
 local METHODS = { "SetBlipTexture", "SetPlayerTexture", "SetPOIArrowTexture", "SetStaticPOIArrowTexture",
   "SetIconScale", "SetArchBlobRingScalar", "SetMaskTexture", "GetZoomLevels", "UpdateBlips" }
 
--- Bindings.xml (S: does the AddOns header show in Key Bindings?). F4 replaces this binding.
-BINDING_HEADER_QDT = "Quantum Dungeon Tools"
-BINDING_NAME_QDT_LENS_PROBE = "Minimap Lens (probe)"
+-- The F1 probe binding (QDT_LENS_PROBE) gave way to the real one in F4 (Triggers.lua);
+-- `/qdt check m2 toggle` still toggles the probe lens.
 
 ---------------------------------------------------------------------------------------------
 -- Encoding (secret first, numbers rounded so the dump stays small)
