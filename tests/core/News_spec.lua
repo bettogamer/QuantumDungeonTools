@@ -1,108 +1,80 @@
--- tests/core/News_spec.lua -- PURE "What's new" model: CHANGELOG parsing and page helpers.
+-- tests/core/News_spec.lua -- PURE "What's new" model: hand-written notes, split and header.
 local helper = dofile("tests/helper.lua")
 
 local ns = helper.newNS()
 helper.loadModule("QuantumDungeonTools/core/News.lua", "QuantumDungeonTools", ns)
+helper.loadModule("QuantumDungeonTools/core/NewsData.lua", "QuantumDungeonTools", ns)
 local News = ns.News
 
-local MD = table.concat({
-  "# Changelog",
-  "",
-  "Formato: Keep a Changelog.",
-  "",
-  "## [Unreleased]",
-  "",
-  "### Añadido",
-  "",
-  "- **Icono del minimapa** (hito M1 F6e): clic abre la ventana; se arrastra",
-  "  por el borde y `/qdt minimap` lo muestra.",
-  "- **Instance Tracker distingue la COPIA** por el zoneUID: si sales, run nueva.",
-  "- `/qdt it demo <live | done>`: enseña cada estado.",
-  "",
-  "- **Sin cuerpo**",
-  "",
-  "### Cambiado",
-  "",
-  "- **Barras con BettoBar** (Craft v2.50.0, re-vendoreada): el relleno usa la textura.",
-  "",
-  "### Arreglado",
-  "",
-  "## [0.2.0] - 2026-11-03",
-  "",
-  "### Arreglado",
-  "",
-  "- Un **fallo** con [el reloj](https://x.y) al recargar.",
-}, "\n")
-
-describe("News.parse", function()
-  local list = News.parse(MD)
-
-  it("una entrada por versión, en el orden del archivo", function()
-    assert_eq(#list, 2)
-    assert_true(list[1].unreleased)
-    assert_eq(list[1].version, nil)
-    assert_eq(list[2].version, "0.2.0")
-    assert_eq(list[2].date, "2026-11-03")
+describe("News.split", function()
+  it("Título: detalle", function()
+    local t, tag, b = News.split("Pausa: el reloj se para.")
+    assert_eq(t, "Pausa")
+    assert_eq(tag, nil)
+    assert_eq(b, "el reloj se para.")
   end)
 
-  it("descarta los apartados vacíos (Arreglado de Unreleased)", function()
-    assert_eq(#list[1].sections, 2)
-    assert_eq(list[1].sections[1].name, "Añadido")
-    assert_eq(list[1].sections[2].name, "Cambiado")
+  it("Título (etiqueta): detalle", function()
+    local t, tag, b = News.split("Ventana principal (/qdt): Inicio y ajustes.")
+    assert_eq(t, "Ventana principal")
+    assert_eq(tag, "/qdt")
+    assert_eq(b, "Inicio y ajustes.")
   end)
 
-  it("une las líneas de continuación y separa viñetas por línea en blanco", function()
-    local items = list[1].sections[1].items
-    assert_eq(#items, 4)
-    assert_eq(items[1].body, "Clic abre la ventana; se arrastra por el borde y /qdt minimap lo muestra.")
+  it("un paréntesis que no va pegado a los dos puntos es parte del detalle", function()
+    local t, tag, b = News.split("Avisos: al llegar (10/10): espera.")
+    assert_eq(t, "Avisos")
+    assert_eq(tag, nil)
+    assert_eq(b, "al llegar (10/10): espera.")
   end)
 
-  it("título en negrita + «: » → punto y mayúscula; la nota (hito …) se quita", function()
-    local it1 = list[1].sections[1].items[1]
-    assert_eq(it1.title, "Icono del minimapa")
-    assert_eq(it1.sep, ". ")
+  it("sin dos puntos: todo es título", function()
+    local t, tag, b = News.split("Solo título")
+    assert_eq(t, "Solo título")
+    assert_eq(tag, nil)
+    assert_eq(b, "")
+  end)
+end)
+
+describe("News.lang / lines", function()
+  it("español para esES y esMX, inglés para el resto", function()
+    assert_eq(News.lang("esES"), "es")
+    assert_eq(News.lang("esMX"), "es")
+    assert_eq(News.lang("enUS"), "en")
+    assert_eq(News.lang("deDE"), "en")
+    assert_eq(News.lang(nil), "en")
   end)
 
-  it("el paréntesis antes de los dos puntos también se quita (versión de lib)", function()
-    local it1 = list[1].sections[2].items[1]
-    assert_eq(it1.title, "Barras con BettoBar")
-    assert_eq(it1.body, "El relleno usa la textura.")
+  it("si falta un idioma sale el otro", function()
+    assert_eq(News.lines({ es = { "a" } }, "en")[1], "a")
+    assert_eq(News.lines({ en = { "b" }, es = {} }, "es")[1], "b")
+    assert_eq(#News.lines({}, "es"), 0)
+  end)
+end)
+
+describe("News.header", function()
+  local L = { dev = "En desarrollo", unreleased = "SIN PUBLICAR", changes = "%d cambios", one = "1 cambio",
+    months = { [11] = "nov" } }
+
+  it("sin publicar: En desarrollo + etiqueta + cuenta", function()
+    local t, tag, meta = News.header({ unreleased = true }, 10, L)
+    assert_eq(t, "En desarrollo")
+    assert_eq(tag, "SIN PUBLICAR")
+    assert_eq(meta, "10 cambios")
   end)
 
-  it("título que sigue la frase: separador espacio, sin mayúscula", function()
-    local it2 = list[1].sections[1].items[2]
-    assert_eq(it2.title, "Instance Tracker distingue la COPIA")
-    assert_eq(it2.sep, " ")
-    assert_eq(it2.body, "por el zoneUID: si sales, run nueva.")
-  end)
-
-  it("viñeta sin título: todo es cuerpo, sin markdown", function()
-    local it3 = list[1].sections[1].items[3]
-    assert_eq(it3.title, nil)
-    assert_eq(it3.body, "/qdt it demo <live | done>: enseña cada estado.")
-    assert_eq(list[2].sections[1].items[1].body, "Un fallo con el reloj al recargar.")
-  end)
-
-  it("título solo: cuerpo vacío y sin separador", function()
-    local it4 = list[1].sections[1].items[4]
-    assert_eq(it4.title, "Sin cuerpo")
-    assert_eq(it4.body, "")
-    assert_eq(it4.sep, "")
-  end)
-
-  it("el CHANGELOG real se parsea y empieza por Unreleased", function()
-    local fh = assert(io.open("CHANGELOG.md", "rb"))
-    local real = News.parse(fh:read("*a"))
-    fh:close()
-    assert_true(#real >= 1)
-    assert_true(#real[1].sections >= 1)
+  it("publicada: vN, sin etiqueta, fecha · cuenta", function()
+    local t, tag, meta = News.header({ version = "1.0.0", date = "2026-11-03" }, 1, L)
+    assert_eq(t, "v1.0.0")
+    assert_eq(tag, nil)
+    assert_eq(meta, "3 nov 2026 · 1 cambio")
+    assert_eq(select(3, News.header({ version = "1.0.0" }, 2, L)), "2 cambios")
   end)
 end)
 
 describe("News helpers", function()
   it("recent corta a MAX y avisa si quedan más", function()
-    local l = { 1, 2, 3, 4, 5, 6, 7 }
-    local r, more = News.recent(l)
+    local r, more = News.recent({ 1, 2, 3, 4, 5, 6, 7 })
     assert_eq(#r, 5)
     assert_true(more)
     r, more = News.recent({ 1, 2 })
@@ -111,34 +83,28 @@ describe("News helpers", function()
     assert_eq(#News.recent(nil), 0)
   end)
 
-  it("heading pasa a mayúsculas con tildes y eñe", function()
-    assert_eq(News.heading("Añadido"), "AÑADIDO")
-    assert_eq(News.heading("Corrección"), "CORRECCIÓN")
+  it("escape duplica la barra vertical del cliente", function()
+    assert_eq(News.escape("a | b"), "a || b")
+  end)
+end)
+
+describe("NewsData (escrito a mano)", function()
+  it("cada versión trae las mismas notas en los dos idiomas", function()
+    assert_true(#ns.NewsData >= 1)
+    for _, v in ipairs(ns.NewsData) do
+      assert_true(v.unreleased or v.version, "una versión sin número ni unreleased")
+      assert_eq(#(v.es or {}), #(v.en or {}), "es y en con distinto número de notas")
+    end
   end)
 
-  it("Añadido lleva el punto oro; el resto el apagado", function()
-    assert_eq(News.dotTone("Añadido"), "gold")
-    assert_eq(News.dotTone("Cambiado"), "muted")
-  end)
-
-  it("cabecera: En desarrollo + SIN PUBLICAR en oro; publicada: vN + fecha", function()
-    local L = { dev = "En desarrollo", unreleased = "SIN PUBLICAR", months = { [11] = "nov" } }
-    local t, tag, tone = News.header({ unreleased = true }, L)
-    assert_eq(t, "En desarrollo")
-    assert_eq(tag, "SIN PUBLICAR")
-    assert_eq(tone, "gold")
-    t, tag, tone = News.header({ version = "1.0.0", date = "2026-11-03" }, L)
-    assert_eq(t, "v1.0.0")
-    assert_eq(tag, "3 nov 2026")
-    assert_eq(tone, "muted")
-    tag = select(2, News.header({ version = "1.0.0" }, L))
-    assert_eq(tag, nil)
-  end)
-
-  it("line arma título.cuerpo y escapa la barra vertical del cliente", function()
-    assert_eq(News.line({ title = "A", sep = ". ", body = "b | c" }, "<", ">"), "<A.> b || c")
-    assert_eq(News.line({ title = "A", sep = " ", body = "por x" }, "<", ">"), "<A> por x")
-    assert_eq(News.line({ title = "A", sep = "", body = "" }, "<", ">"), "<A>")
-    assert_eq(News.line({ sep = "", body = "x" }, "<", ">"), "x")
+  it("todas las notas tienen título y detalle", function()
+    for _, v in ipairs(ns.NewsData) do
+      for _, lang in ipairs({ "es", "en" }) do
+        for _, line in ipairs(v[lang] or {}) do
+          local t, _, b = News.split(line)
+          assert_true(t ~= "" and b ~= "", "nota sin «Título: detalle»: " .. line)
+        end
+      end
+    end
   end)
 end)

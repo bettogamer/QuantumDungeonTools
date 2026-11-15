@@ -12,8 +12,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Añadido
 
-- **Página Novedades** en la ventana principal: lo que cambió en cada versión (las cinco más
-  recientes), sacado de este mismo registro de cambios.
+- **Página Novedades** en la ventana principal: una tarjeta plegable por versión (las cinco más
+  recientes) con una frase corta por cambio, en español e inglés.
 - **Icono del minimapa** (hito M1 F6e): clic abre la ventana principal, mayús+clic el Historial de
   runs y clic derecho un menú (Instance Tracker, Historial, Ajustes generales, Ocultar el icono);
   se arrastra por el borde del minimapa. Nueva página **Ajustes generales** con su interruptor y

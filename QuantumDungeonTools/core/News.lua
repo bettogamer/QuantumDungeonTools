@@ -1,91 +1,39 @@
 -- core/News.lua -- PURE: the "What's new" page model (no WoW API).
 --
--- The page is generated from CHANGELOG.md (owner, 2026-11-14): scripts/gen-news.lua runs
--- News.parse over it and writes core/NewsData.lua, so the text lives in ONE place. Spanish
--- only, like the CHANGELOG (owner OK). The page shows the newest MAX versions; [Unreleased]
--- comes first as "In development · NOT RELEASED" (canvas artboard "Novedades").
+-- The page shows SHORT notes written by hand in core/NewsData.lua, one sentence per change, in
+-- Spanish and English (owner, 2026-11-14, Naowh Forever's pattern). CHANGELOG.md stays the full
+-- technical record (it goes to CurseForge); it is not read in game. One card per version, newest
+-- first and open, the rest folded (canvas artboard "Novedades").
 --
--- Parsed shape: { { version = "1.0.0" | nil, date = "2026-11-20" | nil, unreleased = bool,
---   sections = { { name = "Añadido", items = { { title = "Icono del minimapa" | nil,
---   body = "…", sep = ". " | " " | "" } } } } } }
+-- NewsData shape: { { version = "1.0.0" | nil, date = "2026-11-20" | nil, unreleased = bool,
+--   es = { "Título (etiqueta): detalle", ... }, en = { ... } }, ... }
 local _, ns = ...
 
 local News = { MAX = 5 }
 ns.News = News
 
--- Inline markdown -> plain text: `code`, **bold**, *em*, [text](url).
-local function plain(s)
-  s = s:gsub("%[([^%]]-)%]%([^%)]-%)", "%1")
-  s = s:gsub("%*%*(.-)%*%*", "%1")
-  s = s:gsub("`([^`]-)`", "%1")
-  s = s:gsub("%f[%*]%*([^%*]-)%*", "%1")
-  return s
+-- Client locale -> notes language: Spanish for esES/esMX, English for everything else.
+function News.lang(locale)
+  return (type(locale) == "string" and locale:match("^es")) and "es" or "en"
 end
 
--- First ASCII letter to upper case (accented first letters stay: there is no utf8 lib in WoW).
-local function capital(s)
-  return (s:gsub("^%l", string.upper))
+-- The notes of one version in `lang`, falling back to the other language (never empty when
+-- one of the two was written).
+function News.lines(v, lang)
+  local other = lang == "es" and "en" or "es"
+  local l = v[lang]
+  if not l or #l == 0 then l = v[other] end
+  return l or {}
 end
 
--- "- **Title** (hito M1 F6e): rest" -> title, body, sep. A parenthesis right before the colon is
--- an internal note (milestone, vendored lib version): dropped, as on the artboard.
-function News.item(raw)
-  local text = raw:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
-  local title, rest = text:match("^%*%*(.-)%*%*(.*)$")
-  if not title then return { body = plain(text), sep = "" } end
-  rest = rest:gsub("^%s*%b()%s*:", ":")
-  local sep
-  if rest:match("^%s*:") then
-    rest, sep = capital((rest:gsub("^%s*:%s*", ""))), ". "
-  elseif rest:match("^[,;%.]") then
-    sep = ""
-  else
-    rest, sep = rest:gsub("^%s+", ""), " "
-  end
-  if rest == "" then sep = "" end
-  return { title = plain(title), body = plain(rest), sep = sep }
-end
-
--- CHANGELOG.md text -> list of versions, newest first (file order).
-function News.parse(md)
-  local out, ver, sec, item = {}, nil, nil, nil
-  local function flush()
-    if item and sec then sec.items[#sec.items + 1] = News.item(item) end
-    item = nil
-  end
-  for line in (md .. "\n"):gmatch("(.-)\r?\n") do
-    local head = line:match("^##%s+%[(.-)%]")
-    if head and not line:match("^###") then
-      flush()
-      local unreleased = head:lower() == "unreleased"
-      ver = { version = not unreleased and head or nil, unreleased = unreleased,
-        date = line:match("(%d%d%d%d%-%d%d%-%d%d)"), sections = {} }
-      out[#out + 1], sec = ver, nil
-    elseif ver and line:match("^###%s+") then
-      flush()
-      sec = { name = line:match("^###%s+(.-)%s*$"), items = {} }
-      ver.sections[#ver.sections + 1] = sec
-    elseif sec and line:match("^%-%s+") then
-      flush()
-      item = line:gsub("^%-%s+", "")
-    elseif item and line:match("^%s+%S") then
-      item = item .. " " .. line
-    elseif line:match("^%s*$") then
-      flush()
-    end
-  end
-  flush()
-  -- Drop empty sections and versions (an [Unreleased] with only headings shows nothing).
-  local kept = {}
-  for _, v in ipairs(out) do
-    local secs = {}
-    for _, s in ipairs(v.sections) do
-      if #s.items > 0 then secs[#secs + 1] = s end
-    end
-    v.sections = secs
-    if #secs > 0 then kept[#kept + 1] = v end
-  end
-  return kept
+-- "Title (tag): detail" -> title, tag | nil, detail. Only a parenthesis right before the colon
+-- is a tag; a line without a colon is all title.
+function News.split(line)
+  local title, tag, body = line:match("^([^:%(]-)%s*%(([^%(%):]-)%)%s*:%s*(.*)$")
+  if title and title ~= "" then return title, tag, body end
+  title, body = line:match("^(.-):%s*(.*)$")
+  if title and title ~= "" then return title, nil, body end
+  return line, nil, ""
 end
 
 -- The newest `max` versions (default MAX) and whether older ones were left out.
@@ -96,37 +44,20 @@ function News.recent(list, max)
   return out, #(list or {}) > max
 end
 
--- Section heading as the artboard paints it: upper case, Spanish accents included.
-local UPPER = { ["á"] = "Á", ["é"] = "É", ["í"] = "Í", ["ó"] = "Ó", ["ú"] = "Ú", ["ñ"] = "Ñ", ["ü"] = "Ü" }
-function News.heading(name)
-  local s = name:upper()
-  for lo, up in pairs(UPPER) do s = s:gsub(lo, up) end
-  return s
-end
-
--- "Añadido" carries the gold dot; every other section the muted one (artboard).
-function News.dotTone(name)
-  return name == "Añadido" and "gold" or "muted"
-end
-
--- One item as the page prints it: the title (with its period) wrapped in open/close (the cream
--- color escape) and the body after it. "|" is the client's escape character: doubled.
-function News.line(item, open, close)
-  local function esc(s) return (s:gsub("|", "||")) end
-  local body = esc(item.body or "")
-  if not item.title then return body end
-  local head, tail = (item.sep or ""):match("^(%S*)(%s*)$")
-  return open .. esc(item.title) .. head .. close .. (body ~= "" and tail .. body or "")
-end
-
--- Version header: title + tag. L = { dev, unreleased, months = { "ene"... } }.
-function News.header(v, L)
-  if v.unreleased then return L.dev, L.unreleased, "gold" end
-  local tag
+-- Card header: title, tag (NOT RELEASED, gold) or nil, and the muted meta line.
+-- L = { dev, unreleased, changes = "%d cambios", one = "1 cambio", months = { "ene"... } }.
+function News.header(v, n, L)
+  local count = n == 1 and L.one or L.changes:format(n)
+  if v.unreleased then return L.dev, L.unreleased, count end
   local y, m, d = (v.date or ""):match("^(%d+)%-(%d+)%-(%d+)$")
+  local meta = count
   if y then
-    local month = (L.months or {})[tonumber(m)] or m
-    tag = string.format("%d %s %s", tonumber(d), month, y)
+    meta = string.format("%d %s %s · %s", tonumber(d), (L.months or {})[tonumber(m)] or m, y, count)
   end
-  return "v" .. v.version, tag, "muted"
+  return "v" .. tostring(v.version), nil, meta
+end
+
+-- "|" is the client's escape character: doubled so it prints.
+function News.escape(s)
+  return (tostring(s or ""):gsub("|", "||"))
 end

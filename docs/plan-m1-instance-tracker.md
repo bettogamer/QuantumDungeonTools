@@ -324,26 +324,31 @@ aquí. (7) Inicio › «Historial de runs» › Abrir → también.
 
 **Guion F6e (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 21/21; «minimap icon» dice «<textura>, shown …, setting true, parent …»; con EllesmereUIMinimap el botón vive en su desplegable de botones y puede salir «shown false»: es correcto). (1) Icono reloj de bolsillo en el borde del minimapa con el aro dorado; se arrastra por el borde y la posición sobrevive a `/reload`. (2) Ratón encima: tooltip navy con el reloj de 48 px a su izquierda, «Quantum» en mar y «Dungeon Tools» en oro, 4 líneas (Clic · Mayús+clic · Clic derecho · Arrastrar), letra Inter. (3) Clic = abre/cierra en Inicio; mayús+clic = IT › Historial. (4) Clic derecho = menú con Instance Tracker, Historial de runs, separador, Ajustes generales, Ocultar el icono; cada uno hace lo suyo. (5) Ajustes generales: grupo MINIMAPA con «Icono del minimapa», ayuda, `/qdt minimap` y el interruptor; apagarlo oculta el icono y sale el punto oro; `/qdt minimap` lo vuelve a mostrar y el interruptor se enciende solo. (6) «Ocultar el icono» del menú: lo mismo.
 
-Decididos (owner, 2026-11-14): **«Novedades» se genera del CHANGELOG** (script en `scripts/` →
-Lua de datos commiteado; la página pinta las últimas versiones por apartado; una sola fuente de
-texto, se regenera en cada release). Diseño OK del owner (lienzo v59, artboard «Novedades»; texto
-solo en español, tope 5 versiones). ✅ código (2026-11-14): `core/News.lua` (parser puro + specs),
-`scripts/gen-news.lua` → `core/NewsData.lua` (**regenerar tras editar el CHANGELOG**: `lua
-scripts/gen-news.lua`), página en `wow/MainWindow.lua`; `check f2` gana «page news». Elecciones
-del agente: el título de la viñeta va en crema pero con el mismo peso que el cuerpo (un FontString
-no mezcla pesos); un paréntesis justo antes de «:» (hito, versión de lib) se quita; el pie «Se
-muestran las 5 últimas versiones» solo sale si hay más; «|» se escapa. Pendiente de vista in-game.
+Decididos (owner, 2026-11-14): **«Novedades» = notas CORTAS escritas a mano** en
+`core/NewsData.lua`, una frase por cambio («Título (etiqueta): detalle»), en **español e inglés**
+(si falta uno sale el otro); patrón de Naowh Forever. El **CHANGELOG sigue completo** (va a
+CurseForge) y no se lee en el juego. **Al cerrar cada versión: entrada del CHANGELOG + sus líneas en
+NewsData** (solo lo que nota un jugador; nada de libs ni autopruebas). Diseño OK del owner (lienzo
+v61, artboard «Novedades»: una tarjeta plegable por versión, la más nueva abierta; filas título +
+detalle). ✅ código (2026-11-14): `core/News.lua` (puro + specs, que también comprueban que NewsData
+tenga las mismas notas en los dos idiomas), página en `wow/MainWindow.lua` (tarjetas con
+`Weave.tween`); `check f2` gana «page news». Descartado el primer intento (generar la página desde
+el CHANGELOG, `895ca62`): demasiado texto. **«Buscar ajustes» APLAZADO** (~9 opciones en 2 páginas
+no lo justifican; se retoma con Minimap Lens u otro módulo; sin caja en la ventana hasta entonces).
+Fix (owner, 2026-11-14): la fila activa del sidebar no tenía la barra oro de 2 px del artboard →
+apaño propio en `MainWindow.lua` (`markActive`) + **FR-154 de Craft** (`activeBar`); quitarlo al
+re-vendorear.
 
-**Guion Novedades (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 22/22; «page news»
-dice «1 versions, 15/15 items»). (1) `/qdt` → Novedades (abajo en el sidebar, marcada en oro).
-(2) Cabecera «En desarrollo» con la etiqueta SIN PUBLICAR en oro. (3) CAMBIADO (punto gris) y AÑADIDO
-(punto oro); cada viñeta con su título en crema y el resto en gris, partida en varias líneas sin
-cortarse por la derecha; «Barras con la textura BettoBar. El relleno…» sin «(Craft v2.50.0…)».
-(4) La rueda desplaza la lista hasta la última viñeta (`/qdt check f1 …`) sin cortarla. (5) Estrechar
-la ventana: las viñetas se re-parten y el scroll sigue llegando al final. (6) La viñeta
-`/qdt it demo <live | done | first | compact | off>` enseña las barras verticales. **«Buscar ajustes»
-APLAZADO** (~9 opciones en 2 páginas no lo justifican; se retoma con Minimap Lens u otro módulo;
-sin caja en la ventana hasta entonces).
+**Guion Novedades + barra (in-game, sin mazmorra):** `/reload` → `/qdt check f2` (esperado 22/22;
+«page news» dice «1 versions, 10/10 items»). (1) `/qdt` → la fila Inicio lleva la barra oro a la
+izquierda; Instance Tracker, Ajustes generales y Novedades también al elegirlas (una sola a la vez).
+(2) Novedades: una tarjeta «En desarrollo · SIN PUBLICAR · 10 cambios» abierta, chevron oro hacia
+abajo. (3) Filas: título en crema (y «/qdt» como etiqueta en «Ventana principal»), detalle en gris
+pequeño, partido sin cortarse. (4) Clic en la cabecera: se pliega animada, chevron gris a la derecha;
+otro clic la abre. Ratón encima: lavado oro. (5) Estrechar la ventana: el detalle se re-parte y el
+scroll llega al final. (6) Con el cliente en inglés (o sin acceso: lo vemos en la próxima sesión) las
+notas salen en inglés.
+
 Abierto aún: «Pug ×4» del artboard — hoy
 la columna Grupo pinta los nombres (sin reino) porque no hay forma fiable de distinguir un pug.
 

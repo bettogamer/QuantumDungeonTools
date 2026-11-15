@@ -50,6 +50,8 @@ C.goldWash    = Style.rgba(HEX.gold, 0.05)      -- NOW card fill
 C.hairlineSoft = Style.rgba(HEX.white, 0.06)    -- OPEN row dividers, idle module card
 C.mutedTag    = Style.rgba(HEX.muted, 0.35)     -- SOON tag border
 C.goldTag     = Style.rgba(HEX.gold, 0.45)      -- NOT RELEASED tag border (artboard "Novedades")
+C.cardWash    = Style.rgba(HEX.white, 0.02)     -- version card fill (artboard "Novedades")
+C.goldHover   = Style.rgba(HEX.gold, 0.08)      -- hovered card header (same wash as the menu rows)
 -- Craft paints the sidebar fill and its active row OPAQUE (alpha forced to 1), so the canvas'
 -- "navy + black 22 %" and "gold 8 % on it" are pre-composited here from the same roles.
 C.sidebar       = Style.over(C.panel, { r = 0, g = 0, b = 0 }, 0.22)
@@ -111,12 +113,12 @@ Style.WIN.cardH = math.floor(56 * Style.GEO + 0.5)   -- padding 12 + 14 title + 
 Style.WIN.cardPadX = math.floor(16 * Style.GEO + 0.5)
 Style.WIN.dot = 5                                     -- gold "changed from its default" dot
 
--- What's new page (artboard "Novedades"): version header, section label, wrapped items.
+-- What's new page (artboard "Novedades"): one folding card per version, rows of title + detail.
 Style.NEWS = scale({
-  top = 18, bottom = 18, versionGap = 22, sectionGap = 14, labelGap = 8, itemGap = 8,
-  indent = 13, maxW = 820, tagGap = 10,
+  top = 16, bottom = 16, cardGap = 10, headH = 40, padX = 14, gap = 10, chev = 13,
+  rowPadY = 8, rowGap = 3,
 })
-Style.NEWS.spacing = 4     -- extra leading between wrapped lines (line-height 1.45 at 13 px)
+Style.NEWS.spacing = 3     -- extra leading between wrapped detail lines (line-height 1.4 at 11 px)
 
 -- Minimap icon tooltip (F6e, artboard "Icono del minimapa", SMRT pattern): the button's OWN
 -- GameTooltip with Inter (Craft media) and the icon off its left edge.
@@ -148,7 +150,8 @@ Style.FONT = {
   winRowSub   = { size = 11, weight = "medium", flags = "" },
   winModule   = { size = 14, weight = "semibold", flags = "" },
   winTag      = { size = 9, weight = "semibold", flags = "" },  -- SOON
-  winNewsVer  = { size = 18, weight = "semibold", flags = "" }, -- What's new: version title
+  winNewsVer  = { size = 15, weight = "semibold", flags = "" }, -- What's new: version card title
+  winNewsItem = { size = 13, weight = "semibold", flags = "" }, -- What's new: change title
 }
 
 -- A module's Style: inherits every function and token above, adds its own on top.

@@ -338,17 +338,123 @@ local function buildGeneral(container)
 end
 
 ------------------------------------------------------------------------------
--- What's new (artboard "Novedades"): core/NewsData.lua, generated from CHANGELOG.md
--- (scripts/gen-news.lua). One block per version, newest first; inside, a section label with
--- its dot and the wrapped items. Static text: built once, re-wrapped when the window resizes.
+-- What's new (artboard "Novedades"): the SHORT notes of core/NewsData.lua, written by hand in
+-- Spanish and English (CHANGELOG.md is the full record and is not read in game). One card per
+-- version, newest first and open, the rest folded; a card folds with a Weave tween like the
+-- IT › Summary group. Rows = title (+ tag) over the wrapped detail, re-wrapped on resize.
 ------------------------------------------------------------------------------
 local RAIL = 8   -- Craft.Scroll's rail (Craft px): it goes into the page margin
+
+-- One note: hairline on top, title (and its tag) over the detail. Returns the row and a
+-- function that re-wraps it to the card width `w` and returns its height.
+local function newsRow(parent, line)
+  local N, News = Style.NEWS, ns.News
+  local row = CreateFrame("Frame", nil, parent)
+  local top = hline(row, C.hairlineSoft)
+  top:SetPoint("TOPLEFT")
+  top:SetPoint("TOPRIGHT")
+  local title, tagText, body = News.split(line)
+  local t = text(row, FONT.winNewsItem, C.cream)
+  t:SetPoint("TOPLEFT", N.padX, -N.rowPadY)
+  t:SetText(News.escape(title))
+  if tagText then
+    local tag = kit.newTag(row, FONT.winTag, 4, 1)
+    kit.setTag(tag, News.escape(tagText), C.muted, C.mutedTag)
+    tag:SetPoint("LEFT", t, "RIGHT", 8, 0)
+  end
+  local d = text(row, FONT.winRowSub, C.muted)
+  d:SetWordWrap(true)
+  d:SetSpacing(N.spacing)
+  d:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -N.rowGap)
+  d:SetText(News.escape(body))
+  local function wrap(w)
+    d:SetWidth(math.max(1, w - 2 * N.padX))
+    local h = math.ceil(2 * N.rowPadY + t:GetStringHeight() + N.rowGap + d:GetStringHeight())
+    row:SetHeight(h)
+    return h
+  end
+  return row, wrap
+end
+
+-- One version: a header button (chevron, title, tag, "N changes") over the rows.
+local function newsCard(parent, v, lines, startOpen, LH, onHeight)
+  local N, News = Style.NEWS, ns.News
+  local Weave = LibStub("Weave-1.0")
+  local card = box(parent, C.cardWash, C.hairline)
+  card:SetClipsChildren(true)
+  local head = CreateFrame("Button", nil, card)
+  head:SetPoint("TOPLEFT")
+  head:SetPoint("TOPRIGHT")
+  head:SetHeight(N.headH)
+  local hover = head:CreateTexture(nil, "HIGHLIGHT")
+  hover:SetAllPoints()
+  kit.setColor(hover, C.goldHover)
+  local chev = head:CreateTexture(nil, "ARTWORK")
+  Craft.Icons.Apply(chev, "chevron-down", N.chev)
+  chev:SetSize(N.chev, N.chev)
+  chev:SetPoint("LEFT", N.padX, 0)
+  local titleText, tagText, meta = News.header(v, #lines, LH)
+  local t = text(head, FONT.winNewsVer, C.cream)
+  t:SetPoint("LEFT", chev, "RIGHT", N.gap, 0)
+  t:SetText(News.escape(titleText))
+  local after = t
+  if tagText then
+    local tag = kit.newTag(head, FONT.winTag, 5, 1)
+    kit.setTag(tag, tagText, C.gold, C.goldTag)
+    tag:SetPoint("LEFT", t, "RIGHT", N.gap, 0)
+    after = tag
+  end
+  local m = text(head, FONT.winRowSub, C.muted)
+  m:SetPoint("LEFT", after, "RIGHT", N.gap, 0)
+  m:SetText(meta)
+
+  local body = CreateFrame("Frame", nil, card)
+  body:SetPoint("TOPLEFT", head, "BOTTOMLEFT")
+  body:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT")
+  local rows, wraps = {}, {}
+  for i, line in ipairs(lines) do
+    local row, wrap = newsRow(body, line)
+    if i == 1 then
+      row:SetPoint("TOPLEFT", body, "TOPLEFT")
+    else
+      row:SetPoint("TOPLEFT", rows[i - 1], "BOTTOMLEFT")
+    end
+    row:SetPoint("RIGHT", body, "RIGHT")
+    rows[i], wraps[i] = row, wrap
+  end
+
+  local bodyH = Weave.signal(0)
+  local open = Weave.signal(startOpen)
+  local mo = kit.ctx:get()
+  local prog = Weave.tween(Weave.computed(function() return open() and 1 or 0 end),
+    { duration = mo.motionBase or 0.2, easing = Weave.easing[mo.motionEasing] or Weave.easing.outQuad })
+  card.fx = Weave.effect(function()
+    local p, h = prog(), bodyH()
+    if type(p) ~= "number" then return end
+    card:SetHeight(N.headH + p * h)
+    body:SetHeight(math.max(1, h))
+    body:SetAlpha(p)
+    body:SetShown(p > 0)
+    chev:SetRotation((1 - p) * math.pi / 2)   -- down when open, right when folded
+    local c = p > 0.5 and C.gold or C.muted
+    chev:SetVertexColor(c.r, c.g, c.b, 1)
+    onHeight()
+  end)
+  head:SetScript("OnClick", function() open:set(not open:peek()) end)
+  card.rows = #rows
+  card.wrap = function(w)
+    local h = 0
+    for _, f in ipairs(wraps) do h = h + f(w) end
+    bodyH:set(h)
+  end
+  return card
+end
 
 local function buildNews(container)
   local page = newPage(container, "news")
   local rule = pageHeader(page, L.MW_NEWS, L.MW_NEWS_SUB, L.MW_NEWS)
-  local data = ns.NewsData or {}
-  local versions = ns.News.recent(data.versions)
+  local N, News = Style.NEWS, ns.News
+  local versions, more = News.recent(ns.NewsData)
   if #versions == 0 then
     local empty = Craft.Empty:Create(page, { title = L.MW_NEWS_EMPTY, icon = "file-text" })
     local f = empty:GetFrame()
@@ -356,7 +462,6 @@ local function buildNews(container)
     f:SetPoint("RIGHT", page, "RIGHT", -WIN.padX, 0)
     return
   end
-  local N, News = Style.NEWS, ns.News
 
   local scroll = Craft.Scroll:Create(page, {})
   local sf = scroll:GetFrame()
@@ -369,75 +474,50 @@ local function buildNews(container)
   local child = scroll:GetScrollChild()
   child:SetHeight(1)
 
-  -- Vertical chain: each region hangs from the previous one; `x` is its own left inset.
-  local prev, prevX = nil, 0
-  local function place(region, gap, x)
-    if prev then
-      region:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", x - prevX, -gap)
+  local cards, footer = {}, nil
+  -- The scroll child's height follows the cards while they fold.
+  local function relayout()
+    local h = N.top + N.bottom
+    for i, c in ipairs(cards) do h = h + c:GetHeight() + (i > 1 and N.cardGap or 0) end
+    if footer then h = h + N.cardGap + footer:GetStringHeight() end
+    child:SetHeight(math.max(1, h))
+  end
+
+  local LH = { dev = L.MW_NEWS_DEV, unreleased = L.MW_NEWS_UNREL, changes = L.MW_NEWS_CHANGES,
+    one = L.MW_NEWS_ONE, months = L.IT_H_MONTHS }
+  local lang = News.lang(GetLocale())
+  local rows, expected = 0, 0
+  for i, v in ipairs(versions) do
+    local lines = News.lines(v, lang)
+    local card = newsCard(child, v, lines, i == 1, LH, relayout)
+    if i == 1 then
+      card:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -N.top)
     else
-      region:SetPoint("TOPLEFT", child, "TOPLEFT", x, -gap)
+      card:SetPoint("TOPLEFT", cards[i - 1], "BOTTOMLEFT", 0, -N.cardGap)
     end
-    prev, prevX = region, x
+    card:SetPoint("RIGHT", child, "RIGHT")
+    cards[i] = card
+    rows, expected = rows + card.rows, expected + #lines
   end
+  if more then
+    footer = text(child, FONT.winRowSub, C.tickIdle)
+    footer:SetPoint("TOPLEFT", cards[#cards], "BOTTOMLEFT", 0, -N.cardGap)
+    footer:SetText(L.MW_NEWS_MORE:format(News.MAX))
+  end
+  MW.newsProbe = { versions = #versions, items = rows, expected = expected }
 
-  local wraps = {}   -- item FontStrings: width = min(pane - indent, maxW)
-  local LH = { dev = L.MW_NEWS_DEV, unreleased = L.MW_NEWS_UNREL, months = L.IT_H_MONTHS }
-  local open = Style.code("text")
-  for vi, v in ipairs(versions) do
-    local title, tagText, tone = News.header(v, LH)
-    local head = text(child, FONT.winNewsVer, C.cream)
-    head:SetText(title)
-    place(head, vi == 1 and N.top or N.versionGap, 0)
-    if tagText then
-      local tag = kit.newTag(child, FONT.winTag, 5, 1)
-      kit.setTag(tag, tagText, tone == "gold" and C.gold or C.muted, tone == "gold" and C.goldTag or C.mutedTag)
-      tag:SetPoint("LEFT", head, "RIGHT", N.tagGap, 0)
-    end
-    for _, s in ipairs(v.sections) do
-      local lbl = text(child, FONT.winSection, C.muted)
-      lbl:SetText(News.heading(s.name))
-      place(lbl, N.sectionGap, N.indent)
-      local dot = newDot(child, News.dotTone(s.name) == "gold" and C.gold or C.muted)
-      dot:SetPoint("RIGHT", lbl, "LEFT", -(N.indent - WIN.dot), 0)   -- dot at the margin, 8 px gap
-      for ii, it in ipairs(s.items) do
-        local fs = text(child, FONT.winRow, C.muted)
-        fs:SetWordWrap(true)
-        fs:SetSpacing(N.spacing)
-        fs:SetText(News.line(it, open, "|r"))
-        place(fs, ii == 1 and N.labelGap or N.itemGap, N.indent)
-        wraps[#wraps + 1] = fs
-      end
-    end
-  end
-  local expected = 0
-  for _, v in ipairs(versions) do
-    for _, s in ipairs(v.sections) do expected = expected + #s.items end
-  end
-  MW.newsProbe = { versions = #versions, items = #wraps, expected = expected }
-  if data.more then
-    local more = text(child, FONT.winRowSub, C.tickIdle)
-    more:SetText(L.MW_NEWS_MORE:format(News.MAX))
-    place(more, N.sectionGap, 0)
-  end
-  local last = prev
-
-  -- Re-wrap on a width change only; the wrapped height is measured a frame later (a FontString
-  -- re-lays its lines after SetWidth), so setting the child's height never re-enters here.
+  -- Re-wrap on a width change only (setting the child's height re-enters OnSizeChanged); on
+  -- show, once more a frame later, when the fonts have their final metrics.
   local lastW
-  local function measure()
-    local top, bottom = child:GetTop(), last:GetBottom()
-    if top and bottom then child:SetHeight(math.max(1, top - bottom + N.bottom)) end
-  end
-  local function fit()
+  local function fit(force)
     local w = child:GetWidth()
-    if not w or w <= 0 or w == lastW then return end
+    if not w or w <= 0 or (w == lastW and not force) then return end
     lastW = w
-    local iw = math.min(w - N.indent, N.maxW)
-    for _, fs in ipairs(wraps) do fs:SetWidth(iw) end
-    C_Timer.After(0, measure)
+    for _, c in ipairs(cards) do c.wrap(w) end
+    relayout()
   end
-  child:SetScript("OnSizeChanged", fit)
-  page:HookScript("OnShow", function() fit(); C_Timer.After(0, measure) end)
+  child:SetScript("OnSizeChanged", function() fit() end)
+  page:HookScript("OnShow", function() fit(); C_Timer.After(0, function() fit(true) end) end)
 end
 
 -- For /qdt check f2: what the What's new page built (nil before the window is built).
@@ -608,6 +688,28 @@ end
 ------------------------------------------------------------------------------
 -- API
 ------------------------------------------------------------------------------
+-- The artboards mark the active sidebar row with a 2 px gold bar on its left edge; Craft's
+-- Sidebar only paints the wash (FR-154 of Craft). Until then: our own bar, anchored to the active
+-- row read from a private field (pooled rows) under pcall, re-placed on every navigation.
+local activeBar
+local function markActive(sb, id)
+  if not activeBar then
+    local holder = CreateFrame("Frame", nil, side:GetFrame():GetParent())
+    holder:SetFrameLevel(side:GetFrame():GetFrameLevel() + 20)
+    holder:SetAllPoints(side:GetFrame():GetParent())
+    activeBar = holder:CreateTexture(nil, "OVERLAY")
+    activeBar:SetWidth(2)
+    kit.setColor(activeBar, C.gold)
+  end
+  local ok, row = pcall(function() return sb._itemFrames[id].frame end)
+  if not (ok and row) then return false end
+  activeBar:ClearAllPoints()
+  activeBar:SetPoint("TOPLEFT", row, "TOPLEFT")
+  activeBar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT")
+  activeBar:Show()
+  return true
+end
+
 -- Shows page `id` (unknown ids fall back to Home) and marks it on the right sidebar.
 function MW:Navigate(id)
   if not win then return end
@@ -618,6 +720,10 @@ function MW:Navigate(id)
   current = id
   side:SetActiveItem(not FOOT_IDS[id] and id or nil)
   foot:SetActiveItem(FOOT_IDS[id] and id or nil)
+  local sb = FOOT_IDS[id] and foot or side
+  if not markActive(sb, id) and activeBar then activeBar:Hide() end
+  -- First open: the rows may be laid out on the next frame.
+  C_Timer.After(0, function() if current == id then markActive(sb, id) end end)
 end
 
 function MW:Open(id)
