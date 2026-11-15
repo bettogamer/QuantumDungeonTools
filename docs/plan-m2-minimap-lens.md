@@ -288,6 +288,17 @@ después de F2.
     (opción A) o el jugador desactiva EllesmereUIMinimap (botón «Usar el minimapa de Blizzard,
     recarga»). Ambas son decisión del owner.
 
+30. **Corrige el 29: el bloqueo venía de la configuración de EUI del owner, no de EUI en sí.**
+    En el modo desbloqueo de EUI, el minimapa estaba **pegado (snap) a la esquina superior
+    derecha**. El owner lo despegó y entonces el `SetPoint` al centro aguanta hasta +30 s, sin
+    escrituras de EUI al moverlo. EUI solo reancla cuando cambia el tamaño
+    (`ApplyCenterPosition`, `EUI_UnlockMode_Positions.lua:2406-2418`) y la ronda restaura con 0
+    diferencias. **Efecto secundario:** los elementos de EUI pegados AL minimapa (la lista de
+    misiones del owner) **se mueven con la lente**, porque su anclaje los arrastra. Para F2: la
+    lente detecta en el siguiente fotograma si su `SetPoint` se deshizo. Si se deshizo, se queda
+    en su sitio y avisa una vez («el minimapa está pegado en EllesmereUI: despégalo en su modo
+    desbloqueo para mover la lente»). Así se evita acoplarse a la DB de EUI.
+
 *Configuración ElvUI v16.01 (2026-11-15; pasos 1-5):*
 21. **ElvUI no escribe nada en el Minimap** (0 escrituras ajenas en toda la sesión, también tras el
     `/reload` y al salir de combate). Ronda: 0 diferencias en tamaño y en escala, 0 errores.
