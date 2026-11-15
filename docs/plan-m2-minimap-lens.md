@@ -45,7 +45,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 |------|---------|--------|------|
 | **F0** | Diseño en el lienzo | ✅ OK del owner (2026-11-15, «continuamos con F1») | página «Minimap Lens» (lienzo v71): LensReposo, LensActiva, LensMover, LensAviso (A toast elegida, punto 8), AppLens |
 | **F1** | Sondas de Forever (`/qdt check m2`) | ✅ cerrada fuera de mazmorra (2026-11-15); bloque de mazmorra aplazado tras F2 (owner) | hallazgos 1-31 en §F1; decisión EUI tomada (punto 11) |
-| **F2** | Núcleo de la lente | 🟡 en código (2026-11-15), falta la prueba in-game (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
+| **F2** | Núcleo de la lente | ✅ cerrada (2026-11-15): OK del owner en las tres configuraciones (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ⬜ PENDIENTE | detectar el dueño, modo suave (`SetScale`, reaplicar tras ellos con guard, ceder si pisan y avisar una vez) |
 | **F4** | Disparadores y ciclo de vida | ⬜ PENDIENTE | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
 | **F5** | Página del módulo + ajustes | ⬜ PENDIENTE | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
@@ -362,6 +362,10 @@ Al terminar, `/reload` y avisar: el agente lee `_checkLens` (esperado: `off.diff
 33. Con EUI, el lado original es 255 (Blizzard ~198) y UIParent mide ~1242 de alto, así que la lente
     sale a 663 (2,6×) y la posición por defecto a +138/−52. El tamaño se revisa con el deslizador de F5.
 
+*Sin otro UI y ElvUI (owner, 2026-11-15):* **«todo ok»** en el guion completo (forma, aro,
+combate, zoom tras `/reload`). El volcado `_checkLens` seguía siendo el de la prueba con EUI (no se
+escribió tras estas pruebas), así que el cierre se apoya en la revisión visual del owner.
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
@@ -384,7 +388,6 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** prueba in-game de F2 (guion en §F2) y, con su OK, F3 (convivencia) en sesión
-nueva. Punto 8 cerrado: el aviso de «minimapa pegado en EllesmereUI» (`MinimapLensUI.moveHeld
-== false`) es un **toast** (LensAviso A, mismo motor que el toast de fin de run). Pendiente de F2:
-la prueba sin otro UI y con ElvUI.
+**Siguiente:** F3 (convivencia), en sesión nueva. Recargar AGENTS.md + este plan (§F1 gotchas,
+§F2). Punto 8 cerrado: el aviso de «minimapa pegado en EllesmereUI» (`MinimapLensUI.moveHeld
+== false`) es un **toast** (LensAviso A, mismo motor que el toast de fin de run).
