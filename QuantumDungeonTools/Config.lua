@@ -3,8 +3,6 @@
 local _, ns = ...
 local L = ns.L
 
-local HISTORY_SHOWN = 5
-
 local function say(text) ns.say(text) end
 
 -- `/qdt info`: version of the addon and of EVERY vendored lib actually loaded (if any).
@@ -18,18 +16,6 @@ local function info()
     local lib, minor = LibStub:GetLibrary(name, true)
     print(("  %s  MINOR %s  version %s"):format(name, tostring(minor),
       tostring(type(lib) == "table" and (lib._VERSION or lib.VERSION) or "?")))
-  end
-end
-
-local function history()
-  local list = ns.InstanceTracker:History()
-  if #list == 0 then return say(L.IT_HISTORY_EMPTY) end
-  say(L.IT_HISTORY_HEADER)
-  for i = 1, math.min(HISTORY_SHOWN, #list) do
-    local run = ns.InstanceRun.fromTable(list[i])
-    local done = run.finishedAt ~= nil
-    print("  " .. L.IT_HISTORY_LINE:format(run.name, run.difficulty, run:killedCount(), run:total(),
-      ns.Format.duration(run:elapsed()), ns.Format.thousands(run.xp), done and "" or L.IT_INCOMPLETE))
   end
 end
 
@@ -47,7 +33,7 @@ SlashCmdList.QDT = function(msg)
     ns.InstanceTracker:NewRun()
     say(ns.InstanceTracker.run and L.IT_NEW_RUN or L.IT_RUN_CLOSED)
   elseif msg == "history" then
-    history()
+    ns.InstanceTrackerPage:OpenHistory()   -- the History tab of the main window (F6d)
   elseif msg == "auto" then
     local it = ns.db.instanceTracker
     it.autoShow = not it.autoShow

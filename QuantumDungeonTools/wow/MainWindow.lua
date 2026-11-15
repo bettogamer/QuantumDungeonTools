@@ -192,7 +192,8 @@ local function buildOpen(page, anchor)
   area:SetPoint("RIGHT", page, "RIGHT", -WIN.padX, 0)
   area:SetHeight(2 * WIN.openRowH)
   local rows = {
-    openRow(area, L.MW_OPEN_HISTORY, L.MW_OPEN_HISTORY_SUB, L.MW_BTN_OPEN, function() MW:Navigate("it") end),
+    openRow(area, L.MW_OPEN_HISTORY, L.MW_OPEN_HISTORY_SUB, L.MW_BTN_OPEN,
+      function() ns.InstanceTrackerPage:OpenHistory() end),
     openRow(area, L.MW_OPEN_WIDGET, L.MW_OPEN_WIDGET_SUB, L.MW_BTN_SHOW,
       function() if ns.InstanceTrackerUI then ns.InstanceTrackerUI:Toggle() end end),
     openRow(area, L.MW_OPEN_ALERTS, L.MW_OPEN_ALERTS_SUB, L.MW_BTN_TRY, function()

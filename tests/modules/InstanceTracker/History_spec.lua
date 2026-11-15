@@ -105,6 +105,57 @@ describe("InstanceHistory", function()
     assert_eq(empty.mean, nil)
   end)
 
+  it("columns reparte el ancho como la rejilla del artboard (9 columnas, fr, gap y padding)", function()
+    local cols = History.columns(800, 8, 4)
+    assert_eq(#cols, 9)
+    assert_eq(cols[1].x, 4)
+    local free = 800 - 8 - 8 * 8
+    assert_eq(cols[1].w, math.floor(free * 1.1 / 8))
+    assert_eq(cols[9].w, math.floor(free * 1.5 / 8))
+    -- la última acaba en el borde derecho menos el padding (±1 px de redondeo)
+    local right = cols[9].x + cols[9].w
+    assert_true(right >= 795 and right <= 796)
+    -- nunca anchos negativos
+    for _, c in ipairs(History.columns(10, 8, 4)) do assert_eq(c.w, 0) end
+  end)
+
+  it("cells pinta récord, atrasada, adelantada, sin terminar y primera con su tono", function()
+    local L2 = { record = "récord", unfinished = "sin terminar" }
+    local rec = History.cells(History.row(saved({ len = 1791, newRecord = true, char = "Kael-R", xp = 10 })), L2)
+    assert_eq(rec.delta.text, "récord")
+    assert_eq(rec.delta.tone, "ahead")
+    assert_eq(rec.time.tone, "ahead")
+    assert_eq(rec.record, true)
+    assert_eq(rec.char.tone, "text")
+    assert_eq(rec.xp.tone, "xp")
+    local behind = History.cells(History.row(saved({ len = 1900, pb = { total = 1791 } })), L2)
+    assert_eq(behind.delta.text, "+1:49")
+    assert_eq(behind.delta.tone, "behind")
+    assert_eq(behind.time.tone, "text")
+    assert_eq(behind.char.text, History.DASH)
+    assert_eq(behind.char.tone, "pending")
+    assert_eq(behind.xp.tone, "pending")
+    assert_eq(behind.group.text, History.DASH)
+    local ahead = History.cells(History.row(saved({ len = 1700, pb = { total = 1791 } })), L2)
+    assert_eq(ahead.delta.tone, "ahead")
+    local open = History.cells(History.row(saved({ group = "Ann,Bob" })), L2)
+    assert_eq(open.delta.text, "sin terminar")
+    assert_eq(open.time.tone, "pending")
+    assert_eq(open.group.text, "Ann, Bob")
+    assert_eq(open.group.tone, "muted")
+    local first = History.cells(History.row(saved({ len = 1800 })), L2)
+    assert_eq(first.delta.text, History.DASH)
+    assert_eq(first.date.tone, "sand")
+  end)
+
+  it("footer: runs, media y récord, sin las partes que no hay", function()
+    local L3 = { run1 = "1 run", runs = "%d runs", mean = "media %s", best = "récord %s" }
+    assert_eq(History.footer({ count = 12, mean = 1985.4, best = 1791 }, L3),
+      "12 runs \194\183 media 33:05 \194\183 récord 29:51")
+    assert_eq(History.footer({ count = 1 }, L3), "1 run")
+    assert_eq(History.footer({ count = 0 }, L3), "0 runs")
+  end)
+
   it("recordCount cuenta los récords válidos", function()
     assert_eq(History.recordCount({ a = { total = 1 }, b = { total = 2 }, c = {} }), 2)
     assert_eq(History.recordCount(nil), 0)

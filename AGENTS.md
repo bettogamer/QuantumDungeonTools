@@ -62,7 +62,7 @@
     │   └── InstanceTracker/
     │       ├── core/  Run.lua (modelo de la run) + Guid.lua + Style.lua (colores/tamaños del widget; hereda core/Style.lua)
     │       │          + View.lua (qué pinta el widget) + Detail.lua (tooltip Detalle) + Demo.lua
-    │       └── wow/   Tracker.lua (eventos) + UI.lua (widget) + CheckF1/CheckF2.lua (autopruebas)
+    │       └── wow/   Tracker.lua (eventos) + UI.lua (widget) + Page/HistoryTab.lua (página) + CheckF1/CheckF2.lua
     ├── libs/          LibStub, Weave, Craft vendoreadas READ-ONLY (versiones: libs/README.md)
     └── Config.lua     ← último: /qdt
 ```

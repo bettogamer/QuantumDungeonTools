@@ -77,6 +77,8 @@ files = {
             -- Alerts (Alerts.lua, plan M1 F5): share line + the game's "too many instances"
             "IsInGroup", "IsInRaid", "LE_PARTY_CATEGORY_INSTANCE", "SendChatMessage", "C_ChatInfo",
             "TRANSFER_ABORT_TOO_MANY_INSTANCES", "ERR_TOO_MANY_INSTANCES",
+            -- History tab (HistoryTab.lua, plan M1 F6d): run dates
+            "date",
         },
     },
 

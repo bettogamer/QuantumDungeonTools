@@ -16,6 +16,7 @@ local C = {
   panelBg     = rgba(HEX.panel, 0.82),     -- compact panel
   alertBg     = rgba(HEX.panel, 0.88),     -- 10/10 alert and 8/10 strip (artboard Avisos)
   goldBorder  = rgba(HEX.gold, 0.6),       -- 8/10 strip border
+  recordWash  = rgba(HEX.turquoise, 0.08), -- History row that set the record
 }
 
 -- Sizes (canvas px; Style.extend scales them by Base.GEO, see core/Style.lua). tagPadX/Y are
@@ -75,6 +76,7 @@ local SIZE = {
   toastBlockGap = 14, -- clock -> stats -> buttons (ui-critic M1)
   toastDeltaBase = 3, -- lifts the delta onto the clock's baseline (34 vs 16 px)
   toastVsGap  = 6,   -- delta -> "vs record"
+  toastButtonGap = 8, -- "History" <- "Share with group" (design gap 8)
   toastHeadH  = 44,  -- header row "Run completada  [NUEVO RÉCORD]" (12 + 14 + ~6 + 12)
   toastStatGap = 8,  -- between the four stat columns
   toastStatKV = 2,   -- stat label <-> value
@@ -95,6 +97,18 @@ local SIZE = {
   pageDot     = 5,   -- the gold "changed" dot
   pageSelectW = 130,
   pageBottom  = 16,  -- room under the last block (scroll)
+  -- History tab (F6d, artboard «Instance Tracker · Historial»).
+  histBarH    = 52,  -- filter bar (padding 12 + 28 select + 12)
+  histLabelGap = 8,  -- filter label -> its select (gap 8)
+  histGroupGap = 16, -- select -> next filter label (gap 8 + margin-left 8)
+  histDungeonW = 180,
+  histDiffW   = 110,
+  histCharW   = 120,
+  histHeadH   = 30,  -- column header (padding 8 + 14 + 8)
+  histRowH    = 32,  -- a run row (padding 9 + 14 + 9)
+  histGap     = 8,   -- between columns
+  histPadX    = 4,   -- row padding left and right
+  histFootH   = 36,  -- "12 runs · mean · record" footer (padding 10 + 14 + 12)
 }
 
 -- `flags` overrides the theme outline ("OUTLINE, SLUG") for one element: the Slug outline is
@@ -135,6 +149,10 @@ local FONT = {
   toastTag    = { size = 10, weight = "bold", flags = "" },     -- NEW RECORD: gold block (Oro Forever)
   toastButton = { flags = "" },                                 -- Craft.Button keeps its own size
   panelTag    = { size = 10, weight = "medium", flags = "" },   -- RARE on the compact panel
+  -- History tab of the main window (solid panel: no outline).
+  histHead    = { size = 11, weight = "semibold", flags = "" }, -- column titles
+  histCell    = { size = 12, weight = "medium", flags = "" },
+  histHour    = { size = 12, weight = "bold", flags = "" },     -- "8/10"
 }
 
 local Style = Base.extend({ C = C, SIZE = SIZE, FONT = FONT })

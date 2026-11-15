@@ -2,7 +2,7 @@
 -- modules/InstanceTracker/wow/Page.lua -- the module's page in the main window (plan M1 F6c,
 -- artboard «Instance Tracker · Resumen»).
 --
--- Header + tabs Summary | History (History arrives in F6d). Summary: the MODULE card (module
+-- Header + tabs Summary | History (wow/HistoryTab.lua, F6d). Summary: the MODULE card (module
 -- switch, applied on reload), the WIDGET group «What it shows» (our own fold, animated with
 -- Weave: Craft.Section has no summary slot and puts the chevron on the right) with the 8
 -- settings of core/Settings.lua in two columns, a gold dot on the ones off their default and the
@@ -24,6 +24,7 @@ local MARKER_ICON = [[|TInterface\TargetingFrame\UI-RaidTargetingIcon_%d:0|t %s]
 
 -- Pure modules load earlier in the .toc: resolved now (Home asks ModuleOn before Build).
 local Settings, View, History = ns.InstanceSettings, ns.InstanceTrackerView, ns.InstanceHistory
+local HistoryTab = ns.InstanceHistoryTab
 local Style, C, FONT, S
 local kit, Craft, B, Weave
 local P = {}                -- widgets
@@ -408,25 +409,22 @@ function Page:Build(page, blocks)
     variant = "line", defaultTab = "summary",
     tabs = { { id = "summary", label = L.IT_P_SUMMARY }, { id = "history", label = L.IT_P_HISTORY } },
     onTabChange = function(id)
+      P.tab = id
       head.kicker:SetText(L.IT_P_KICKER:format(id == "history" and L.IT_P_HISTORY or L.IT_P_SUMMARY))
+      if id == "history" then HistoryTab:Refresh() end
     end,
   })
   local tf = tabs:GetFrame()
   tf:SetPoint("TOPLEFT", head.sub, "BOTTOMLEFT", 0, -12)
   tf:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -B.padX, 0)
-  P.tabs = tabs
+  P.tabs, P.tab = tabs, "summary"
   -- Built hidden: the content frames keep their rect since Craft 2.51.0 (FR-153).
   local panes = { summary = tabs:GetContentFrame("summary"), history = tabs:GetContentFrame("history") }
   P.panes = panes
 
   buildSummary(panes.summary, function() tabs:SetActiveTab("history") end)
 
-  -- History: F6d. Until then, the same "coming soon" state as the other pages.
-  local empty = Craft.Empty:Create(panes.history, { title = L.MW_SOON_TITLE,
-    description = L.MW_SOON_DESC, icon = "hourglass" })
-  local ef = empty:GetFrame()
-  ef:SetPoint("TOPLEFT", panes.history, "TOPLEFT", 0, -S.pageTop)
-  ef:SetPoint("RIGHT", panes.history, "RIGHT", 0, 0)
+  HistoryTab:Build(panes.history, B)
 
   self:OnModuleChange(refreshModule)
   refreshModule()
@@ -438,21 +436,31 @@ function Page:Build(page, blocks)
     if acc < TICK then return end
     acc = 0
     Page:RefreshRun()
+    HistoryTab:Tick()
   end)
   page:SetScript("OnShow", function()
     refreshModule()
     refreshSettings()   -- /qdt auto, /qdt it compact and /qdt it mark change them too
     Page:RefreshRun()
+    if P.tab == "history" then HistoryTab:Refresh() end
   end)
   if ns.itLoaded and ns.InstanceTracker then
     ns.InstanceTracker:OnChange(function() if page:IsVisible() then Page:RefreshRun() end end)
   end
 end
 
--- Shows the History tab (F6d entry points: /qdt history, the toast button).
+-- Shows a tab of the page ("summary" | "history").
 function Page:ShowTab(id)
   if P.tabs then P.tabs:SetActiveTab(id) end
 end
+
+-- Opens the main window on the History tab: /qdt history, the toast button, Home › OPEN.
+function Page:OpenHistory()
+  ns.MainWindow:Open("it")
+  self:ShowTab("history")
+end
+
+function Page:ActiveTab() return P.tab end
 
 -- For /qdt check f2: what was built (plain values only).
 function Page:Snapshot()

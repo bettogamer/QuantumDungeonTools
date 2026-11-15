@@ -19,7 +19,7 @@ L.HELP_LINES   = {
   "/qdt it mark <marker> -- raid marker of the right click on a boss (default: skull)",
   "/qdt it alert <toast | cap | near> -- preview the end-of-run toast or the instance alerts",
   "/qdt new -- forget the current run and start a new one",
-  "/qdt history -- last runs (time, bosses, XP)",
+  "/qdt history -- opens the run history",
   "/qdt auto -- open the window automatically inside dungeons (on/off)",
   "/qdt info -- version",
   "/qdt check f1 [label | off] -- Forever probes snapshot (dev)",
@@ -33,10 +33,6 @@ L.IT_STATS          = "Bosses %d/%s  |  %s  |  XP +%s"
 L.IT_NEW_RUN        = "new run started."
 L.IT_RUN_CLOSED     = "run closed (you are not in a dungeon)."
 L.IT_AUTO           = "auto show: %s"
-L.IT_HISTORY_EMPTY  = "no runs in the history yet."
-L.IT_HISTORY_HEADER = "last runs:"
-L.IT_HISTORY_LINE   = "%s (%s): %d/%d bosses, %s, XP +%s%s"
-L.IT_INCOMPLETE     = " [incomplete]"
 
 -- Instance Tracker widget (plan M1 F2)
 L.IT_BOSSES         = "Bosses %s"
@@ -185,6 +181,26 @@ L.IT_P_RESET_RUN   = "Reset the run"
 L.IT_P_CONFIRM     = "Sure? Click again"
 L.IT_P_HIST_LINE   = "%d of %d runs saved · record in %d dungeons"
 L.IT_P_SEE_HISTORY = "See history ›"
+L.IT_H_DUNGEON     = "Dungeon"
+L.IT_H_DIFFICULTY  = "Difficulty"
+L.IT_H_CHAR        = "Character"
+L.IT_H_ALL_F       = "All"
+L.IT_H_ALL_M       = "All"
+L.IT_H_HOUR        = "Instances last hour"
+L.IT_H_COLS        = { date = "Date", char = "Character", time = "Time", delta = "vs. record", deaths = "Deaths",
+                       xp = "XP", gold = "Gold", rep = "Rep.", group = "Group" }
+L.IT_H_RECORD      = "record"
+L.IT_H_UNFINISHED  = "unfinished"
+L.IT_H_RUN1        = "1 run"
+L.IT_H_RUNS        = "%d runs"
+L.IT_H_MEAN        = "mean %s"
+L.IT_H_BEST        = "record %s"
+L.IT_H_KEPT        = "The last %d of the account are kept"
+L.IT_H_EMPTY       = "No runs yet: one is saved when you finish a dungeon or leave it with a boss down."
+L.IT_H_NO_MATCH    = "No run matches these filters."
+L.IT_H_TODAY       = "Today"
+L.IT_H_YESTERDAY   = "Yesterday"
+L.IT_H_MONTHS      = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" }
 L.IT_SET = {   -- { label, hint } per Settings.WIDGET key
   autoShow    = { "Show when entering a dungeon", "Hides on its own outside" },
   compact     = { "Compact mode", "One line; the list shows on hover" },
@@ -213,7 +229,7 @@ if locale == "esES" or locale == "esMX" then
     "/qdt it mark <marca> -- marca del clic derecho en un jefe (por defecto: calavera)",
     "/qdt it alert <toast | cap | near> -- ver el toast de fin de run o los avisos de instancias",
     "/qdt new -- olvidar la run actual y empezar otra",
-    "/qdt history -- últimas runs (tiempo, jefes, XP)",
+    "/qdt history -- abre el historial de runs",
     "/qdt auto -- abrir la ventana sola al entrar en mazmorras (sí/no)",
     "/qdt info -- versión",
     "/qdt check f1 [etiqueta | off] -- foto de las sondas de Forever (dev)",
@@ -226,10 +242,6 @@ if locale == "esES" or locale == "esMX" then
   L.IT_NEW_RUN        = "nueva run iniciada."
   L.IT_RUN_CLOSED     = "run cerrada (no estás en una mazmorra)."
   L.IT_AUTO           = "mostrar automáticamente: %s"
-  L.IT_HISTORY_EMPTY  = "todavía no hay runs en el historial."
-  L.IT_HISTORY_HEADER = "últimas runs:"
-  L.IT_HISTORY_LINE   = "%s (%s): %d/%d jefes, %s, XP +%s%s"
-  L.IT_INCOMPLETE     = " [incompleta]"
 
   L.IT_BOSSES         = "Jefes %s"
   L.IT_VS_PB          = "vs. récord %s"
@@ -373,6 +385,26 @@ if locale == "esES" or locale == "esMX" then
   L.IT_P_CONFIRM     = "¿Seguro? Otro clic"
   L.IT_P_HIST_LINE   = "%d de %d runs guardadas · récord en %d mazmorras"
   L.IT_P_SEE_HISTORY = "Ver historial ›"
+  L.IT_H_DUNGEON     = "Mazmorra"
+  L.IT_H_DIFFICULTY  = "Dificultad"
+  L.IT_H_CHAR        = "Personaje"
+  L.IT_H_ALL_F       = "Todas"
+  L.IT_H_ALL_M       = "Todos"
+  L.IT_H_HOUR        = "Instancias última hora"
+  L.IT_H_COLS        = { date = "Fecha", char = "Personaje", time = "Tiempo", delta = "vs. récord", deaths = "Muertes",
+                         xp = "XP", gold = "Oro", rep = "Rep.", group = "Grupo" }
+  L.IT_H_RECORD      = "récord"
+  L.IT_H_UNFINISHED  = "sin terminar"
+  L.IT_H_RUN1        = "1 run"
+  L.IT_H_RUNS        = "%d runs"
+  L.IT_H_MEAN        = "media %s"
+  L.IT_H_BEST        = "récord %s"
+  L.IT_H_KEPT        = "Se guardan las últimas %d de la cuenta"
+  L.IT_H_EMPTY       = "Aún no hay runs: se guarda una al terminar una mazmorra o al salir con algún jefe muerto."
+  L.IT_H_NO_MATCH    = "Ninguna run coincide con estos filtros."
+  L.IT_H_TODAY       = "Hoy"
+  L.IT_H_YESTERDAY   = "Ayer"
+  L.IT_H_MONTHS      = { "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic" }
   L.IT_SET = {
     autoShow    = { "Mostrar al entrar en una mazmorra", "Fuera se oculta solo" },
     compact     = { "Modo compacto", "Una línea; la lista sale con el mouse" },

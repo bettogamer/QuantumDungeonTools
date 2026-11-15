@@ -5,7 +5,7 @@
 --     the game refuses an entry ("You have entered too many instances recently.").
 --   * Amber strip: on entering the 8th and 9th instance of the hour; gone after 8 s.
 --   * End-of-run toast: time, delta and NEW RECORD, four stats and "Share with group".
---     The "History" button waits for the History window (F6).
+--     "History" opens the History tab of the main window (F6d).
 -- WHAT to show comes from core/Alerts.lua (pure, tested); colors and sizes from core/Style.lua;
 -- fonts, borders and tags from the widget's kit (UI:Kit), so a theme change re-fonts them too.
 -- Every panel is solid (no HUD outline) and a click on its body closes it.
@@ -373,6 +373,8 @@ local function buildToast()
   toast.share = kit.Craft.Button:Create(toast, { text = L.IT_A_SHARE, size = "sm", onClick = share,
     -- default = the theme's primary: gold with navy text (artboard «Oro Forever»)
     fontFlags = FONT.toastButton.flags })
+  toast.history = kit.Craft.Button:Create(toast, { text = L.IT_A_HISTORY, size = "sm", variant = "outline",
+    fontFlags = FONT.toastButton.flags, onClick = function() ns.InstanceTrackerPage:OpenHistory() end })
 end
 
 local function layoutToast()
@@ -395,6 +397,9 @@ local function layoutToast()
   local btn = toast.share:GetFrame()
   btn:ClearAllPoints()
   btn:SetPoint("TOPRIGHT", toast, "TOPRIGHT", -S.alertPadX, -y)
+  local hist = toast.history:GetFrame()
+  hist:ClearAllPoints()
+  hist:SetPoint("RIGHT", btn, "LEFT", -S.toastButtonGap, 0)
   toast:SetHeight(y + btn:GetHeight() + S.alertPadY)
 end
 

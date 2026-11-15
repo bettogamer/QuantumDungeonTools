@@ -86,6 +86,7 @@ modules\InstanceTracker\core\Demo.lua
 modules\InstanceTracker\wow\Tracker.lua
 modules\InstanceTracker\wow\UI.lua
 modules\InstanceTracker\wow\Alerts.lua
+modules\InstanceTracker\wow\HistoryTab.lua
 modules\InstanceTracker\wow\Page.lua
 modules\InstanceTracker\wow\CheckF1.lua
 modules\InstanceTracker\wow\CheckF2.lua

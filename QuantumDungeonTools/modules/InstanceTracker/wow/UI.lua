@@ -172,12 +172,17 @@ end
 local BLANK = [[Interface\AddOns\QuantumDungeonTools\media\blank]]
 local function spacer(px) return "|T" .. BLANK .. ":1:" .. px .. "|t" end
 
-local function moneyText(copper)
+local function coinText(copper)
   local s = GetMoneyString and GetMoneyString(copper, true) or GetCoinTextureString(copper)
   s = s:gsub("|T([^|:]+):[^|]*|t", spacer(S.coinBefore) .. "|T%1:" .. S.coinSize .. "|t")
   s = s:gsub("|t +(%d)", "|t" .. spacer(S.coinAfter) .. "%1")   -- the next denomination
-  return "+" .. s .. " "
+  return s .. " "
 end
+
+local function moneyText(copper) return "+" .. coinText(copper) end
+
+-- Coins without the "+" (the History table): usable before Init and with the module off.
+UI.coinText = coinText
 
 -- "+350 Undercity": the amount in cream, the faction in the row's muted color.
 local function repText(rep)

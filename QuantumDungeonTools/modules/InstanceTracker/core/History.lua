@@ -173,6 +173,76 @@ function History.summary(list)
   return { count = count, mean = n > 0 and sum / n or nil, best = best }
 end
 
+------------------------------------------------------------------------------
+-- Table layout and cells (the wow/ tab paints exactly this)
+------------------------------------------------------------------------------
+-- The 9 columns of the artboard grid (CSS fr weights).
+History.COLUMNS = {
+  { key = "date", fr = 1.1 }, { key = "char", fr = 0.9 }, { key = "time", fr = 0.7 },
+  { key = "delta", fr = 0.8 }, { key = "deaths", fr = 0.6 }, { key = "xp", fr = 0.9 },
+  { key = "gold", fr = 0.9 }, { key = "rep", fr = 0.6 }, { key = "group", fr = 1.5 },
+}
+
+-- CSS grid over a row `width` wide with `pad` on both sides and `gap` between columns:
+-- { { x, w } ... } in whole pixels (x from the row's left edge). Never negative.
+function History.columns(width, gap, pad)
+  local cols = History.COLUMNS
+  gap, pad = gap or 0, pad or 0
+  local free = math.max(0, (width or 0) - 2 * pad - (#cols - 1) * gap)
+  local sum = 0
+  for _, c in ipairs(cols) do sum = sum + c.fr end
+  local out, x = {}, pad
+  for i, c in ipairs(cols) do
+    local w = math.floor(free * c.fr / sum)
+    out[i] = { x = math.floor(x + 0.5), w = w }
+    x = x + free * c.fr / sum + gap
+  end
+  return out
+end
+
+-- Text + tone of every text cell of a display row (artboard colors): the gold cell is drawn
+-- by the UI with coin icons (`copper`; 0 = DASH). Tones: core/Style.lua TONE names or palette
+-- roles ("sand"). L = { record = "record", unfinished = "unfinished" }.
+function History.cells(row, L)
+  L = L or {}
+  local D = History.DASH
+  local kind = row.kind
+  local time = kind == "record" and "ahead" or (kind == "unfinished" and "pending" or "text")
+  local delta, deltaTone
+  if kind == "record" then
+    delta, deltaTone = L.record or "record", "ahead"
+  elseif kind == "unfinished" then
+    delta, deltaTone = L.unfinished or "unfinished", "pending"
+  elseif kind == "behind" or kind == "ahead" then
+    delta, deltaTone = row.delta, kind
+  else
+    delta, deltaTone = D, "pending"
+  end
+  return {
+    date = { text = row.date, tone = "sand" },
+    char = { text = row.char or D, tone = row.char and "text" or "pending" },
+    time = { text = row.time, tone = time },
+    delta = { text = delta, tone = deltaTone },
+    deaths = { text = tostring(row.deaths), tone = "text" },
+    xp = { text = row.xp, tone = row.xp == D and "pending" or "xp" },
+    rep = { text = row.rep, tone = row.rep == D and "pending" or "text" },
+    group = { text = row.group or D, tone = row.group and "muted" or "pending" },
+    record = kind == "record",
+  }
+end
+
+-- "12 runs · mean 33:05 · record 29:51" (parts without data are left out).
+-- L = { run1 = "1 run", runs = "%d runs", mean = "mean %s", best = "record %s" }.
+function History.footer(s, L)
+  L = L or {}
+  s = s or {}
+  local n = s.count or 0
+  local parts = { n == 1 and (L.run1 or "1 run") or (L.runs or "%d runs"):format(n) }
+  if s.mean then parts[#parts + 1] = (L.mean or "mean %s"):format(Format.clock(s.mean)) end
+  if s.best then parts[#parts + 1] = (L.best or "record %s"):format(Format.clock(s.best)) end
+  return table.concat(parts, " \194\183 ")
+end
+
 -- Distinct dungeon + difficulty pairs with a record (the Summary tab: "récord en 9 mazmorras").
 function History.recordCount(records)
   local n = 0

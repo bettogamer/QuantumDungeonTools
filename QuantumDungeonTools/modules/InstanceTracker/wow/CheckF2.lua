@@ -101,6 +101,14 @@ function C:Run()
     pageProbe = ps.probe
     -- Rects only resolve once the page has been on screen: checked when the window was open.
     if wasShown then check("page it painted", ps.painted, ps.probe and ps.probe.last) end
+    -- F6d: the History tab builds its 9 columns and paints one row per saved run that passes
+    -- the filters (then the tab the owner had open comes back).
+    local before = Page:ActiveTab()
+    local okH, errH = pcall(Page.ShowTab, Page, "history")
+    local hs = ns.InstanceHistoryTab:Snapshot()
+    check("page history", okH and hs.built and hs.cols == 9 and hs.shown == hs.filtered,
+      okH and (hs.cols .. " cols, " .. hs.shown .. "/" .. hs.filtered .. " rows, " .. hs.saved .. " saved") or errH)
+    if before ~= "history" then pcall(Page.ShowTab, Page, before) end
     if not wasShown and MW:IsShown() then MW:Toggle() end
   end
 
