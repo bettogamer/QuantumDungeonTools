@@ -688,25 +688,44 @@ end
 ------------------------------------------------------------------------------
 -- API
 ------------------------------------------------------------------------------
--- The artboards mark the active sidebar row with a 2 px gold bar on its left edge; Craft's
--- Sidebar only paints the wash (FR-154 of Craft). Until then: our own bar, anchored to the active
--- row read from a private field (pooled rows) under pcall, re-placed on every navigation.
-local activeBar
+-- The artboards mark the active sidebar row edge to edge: the wash spans the whole sidebar and a
+-- 2 px gold bar sits on its left edge. Craft's Sidebar insets its rows (group padding) and only
+-- paints the wash (FR-154 of Craft). Until then: our own bar on the sidebar's left edge plus the
+-- active-row color in the two side gaps, at the height of the active row (read from a private
+-- field, pooled rows, under pcall), re-placed on every navigation.
+local activeBar   -- holder frame: .bar, .left, .right
 local function markActive(sb, id)
+  local sf = side:GetFrame()
   if not activeBar then
-    local holder = CreateFrame("Frame", nil, side:GetFrame():GetParent())
-    holder:SetFrameLevel(side:GetFrame():GetFrameLevel() + 20)
-    holder:SetAllPoints(side:GetFrame():GetParent())
-    activeBar = holder:CreateTexture(nil, "OVERLAY")
-    activeBar:SetWidth(2)
-    kit.setColor(activeBar, C.gold)
+    activeBar = CreateFrame("Frame", nil, sf:GetParent())
+    activeBar:SetFrameLevel(sf:GetFrameLevel() + 20)
+    local function tex(layer, color)
+      local t = activeBar:CreateTexture(nil, layer)
+      kit.setColor(t, color)
+      return t
+    end
+    activeBar.left, activeBar.right = tex("ARTWORK", C.sidebarActive), tex("ARTWORK", C.sidebarActive)
+    activeBar.bar = tex("OVERLAY", C.gold)
+    activeBar.bar:SetWidth(2)
   end
   local ok, row = pcall(function() return sb._itemFrames[id].frame end)
   if not (ok and row) then return false end
-  activeBar:ClearAllPoints()
-  activeBar:SetPoint("TOPLEFT", row, "TOPLEFT")
-  activeBar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT")
-  activeBar:Show()
+  local H = activeBar
+  H:ClearAllPoints()
+  H:SetPoint("TOP", row, "TOP")
+  H:SetPoint("BOTTOM", row, "BOTTOM")
+  H:SetPoint("LEFT", sf, "LEFT")
+  H:SetPoint("RIGHT", sf, "RIGHT")
+  H.left:ClearAllPoints()
+  H.left:SetPoint("TOPLEFT", H, "TOPLEFT")
+  H.left:SetPoint("BOTTOMRIGHT", row, "BOTTOMLEFT")
+  H.right:ClearAllPoints()
+  H.right:SetPoint("TOPLEFT", row, "TOPRIGHT")
+  H.right:SetPoint("BOTTOMRIGHT", H, "BOTTOMRIGHT")
+  H.bar:ClearAllPoints()
+  H.bar:SetPoint("TOPLEFT", H, "TOPLEFT")
+  H.bar:SetPoint("BOTTOMLEFT", H, "BOTTOMLEFT")
+  H:Show()
   return true
 end
 
