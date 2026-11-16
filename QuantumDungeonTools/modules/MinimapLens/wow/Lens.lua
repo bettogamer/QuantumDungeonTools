@@ -277,7 +277,8 @@ function UI:Warn(kind, owner)
   if warned[kind] then return end
   warned[kind] = true
   if snap and current then current.warned = current.warned .. kind .. " " end
-  local body, title = nil, L.LENS_SOFT_TITLE
+  local body
+  local title = L.LENS_SOFT_TITLE
   if kind == "pinned" then
     title = L.LENS_PINNED_TITLE
     body = owner == "eui" and L.LENS_PINNED_EUI or L.LENS_PINNED:format(ownerLabel(owner))
