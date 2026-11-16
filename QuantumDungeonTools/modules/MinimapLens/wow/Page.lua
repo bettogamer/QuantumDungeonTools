@@ -147,7 +147,7 @@ local function refreshCoexist()
     kit.setTag(P.ownerTag, L.LENS_P_NORMAL, C.muted, C.mutedTag)
     P.ownerTitle:SetText(L.LENS_P_BLIZZARD)
   else
-    kit.setTag(P.ownerTag, L.LENS_P_SOFT, C.gold, C.gold)
+    kit.setTag(P.ownerTag, L.LENS_P_SOFT, C.gold, C.goldTag)
     P.ownerTitle:SetText(L.LENS_P_DETECTED:format(Lens.ownerName(owner) or L.LENS_OTHER_UI))
   end
   P.ownerHelp:SetText(L[OWNER_HELP[owner] or "LENS_P_HELP_OTHER"])

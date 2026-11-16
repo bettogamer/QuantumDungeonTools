@@ -180,7 +180,7 @@ L.LENS_P_GATHER_OFF   = "herbs and ores hidden"
 L.LENS_P_GATHER_KEEP  = "tracking untouched"
 L.LENS_P_RESET        = "Reset the lens ›"
 L.LENS_SET = {   -- { label, hint } per lens setting
-  size          = { "Size", "Compared to the normal minimap" },
+  size          = { "Size", "Vs. the normal minimap" },
   opacity       = { "Opacity", "Map and the icons around it" },
   zoomStep      = { "Extra zoom when it opens", "One step closer; closing it brings yours back" },
   hideGathering = { "Hide herbs and ores", "Only while it is on; restored afterwards" },
@@ -197,12 +197,10 @@ L.LENS_P_NORMAL       = "BLIZZARD"
 L.LENS_P_DETECTED     = "%s minimap detected"
 L.LENS_P_BLIZZARD     = "Blizzard's minimap"
 L.LENS_P_HELP_NONE    = "Nobody else moves the minimap: the lens changes it and puts it back as it was."
-L.LENS_P_HELP_EUI     = "EllesmereUI puts the minimap back when you enter the dungeon: the lens re-applies"
-  .. " after it, without fighting. If it still overrides it, you get one warning."
-L.LENS_P_HELP_ELVUI   = "The lens changes ElvUI's minimap and gives it back the same. With ElvUI's"
-  .. " «Reset Zoom» on, the extra zoom step lasts a few seconds."
-L.LENS_P_HELP_OTHER   = "Another addon shapes the minimap: the lens leaves its mask alone and re-applies"
-  .. " after it. If it keeps overriding it, you get one warning."
+L.LENS_P_HELP_EUI     = "EllesmereUI resets the minimap: the lens re-applies after it and warns you once if it insists."
+L.LENS_P_HELP_ELVUI   = "With ElvUI's «Reset Zoom» on, the extra zoom step only lasts a few seconds."
+L.LENS_P_HELP_OTHER   = "Another addon shapes the minimap: the lens re-applies after it and warns you"
+  .. " once if it insists."
 
 -- Main window (plan M1 F6b)
 L.MW_HOME          = "Home"
@@ -475,7 +473,7 @@ if locale == "esES" or locale == "esMX" then
   L.LENS_P_GATHER_KEEP  = "rastreo sin tocar"
   L.LENS_P_RESET        = "Restablecer la lente ›"
   L.LENS_SET = {
-    size          = { "Tamaño", "Respecto al minimapa normal" },
+    size          = { "Tamaño", "Vs. el minimapa normal" },
     opacity       = { "Opacidad", "Mapa e iconos de alrededor" },
     zoomStep      = { "Zoom extra al activarla", "Un paso más cerca; al apagarla vuelve el tuyo" },
     hideGathering = { "Ocultar hierbas y minas", "Solo mientras está activa; luego se restaura" },
@@ -492,12 +490,10 @@ if locale == "esES" or locale == "esMX" then
   L.LENS_P_DETECTED     = "Minimapa de %s detectado"
   L.LENS_P_BLIZZARD     = "Minimapa de Blizzard"
   L.LENS_P_HELP_NONE    = "Nadie más mueve el minimapa: la lente lo cambia y lo devuelve igual."
-  L.LENS_P_HELP_EUI     = "EllesmereUI vuelve a colocar el minimapa al entrar en la mazmorra: la lente se"
-    .. " reaplica después, sin pelear. Si aun así lo pisa, te avisamos una vez."
-  L.LENS_P_HELP_ELVUI   = "La lente cambia el minimapa de ElvUI y lo devuelve igual. Si tienes activado"
-    .. " «Reiniciar zoom» en ElvUI, el paso de zoom extra durará unos segundos."
-  L.LENS_P_HELP_OTHER   = "Otro addon da forma al minimapa: la lente no toca su máscara y se reaplica"
-    .. " después. Si aun así lo pisa, te avisamos una vez."
+  L.LENS_P_HELP_EUI     = "EllesmereUI recoloca el minimapa: la lente se reaplica después y te avisa"
+    .. " una vez si insiste."
+  L.LENS_P_HELP_ELVUI   = "Con «Reiniciar zoom» activado en ElvUI, el paso de zoom extra dura unos segundos."
+  L.LENS_P_HELP_OTHER   = "Otro addon da forma al minimapa: la lente se reaplica después y te avisa una vez si insiste."
 
   L.CHECK_F1_SAVED  = "check f1: foto %d guardada (%s)."
   L.CHECK_F1_LOCK   = "lockout: %s/%s muertos, %d filas de jefe"
