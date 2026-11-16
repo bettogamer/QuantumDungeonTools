@@ -43,7 +43,10 @@ local function snap(label, s)
 end
 
 for i, r in ipairs(c.runs) do
-  if not only or only == i then
+  if r.kind == "sys" and (not only or only == i) then
+    print(("== run %d  %s  (ping system) =="):format(i, r.date or "?"))
+    for _, l in ipairs(r.lines) do print("  " .. l) end
+  elseif not only or only == i then
     print(("== run %d  %s =="):format(i, r.date or "?"))
     snap("before", r.before)
     for _, n in ipairs(r.notes) do print("  note: " .. n) end

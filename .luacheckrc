@@ -63,6 +63,7 @@ files = {
             "GetPlayerFacing", "C_Map", "GetUnitSpeed", "C_Minimap", "GetCVar", "Minimap", "date",
             "UnitExists", "UnitIsConnected", "UnitIsVisible", "UnitDistanceSquared", "UnitInRange",
             "CheckInteractDistance", "C_Item", "IsItemInRange", "UnitIsUnit",
+            "EnumerateFrames", "C_Ping", "Enum",
         },
     },
 
