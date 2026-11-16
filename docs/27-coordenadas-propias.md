@@ -89,4 +89,25 @@ Lectura: `/reload` y luego `lua scripts/read-check-pos.lua`.
 
 ## Resultados
 
-_(pendiente de la prueba in-game)_
+### Tanda 1 — mundo abierto, Tarren Mill (2026-11-16), con `UnitPosition` como verdad
+- **`MINIMAP_PING` NO existe en el cliente** (`Attempt to register unknown event`), aunque el api-db
+  lo lista. Sin evento: los pings de otros solo se ven leyendo `GetPingPosition` (sondeo).
+- **`GetPingPosition()` es público** y cambia mientras te mueves (96 valores distintos en 30 s).
+- **Semántica medida** (encaja en los dos tramos, antes y después del giro):
+  `GetPingPosition()` = posición **del ping respecto a ti**, ejes del minimapa (x = este, y = norte),
+  en **fracción del diámetro del minimapa**: `k = 1 / (2 · C_Minimap.GetViewRadius())` por yarda
+  (0,00214 teórico frente a 0,00217 medido; `viewRadius` = 233,3 yd con zoom 0 al aire libre).
+  Con `UnitPosition` = (norte, oeste): `ΔpingX = +k·Δoeste`, `ΔpingY = −k·Δnorte`.
+  ⇒ **tu posición respecto al origen, en yardas = (−px, −py) · 2 · viewRadius** (este, norte).
+- **El ping sigue vivo ≥ 15 s** (el aro se apaga a los ~5 s; la lectura sigue siguiéndote).
+- `PingLocation(0.144, 0.054)` (con las unidades de `GetPingPosition`) puso el ping nuevo **sobre
+  el jugador**: sus argumentos van en otra unidad. Hipótesis: píxeles del minimapa desde el centro
+  → la tanda 2 encadena con `(px·ancho, py·alto)`.
+- El rumbo se puede **deducir del movimiento** (dos lecturas seguidas), sin `GetPlayerFacing`.
+
+### Pendiente (tanda 2)
+1. **Dentro de una mazmorra** (lo decisivo): ¿`GetPingPosition` sigue público y moviéndose?
+   ¿`viewRadius` en interior?
+2. `/qdt check pos 180` (sin encadenar): ¿cuánto vive el ping?
+3. Encadenado en píxeles: ¿conserva el origen (lectura igual antes y después)?
+4. Con un compañero en grupo: ¿su ping mueve tu `GetPingPosition`? Rangos e ítems contra `party1`.

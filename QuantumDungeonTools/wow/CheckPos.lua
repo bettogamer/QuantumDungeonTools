@@ -163,7 +163,7 @@ local function finish()
   active, current = false, nil
 end
 
-local function tour()
+local function tour(duration)
   local r = QuantumDungeonToolsDB._checkPos
   if not r or r.format ~= FORMAT then
     r = { format = FORMAT, runs = {} }
@@ -179,22 +179,34 @@ local function tour()
   local ping = mm("PingLocation", 0, 0)
   current.notes[#current.notes + 1] = "ping(0,0)=" .. joined(ping)
   say("pinged your spot. WALK straight now ~10 s, then turn right ~90 degrees and walk ~10 s, then stop.")
-  local chained = false
+  -- Run 1 (open world): PingLocation(0.144, 0.054) put the new ping on the PLAYER, so its args are
+  -- not GetPingPosition's units (fraction of the minimap diameter). Hypothesis: minimap pixels
+  -- from the centre -> re-ping at (px * width, py * height) should land on the OLD ping.
+  local chained, chainCheck = duration ~= TOUR, nil
   ticker = C_Timer.NewTicker(STEP, function()
     local t = GetTime() - current.t0
     sample(t)
+    if chainCheck then
+      local nx, ny = pingPos()
+      current.notes[#current.notes + 1] = ("chain: before %s,%s -> after %s,%s (same = origin kept)")
+        :format(tostring(enc(chainCheck[1])), tostring(enc(chainCheck[2])), tostring(enc(nx)), tostring(enc(ny)))
+      chainCheck = nil
+    end
     if not chained and t >= CHAIN_AT then
       chained = true
       local px, py = pingPos()
       current.notes[#current.notes + 1] = "sink=" .. sinkTest(px, py)
       if type(px) == "number" and not issecretvalue(px) then
-        current.notes[#current.notes + 1] = ("chain ping(%s,%s)=%s"):format(
-          tostring(enc(px)), tostring(enc(py)), joined(mm("PingLocation", px, py)))
+        local w, h = Minimap:GetSize()
+        current.notes[#current.notes + 1] = ("chain ping(%s,%s) [pos x size %s,%s]=%s"):format(
+          tostring(enc(px * w)), tostring(enc(py * h)), tostring(enc(w)), tostring(enc(h)),
+          joined(mm("PingLocation", px * w, py * h)))
+        chainCheck = { px, py }
       else
         current.notes[#current.notes + 1] = "chain skipped: ping pos " .. tostring(enc(px))
       end
     end
-    if t >= TOUR then finish() end
+    if t >= duration then finish() end
   end)
 end
 
@@ -202,10 +214,11 @@ function C:Run(arg)
   if arg == "reset" then
     QuantumDungeonToolsDB._checkPos = nil
     say("dumps cleared.")
-  elseif arg == "" then
+  elseif arg == "" or tonumber(arg) then
+    -- `/qdt check pos 180`: long tour WITHOUT the chain ping, to see how long the ping lives.
     if active then say("already running.") return end
-    tour()
+    tour(math.max(10, math.min(600, tonumber(arg) or TOUR)))
   else
-    say("usage: /qdt check pos  |  /qdt check pos reset")
+    say("usage: /qdt check pos [seconds]  |  /qdt check pos reset")
   end
 end
