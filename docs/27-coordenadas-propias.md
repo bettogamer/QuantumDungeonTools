@@ -113,6 +113,17 @@ Lectura: `/reload` y luego `lua scripts/read-check-pos.lua`.
 - `GetUnitSpeed("player")` es **público** dentro y fuera de combate: da la distancia recorrida, pero
   sin rumbo no da posición.
 
+Repetida con el encadenado en píxeles (tanda 3): también 0,0 antes y después.
+
+### Tanda 4 — sistema de pings de 10.1 (`C_Ping`), dentro, solo (2026-11-16)
+- `C_Ping` existe y `IsPingSystemEnabled()` = true; `C_Ping.SendMacroPing({type=Warning,
+  targetToken="player"})` no lanza error desde el addon.
+- **0 marcos nuevos** visibles para el addon a los 2 s y a los 6 s (`EnumerateFrames`): el marco del
+  ping lo gestiona `C_PingSecure` y no se ve desde el addon (prohibido o creado antes).
+- `GetPingPosition()` sigue en 0,0: este sistema no comparte nada con el ping del minimapa.
+- Por diseño solo trabaja con unidades y con clics en pantalla: ninguna API devuelve coordenadas.
+  ⇒ **descartado**.
+
 ### Lo que queda
 - **Solo:** ninguna señal da posición ni rumbo → **no viable** un sistema de coordenadas propio.
 - **En grupo (vía B, sin medir):** malla de rangos entre clientes con QDT → radar relativo tosco
