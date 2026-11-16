@@ -40,3 +40,7 @@ Roles de la paleta B: gold, cream, panel, track, tickIdle, muted.
 
 ## Lo que NO toqué
 Tamaño 32x18 y animación (Lyra, `Switch.lua:17-21`); estados hover/disabled (no están en la captura: pedir captura si importan); el resto de controles de la página.
+
+## Resolución (2026-11-15)
+
+Se mantiene el thumb tal cual (veredicto aceptado por el owner); sin commit de código.

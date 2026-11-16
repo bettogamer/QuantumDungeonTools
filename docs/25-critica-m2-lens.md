@@ -86,3 +86,9 @@ Se ve: panel oscuro con borde dorado, icono lupa + título dorado «Minimap Lens
 - El texto en español no se ha visto renderizado: pedir captura con cliente es-ES si importa el ajuste de líneas.
 
 Cierre del toast: ninguno bloquea; T1 conviene antes de dar F3 por cerrada visualmente.
+
+## Resolución (2026-11-15)
+
+- Página: 1, 2 y 3 resueltos en `123ec11`. 4 (tecla «,») y 5 (pestaña única): se quedan así (owner).
+- Toast: T1 y T3 resueltos en `f7df9b5`/`a9ed7c4`, verificado in-game con `/qdt lens notice pinned`.
+  T2 (opacidad del fondo) y T4: se quedan así (owner). T5: sin cambio, igual que el resto de toasts.

@@ -6,6 +6,16 @@
 > desarrolla en `main` **oculto tras el «PRONTO»** del sidebar mientras dura la beta
 > `0.1.0-beta.1` del Instance Tracker. **Una sesión por fase.** Este doc es el registro vivo.
 
+
+> ## ✅ M2 CERRADO (2026-11-15, v0.1.0-beta.2) — F0-F5 cerradas, 219 tests en verde
+>
+> Minimap Lens agranda el minimapa real a demanda y lo devuelve intacto, convive con EllesmereUI y
+> ElvUI y tiene su página de ajustes. Restos: pasos 5-6 de F4 y bloque B de F1 → run agrupada en
+> mazmorra (owner); captura del modo Mover → opcional.
+>
+> **Trabajo futuro elegible:** flecha/posición del jugador (sin datos en instancia), activación
+> automática, rotación del minimapa (ver «Fuera de este hito» en §Fases).
+
 ## Contexto
 
 M1 (Instance Tracker) está cerrado en código y en beta para la guild. Minimap Lens viene de la
@@ -599,9 +609,11 @@ Estado del cierre (2026-11-15):
       luacheck 0/0, taintlint 0/0/0 (db 1.60.1), 18 specs 219 ok, check-upvalues ok.
 - [x] Puntos abiertos: todos cerrados (el 10 no hizo falta).
 - [x] CHANGELOG: F2-F5 ya están en `[Unreleased]`.
-- [ ] `ui-critic` sobre la página de la lente, la lente activa y el toast: faltan capturas del owner.
-- [ ] Versión de la release (owner) → entrada de NewsData con esa versión y ritual de doc 04 §Release.
-- [ ] Al cerrar: bloque «✅ M2 CERRADO» arriba del todo y poda de AGENTS.md.
+- [x] `ui-critic`: switch (doc 24), página, lente y toast (doc 25), todo «resuelto» o «se queda así» (owner).
+- [x] Versión `0.1.0-beta.2` (owner): CHANGELOG, NewsData y changelog de CurseForge (`03cd1d2`), tag local.
+- [x] Bloque «✅ M2 CERRADO» arriba y línea de estado de AGENTS.md.
+- [ ] Modo Mover sin captura revisada (no bloquea: probado en el guion de F5).
 
-**Siguiente:** capturas del owner para `ui-critic` y decisión de versión; luego NewsData + release.
-Siguen para la run agrupada en mazmorra: pasos 5-6 de F4 y el bloque B de F1.
+**Siguiente:** subir `0.1.0-beta.2` a CurseForge (`docs/curseforge/upload.md`; imagen nueva
+`docs/curseforge/screenshots/out/04-minimap-lens.png`). Siguen para la run agrupada en mazmorra:
+pasos 5-6 de F4 y el bloque B de F1.
