@@ -4,27 +4,23 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ## [Unreleased]
 
+## [0.1.0-beta.2] - 2026-11-15
+
 ### Añadido
 
-- **Minimap Lens, núcleo (M2 F2, en desarrollo y oculto tras «PRONTO»):** `/qdt lens` agranda el
-  minimapa real a un cuadrado de 2,6× su lado, en su propia posición, un paso de zoom más cerca,
-  con el contorno QDT en lugar del aro de Blizzard y los iconos de addons alrededor; al apagarla
-  (o al recargar / pantalla de carga) todo vuelve como estaba, también en combate.
-- **Minimap Lens, convivencia (M2 F3):** si otro UI (EllesmereUI, ElvUI u otro addon) vuelve a
-  colocar el minimapa con la lente puesta, la lente repone solo lo que cambió, sin pelear; si
-  insiste, cede y avisa una vez con un toast. También avisa si el minimapa está pegado en
-  EllesmereUI y la lente no se puede mover.
-- **Minimap Lens, disparadores (M2 F4):** atajo de teclado en Opciones › Atajos › AddOns ›
-  Quantum Dungeon Tools (sin tecla por defecto) y botón lupa pegado al minimapa, que solo aparece
-  dentro de una instancia (o con la lente puesta) y enseña en su tooltip el atajo asignado. La
-  lente se cierra sola al salir de la instancia y al abrir el Modo edición.
-- **Minimap Lens, página del módulo (M2 F5):** la fila «Minimap Lens» de la ventana principal ya
-  no lleva «PRONTO». Interruptor del módulo (al momento, sin recargar), «Probar la lente» y
-  «Mover la lente» (un cuadrado dorado que se arrastra a donde irá la lente); deslizadores de
-  tamaño y opacidad que cambian la lente en vivo; interruptores de zoom extra, ocultar hierbas y
-  minas mientras está activa y bloquear la posición (sin bloquear, la lente se arrastra con el
-  ratón); el atajo asignado con un botón para abrir Atajos, y quién manda en el minimapa. El aviso
-  de convivencia trae el botón «Ajustes de la lente».
+- **Minimap Lens (módulo nuevo, M2):** agranda el minimapa real a demanda (2,6× su lado por defecto,
+  un paso de zoom más cerca, contorno QDT en lugar del aro de Blizzard, iconos de addons
+  alrededor). Al apagarla, al recargar o en una pantalla de carga todo vuelve como estaba, también
+  en combate. Se cierra sola al salir de la instancia y al abrir el Modo edición.
+- **Disparadores de la lente:** atajo en Opciones › Atajos › AddOns › Quantum Dungeon Tools (sin
+  tecla por defecto), botón lupa pegado al minimapa (solo dentro de una instancia, con el atajo en
+  su tooltip) y `/qdt lens`.
+- **Convivencia con otros UI:** si EllesmereUI, ElvUI u otro addon recoloca el minimapa con la
+  lente puesta, la lente repone solo lo que cambió, sin pelear; si insiste, cede y avisa una vez
+  con un toast que lleva a los ajustes. También avisa si el minimapa está pegado en EllesmereUI.
+- **Página de Minimap Lens** en la ventana principal (ya sin «PRONTO»): interruptor del módulo,
+  «Probar la lente» y «Mover la lente»; tamaño y opacidad en vivo; zoom extra, ocultar hierbas y
+  minas mientras está activa y bloquear la posición; el atajo asignado y quién manda en el minimapa.
 
 ## [0.1.0-beta.1] - 2026-11-15
 

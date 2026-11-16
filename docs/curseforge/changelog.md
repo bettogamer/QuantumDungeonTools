@@ -6,6 +6,20 @@
 
 ---
 
+## v0.1.0-beta.2 — Minimap Lens
+
+A second module: Minimap Lens, a bigger minimap when you need it.
+
+- Enlarges the real minimap on demand (2.6× by default, one zoom step closer) and puts
+  everything back when you turn it off, reload or go through a loading screen, even in combat.
+- Turn it on with a keybinding (Options › Keybindings › AddOns › Quantum Dungeon Tools, unbound by
+  default), the magnifier button next to the minimap (inside instances) or `/qdt lens`. It closes
+  itself when you leave the instance or open Edit Mode.
+- Works alongside EllesmereUI, ElvUI and other minimap addons: it re-applies what they change
+  without fighting, and warns you once if they keep overriding it.
+- A Minimap Lens page in the main window: size and opacity live, extra zoom, hide herbs and ores
+  while it is on, lock or move its position, and your keybinding.
+
 ## v0.1.0-beta.1 — First beta: Instance Tracker
 
 The first public build of Quantum Dungeon Tools, for WoW Forever. It ships one module, the

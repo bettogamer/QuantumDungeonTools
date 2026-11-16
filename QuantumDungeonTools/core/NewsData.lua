@@ -8,6 +8,24 @@ local _, ns = ...
 
 ns.NewsData = {
   {
+    version = "0.1.0-beta.2", date = "2026-11-15",
+    es = {
+      "Minimap Lens: agranda el minimapa a demanda con un atajo, el botón lupa (dentro de una "
+        .. "instancia) o /qdt lens; al apagarla todo vuelve como estaba.",
+      "Ajustes de la lente: tamaño, opacidad, zoom extra, ocultar hierbas y minas, y moverla a "
+        .. "donde quieras.",
+      "Convivencia: funciona con EllesmereUI, ElvUI y otros minimapas, y te avisa una vez si "
+        .. "otro addon no la deja.",
+    },
+    en = {
+      "Minimap Lens: enlarges the minimap on demand with a keybinding, the magnifier button "
+        .. "(inside an instance) or /qdt lens; turning it off puts everything back.",
+      "Lens settings: size, opacity, extra zoom, hide herbs and ores, and move it wherever you want.",
+      "Coexistence: works with EllesmereUI, ElvUI and other minimaps, and warns you once if "
+        .. "another addon will not let it.",
+    },
+  },
+  {
     version = "0.1.0-beta.1", date = "2026-11-15",
     es = {
       "Vista previa del widget: en los ajustes del Instance Tracker, el widget en curso, completado "
