@@ -750,6 +750,22 @@ end
 -- «Lock position» changed, or the lens settled: the Minimap is draggable only while it may move.
 function UI:RefreshDrag() refreshDrag() end
 
+-- «Hide herbs and ores» changed: live while on (turns them off now, or back on).
+function UI:RefreshGathering()
+  local s, d = snap, db()
+  if not s or leaving then return end
+  if Lens.get(d, "hideGathering") then
+    if s.tracking and #s.tracking > 0 then return end
+    s.tracking = Lens.gatherToHide(trackingRows())
+    Lens.markTracking(d, s.tracking)
+    setTracking(s.tracking, false)
+  else
+    setTracking(s.tracking, true)
+    s.tracking = nil
+    Lens.markTracking(d, nil)
+  end
+end
+
 -- Module switch (F5, live): off closes the lens; the magnifier hides through OnChange.
 function UI:SetModuleOn(on)
   db().enabled = on and true or false

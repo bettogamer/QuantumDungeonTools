@@ -48,7 +48,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | **F2** | Núcleo de la lente | ✅ cerrada (2026-11-15): OK del owner en las tres configuraciones (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ✅ cerrada (2026-11-15): pruebas A y B ok con EUI; C sin aviso porque el minimapa estaba despegado (correcto) | dueño `other`, vigilante de setters, reaplicar solo lo que derivó, ceder a las 4 correcciones en 10 s, toast LensAviso una vez por sesión |
 | **F4** | Disparadores y ciclo de vida | ✅ cerrada fuera de mazmorra (2026-11-15); pasos 5-6 a la run agrupada (§F4) | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
-| **F5** | Página del módulo + ajustes | 🟨 en código (2026-11-15), pendiente la prueba in-game (§F5) | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
+| **F5** | Página del módulo + ajustes | ✅ cerrada (2026-11-15): guion completo ok (§F5) | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
 
 > Fuera de este hito por decisión previa: **flecha o posición del jugador** (no hay datos en
 > instancia); **activación automática al entrar** (owner: solo manual); **clic en el icono de
@@ -515,8 +515,8 @@ Decisiones del agente:
   lupa y `/qdt lens` dicen «está apagada».
 - **Tamaño 150-350 %** (el artboard llegaba a 400 %; el límite de F2 es 3,5×) en pasos de 10;
   **opacidad 40-100 %** en pasos de 5; por defecto 260 % / 100 % (no el 85 % de ejemplo del artboard).
-  Los dos cambian la lente en vivo si está puesta. Los interruptores se aplican al abrirla, salvo
-  «Bloquear posición», que es inmediato.
+  Los dos cambian la lente en vivo si está puesta. Los interruptores se aplican al abrirla, salvo «Ocultar hierbas y minas» (owner, 2026-11-15) y
+  «Bloquear posición», que son inmediatos.
 - **Restablecer la lente** vuelve los 5 ajustes; no la posición («Restablecer posición» del
   modo mover) ni el interruptor del módulo.
 - **Bloquear posición apagado = la lente se arrastra con el botón izquierdo** (lo que dice el
@@ -564,6 +564,12 @@ relativa); `triggers.opens/closes` registra el origen `page`.
 
 Al terminar, `/reload` y «listo» con el sí/no. El agente lee `_checkLens` (esperado: `on.gather = 1`
 en la apertura del paso 6, `off.diffs = 0` en todas, `opens` con `page`).
+
+### Resultados in-game de F5 (owner, 2026-11-15, EllesmereUIMinimap)
+
+41. **Guion completo: «todo ok».** Un fallo: «Ocultar hierbas y minas» solo se aplicaba al volver a
+    abrir la lente. Ahora va en vivo con la lente puesta (`UI:RefreshGathering`, también al
+    restablecer). **F5 cerrada.**
 
 ## Puntos abiertos
 

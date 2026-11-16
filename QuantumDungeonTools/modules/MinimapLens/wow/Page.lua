@@ -10,7 +10,7 @@
 -- minimap and what soft mode does with it).
 --
 -- Every change writes db.minimapLens and reaches the lens at once (UI:SetSize/SetOpacity live
--- while it is on; the switches apply on the next opening, except «lock», live).
+-- while it is on; the switches apply on the next opening, except «lock» and «hide herbs», live).
 local _, ns = ...
 local L = ns.L
 local Lens = ns.MinimapLens
@@ -238,6 +238,7 @@ local function buildCell(parent, key, kind)
         if silent then return end
         db()[key] = v
         if key == "locked" then UI():RefreshDrag() end
+        if key == "hideGathering" then UI():RefreshGathering() end
         refreshSettings()
       end })
     ctrl = entry.control:GetFrame()
@@ -317,6 +318,7 @@ local function buildFold(parent, anchor, onHeight)
       UI():SetSize(Lens.get(db(), "size"))
       UI():SetOpacity(Lens.get(db(), "opacity"))
       UI():RefreshDrag()
+      UI():RefreshGathering()
       if Mover() then Mover():Refresh() end
       refreshSettings()
     end })
