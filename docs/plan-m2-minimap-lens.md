@@ -584,7 +584,7 @@ en la apertura del paso 6, `off.diffs = 0` en todas, `opens` con `page`).
 | 7 | Soporte de EllesmereUI/ElvUI | **owner** | modo suave + aviso único | ✅ así (2026-11-15) |
 | 8 | Aviso de convivencia: ¿chat o toast? | **owner** | toast como el de fin de run | ✅ toast (owner, 2026-11-15): artboard LensAviso variante A |
 | 9 | Valores por defecto y límites de tamaño y opacidad | agente (tras F1) | ~2× el original, opacidad 100 % | ✅ 2,6× (1,5-3,5×, ≤85 % del alto), opacidad 100 % (40-100 %), §F2 |
-| 10 | Revisar FarmMode/MountMapMove (guardan y restauran el ancla) | agente | `addon-scout` antes de F2 si F1 da sorpresas | ⬜ |
+| 10 | Revisar FarmMode/MountMapMove (guardan y restauran el ancla) | agente | `addon-scout` antes de F2 si F1 da sorpresas | ✅ no hizo falta (2026-11-15): F1-F5 sin sorpresas al restaurar el ancla (`off.diffs = 0` en todas las pruebas) |
 | 11 | Lente con EllesmereUI cuando el minimapa está pegado (snap) en su modo desbloqueo | **owner** | intentar mover, comprobar en el siguiente fotograma y, si se deshizo, crecer en su sitio y avisar | ✅ así: solo un **aviso** de que con el minimapa pegado no se puede mover; lo pegado al minimapa se mueve con la lente (2026-11-15) |
 
 ## Checklist de cierre del hito
@@ -593,5 +593,15 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** prueba in-game de F5 (§F5, guion) y, con su OK, cierre del hito (checklist de
-arriba; pasos 5-6 de F4 y el bloque B de F1 siguen para la run agrupada).
+Estado del cierre (2026-11-15):
+
+- [x] CI con el job `test` (el runner descubre los specs solo) y cadena local en verde: luac 38/38,
+      luacheck 0/0, taintlint 0/0/0 (db 1.60.1), 18 specs 219 ok, check-upvalues ok.
+- [x] Puntos abiertos: todos cerrados (el 10 no hizo falta).
+- [x] CHANGELOG: F2-F5 ya están en `[Unreleased]`.
+- [ ] `ui-critic` sobre la página de la lente, la lente activa y el toast: faltan capturas del owner.
+- [ ] Versión de la release (owner) → entrada de NewsData con esa versión y ritual de doc 04 §Release.
+- [ ] Al cerrar: bloque «✅ M2 CERRADO» arriba del todo y poda de AGENTS.md.
+
+**Siguiente:** capturas del owner para `ui-critic` y decisión de versión; luego NewsData + release.
+Siguen para la run agrupada en mazmorra: pasos 5-6 de F4 y el bloque B de F1.
