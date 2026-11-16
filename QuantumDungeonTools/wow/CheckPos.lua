@@ -153,7 +153,7 @@ end
 
 local function finish()
   if ticker then ticker:Cancel() ticker = nil end
-  evFrame:UnregisterEvent("MINIMAP_PING")
+  evFrame:UnregisterAllEvents()
   current.after = snapshot()
   local r = QuantumDungeonToolsDB._checkPos
   table.insert(r.runs, current)
@@ -172,7 +172,10 @@ local function tour()
   active = true
   current = { t0 = GetTime(), date = date("%Y-%m-%d %H:%M"), before = snapshot(),
     samples = {}, events = {}, notes = {} }
-  evFrame:RegisterEvent("MINIMAP_PING")
+  -- Forever 1.60.1: "unknown event MINIMAP_PING" (listed in the api-db, absent in the client).
+  local evOk, evErr = pcall(evFrame.RegisterEvent, evFrame, "MINIMAP_PING")
+  current.notes[#current.notes + 1] = "MINIMAP_PING "
+    .. (evOk and "registered" or ("ERR:" .. tostring(evErr):sub(1, 80)))
   local ping = mm("PingLocation", 0, 0)
   current.notes[#current.notes + 1] = "ping(0,0)=" .. joined(ping)
   say("pinged your spot. WALK straight now ~10 s, then turn right ~90 degrees and walk ~10 s, then stop.")
