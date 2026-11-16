@@ -99,6 +99,7 @@ modules\MinimapLens\core\Lens.lua
 modules\MinimapLens\wow\Lens.lua
 modules\MinimapLens\wow\Triggers.lua
 modules\MinimapLens\wow\CheckM2.lua
+wow\CheckPos.lua
 modules\MinimapLens\wow\Mover.lua
 modules\MinimapLens\wow\Page.lua
 wow\MainWindow.lua

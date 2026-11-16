@@ -56,6 +56,15 @@ files = {
             "LibStub", "IsShiftKeyDown", "_G",
         },
     },
+    -- Research probe for own dungeon coordinates (CheckPos.lua, docs/27): position, range, ping.
+    ["QuantumDungeonTools/wow/CheckPos.lua"] = {
+        globals = {
+            "GetInstanceInfo", "IsInInstance", "IsIndoors", "GetMinimapZoneText", "UnitPosition",
+            "GetPlayerFacing", "C_Map", "GetUnitSpeed", "C_Minimap", "GetCVar", "Minimap", "date",
+            "UnitExists", "UnitIsConnected", "UnitIsVisible", "UnitDistanceSquared", "UnitInRange",
+            "CheckInteractDistance", "C_Item", "IsItemInRange", "UnitIsUnit",
+        },
+    },
 
     -- Modules: same split. modules/<Name>/core/ is pure (inherits nothing); modules/<Name>/wow/
     -- gets the game globals that module uses (added by: Instance Tracker, v0.1).
