@@ -9,8 +9,8 @@
 
 | Dato | Valor |
 |------|-------|
-| URL pública | ⬜ `https://www.curseforge.com/wow/addons/<slug>` (al crear el proyecto) |
-| Project ID | ⬜ barra derecha «About Project» de la página pública _(no confirmado)_ |
+| URL pública | ✅ `https://www.curseforge.com/wow/addons/qdt` (slug `qdt`) |
+| Project ID | ✅ `1801831` |
 | Nombre | `Quantum Dungeon Tools` |
 | Categoría principal + extra | ⬜ propuesta: `Dungeons & Raids` (+ `Map & Minimap`) |
 | Licencia | ⬜ **decisión del owner**: el repo no tiene `LICENSE` todavía (CurseForge pide elegir una) |
