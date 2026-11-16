@@ -2,7 +2,7 @@
 -- wow/MainWindow.lua -- the addon's main window (plan M1 F6b, canvas page "Ventana principal").
 --
 -- One headless Craft.Window: a 220 px sidebar (brand, Home, DUNGEONS > Instance Tracker, Minimap
--- Lens as SOON, and General settings / What's new pinned at the bottom with the version) and,
+-- Lens, and General settings / What's new pinned at the bottom with the version) and,
 -- to its right, a top bar with "Reload UI" and close, over one frame per page. Pages are built
 -- once and switched with Show/Hide (no re-render per visit). F6b paints the Home page (NOW,
 -- OPEN, MODULES); the module pages are placeholders that F6c/F6d fill.
@@ -247,18 +247,32 @@ local function buildModules(page, anchor)
   desc:SetPoint("RIGHT", cfg:GetFrame(), "LEFT", -14, 0)
   desc:SetText(L.MW_IT_DESC)
 
-  local lens = box(page, nil, C.hairlineSoft)
+  -- Minimap Lens (M2 F5): same card, its switch is live (no reload).
+  local lens = box(page, nil, C.hairline)
   lens:SetPoint("TOPLEFT", it, "BOTTOMLEFT", 0, -WIN.moduleGap)
   lens:SetPoint("RIGHT", page, "RIGHT", -WIN.padX, 0)
   lens:SetHeight(WIN.moduleH)
-  local lname = text(lens, FONT.winModule, C.tickIdle)
+  local lname = text(lens, FONT.winModule, C.cream)
   lname:SetPoint("LEFT", 16, 0)
   lname:SetText(L.MW_LENS)
-  local tag = kit.newTag(lens, FONT.winTag, 4, 1)
-  kit.setTag(tag, L.MW_SOON, C.tickIdle, C.mutedTag)
-  tag:SetPoint("LEFT", lname, "RIGHT", 14, 0)
-  local ldesc = text(lens, FONT.winSub, C.tickIdle)
-  ldesc:SetPoint("LEFT", tag, "RIGHT", 14, 0)
+  local LP = ns.MinimapLensPage
+  local lsw = Craft.Switch:Create(lens, { checked = LP:ModuleOn(),
+    onChange = function(v) if not home.silent then LP:SetModuleOn(v) end end })
+  lsw:GetFrame():SetPoint("LEFT", lname, "RIGHT", 14, 0)
+  LP:OnModuleChange(function(on)
+    home.silent = true
+    if lsw:GetChecked() ~= on then lsw:SetChecked(on) end
+    home.silent = false
+  end)
+  local lcmd = text(lens, FONT.winRowSub, C.tickIdle)
+  lcmd:SetPoint("LEFT", lsw:GetFrame(), "RIGHT", 14, 0)
+  lcmd:SetText("/qdt lens")
+  local lcfg = Craft.Button:Create(lens, { text = L.MW_CONFIGURE, variant = "link", tone = "primary",
+    size = "sm", fontFlags = "", onClick = function() MW:Navigate("lens") end })
+  lcfg:GetFrame():SetPoint("RIGHT", lens, "RIGHT", -10, 0)
+  local ldesc = text(lens, FONT.winSub, C.muted)
+  ldesc:SetPoint("LEFT", lcmd, "RIGHT", 14, 0)
+  ldesc:SetPoint("RIGHT", lcfg:GetFrame(), "LEFT", -14, 0)
   ldesc:SetText(L.MW_LENS_DESC)
 end
 
@@ -573,12 +587,7 @@ local function buildSidebar(content)
     items = {
       { id = "home", label = L.MW_HOME, icon = "house" },
       { id = "it", label = L.IT_TITLE, icon = "timer", section = L.MW_DUNGEONS },
-      -- SOON as the row's trailing badge (Craft FR-152), same tag as on the Home card.
-      { id = "lens", label = L.MW_LENS, icon = "map", section = L.MW_DUNGEONS, disabled = true,
-        tooltip = L.MW_SOON_TIP,
-        badge = { text = L.MW_SOON, variant = "outline", fontSize = FONT.winTag.size,
-          fontWeight = FONT.winTag.weight, fontFlags = FONT.winTag.flags, paddingX = 3, paddingY = 1,
-          textColor = C.tickIdle, borderColor = C.mutedTag } },
+      { id = "lens", label = L.MW_LENS, icon = "map", section = L.MW_DUNGEONS },
     },
     onSelect = function(id) MW:Navigate(id) end,
   })
@@ -648,6 +657,11 @@ local function buildMain(content)
     ns.InstanceTrackerPage:Build(newPage(body, "it"), blocks)
   else
     placeholder(body, "it", L.IT_TITLE, L.MW_IT_DESC)
+  end
+  if ns.MinimapLensPage then
+    ns.MinimapLensPage:Build(newPage(body, "lens"), blocks)
+  else
+    placeholder(body, "lens", L.MW_LENS, L.MW_LENS_DESC)
   end
   buildGeneral(body)
   buildNews(body)

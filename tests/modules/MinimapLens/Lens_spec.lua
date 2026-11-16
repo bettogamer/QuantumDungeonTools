@@ -168,4 +168,61 @@ describe("MinimapLens core", function()
     assert_eq(Lens.leftInstance(true, true), false)
     assert_eq(Lens.leftInstance(true, nil), false)
   end)
+
+  it("ajustes de la página: valores por defecto, cambiados y restablecer", function()
+    local db = {}
+    Lens.applyDefaults(db)
+    assert_eq(Lens.get(db, "zoomStep"), true)
+    assert_eq(Lens.get(db, "hideGathering"), false)
+    assert_eq(Lens.get(db, "locked"), false)
+    assert_eq(Lens.changedCount(db), 0)
+    db.size, db.opacity, db.hideGathering, db.zoomStep = 3.0, 0.85, true, false
+    assert_eq(Lens.changedCount(db), 4)
+    assert_true(Lens.isChanged(db, "size"))
+    assert_eq(Lens.isChanged(db, "locked"), false)
+    db.pos, db.enabled = { point = "CENTER", x = 1, y = 2 }, false
+    Lens.reset(db)
+    assert_eq(Lens.changedCount(db), 0)
+    assert_eq(db.pos.x, 1)            -- la posición tiene su propio restablecer
+    assert_eq(db.enabled, false)      -- el interruptor del módulo no es un ajuste de la lente
+  end)
+
+  it("isOn: el módulo está encendido salvo que se apague a mano", function()
+    assert_true(Lens.isOn({}))
+    assert_true(Lens.isOn(nil))
+    assert_eq(Lens.isOn({ enabled = false }), false)
+  end)
+
+  it("percent redondea a entero", function()
+    assert_eq(Lens.percent(2.6), 260)
+    assert_eq(Lens.percent(0.85), 85)
+  end)
+
+  it("gatherToHide: solo hierbas y minerales que estén activos", function()
+    local ids = Lens.gatherToHide({
+      { spellID = 2580, active = true }, { spellID = 2383, active = false },
+      { spellID = 5502, active = true }, { spellID = nil, active = true },
+    })
+    assert_eq(#ids, 1)
+    assert_eq(ids[1], 2580)
+    assert_eq(#Lens.gatherToHide(nil), 0)
+  end)
+
+  it("rastreo pendiente: se guarda con el zoom y se toma antes que él", function()
+    local db = {}
+    Lens.markTracking(db, { 2580 })   -- sin marca de zoom no hay dónde guardarlo
+    assert_eq(db.saved, nil)
+    Lens.markApplied(db, 1)
+    Lens.markTracking(db, { 2580 })
+    local t = Lens.takePendingTracking(db)
+    assert_eq(t[1], 2580)
+    assert_eq(Lens.takePendingTracking(db), nil)
+    assert_eq(Lens.takePendingZoom(db), 1)
+  end)
+
+  it("centerOffset: desplazamiento desde el centro de UIParent", function()
+    local p = Lens.centerOffset(1000, 300, 1600, 900)
+    assert_eq(p.point, "CENTER"); assert_eq(p.x, 200); assert_eq(p.y, -150)
+    assert_eq(Lens.centerOffset(nil, 1, 1, 1), nil)
+  end)
 end)

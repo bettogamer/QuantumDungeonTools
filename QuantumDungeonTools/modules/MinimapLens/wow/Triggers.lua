@@ -155,7 +155,7 @@ end
 -- In an instance, or while the lens is on (so the button can close it).
 local function update()
   if not button then return end
-  local want = inside == true or preview or UI():IsOn()
+  local want = Lens.isOn(ns.db and ns.db.minimapLens) and (inside == true or preview or UI():IsOn())
   if want then place() end
   paint()
   if want and target ~= 1 then fadeTo(1) elseif not want and target ~= 0 then fadeTo(0) end
@@ -197,8 +197,11 @@ end
 function T:Toggle(source)
   local wasOn = UI():IsOn()
   UI():Toggle()
-  log(wasOn and "closes" or "opens", source or "?")
+  if UI():IsOn() ~= wasOn then log(wasOn and "closes" or "opens", source or "?") end
 end
+
+-- The key bound to the lens ("Shift-M"), or nil: the page's SHORTCUT card (F5).
+function T:BoundKey() return boundKey() end
 
 local function close(reason)
   if not UI():IsOn() then return end

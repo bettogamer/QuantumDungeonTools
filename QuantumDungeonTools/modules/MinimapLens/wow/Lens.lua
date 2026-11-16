@@ -12,7 +12,9 @@
 -- The lens does not survive a reload or a loading screen (gotcha 3): PLAYER_LEAVING_WORLD
 -- restores it. The original zoom also lives in the DB while it is on (gotcha 16).
 -- Triggers (binding, magnifier button, auto-close) live in Triggers.lua (F4): they listen
--- through UI:OnChange.
+-- through UI:OnChange. F5 (the module page): live size, opacity and position, the zoom step and
+-- the herbs/ores tracking as options, dragging the lens itself unless «Lock position», and the
+-- module switch (off = the lens cannot open). db.pos is in UIParent units.
 --
 -- Coexistence (F3, soft mode): hooks on the Minimap's setters see every write that is not ours
 -- (`writing` marks ours). Once the lens has settled (the move check is done), a foreign write
@@ -285,7 +287,7 @@ function UI:Warn(kind, owner)
   local ok, shown = false, false
   if alerts and alerts.ShowNotice then
     ok, shown = pcall(alerts.ShowNotice, alerts, { icon = "search", title = L.LENS_SOFT_TITLE, body = body,
-      seconds = NOTICE_SECONDS })
+      seconds = NOTICE_SECONDS, action = UI.settingsAction and UI.settingsAction() or nil })
   end
   if not ok or not shown then ns.say(body) end
 end
@@ -402,6 +404,7 @@ local function checkMove(my)
     settled = true
     dump("move", { held = held, retried = retried })
     coexist({ held = held })
+    UI:RefreshDrag()
     if not held then UI:Warn("pinned", snap.owner) end
   end
   C_Timer.After(MOVE_CHECK, function()
@@ -420,13 +423,139 @@ local function checkMove(my)
   end)
 end
 
+------------------------------------------------------------------------------
+-- Geometry (F5). The lens position lives in UIParent units (db.pos, the mover); the Minimap
+-- gets it divided by its scale relative to UIParent (1 on Blizzard's, EUI/ElvUI may differ).
+------------------------------------------------------------------------------
+local function num(v) return (not issecretvalue(v) and type(v) == "number") and v or nil end
+
+local function relScale()
+  local _, m = call(Minimap, "GetEffectiveScale")
+  local _, u = call(UIParent, "GetEffectiveScale")
+  m, u = num(m), num(u)
+  if not m or not u or u <= 0 or m <= 0 then return 1 end
+  return m / u
+end
+
+local function uiSize()
+  local _, w, h = call(UIParent, "GetSize")
+  return num(w), num(h)
+end
+
+-- Lens side (Minimap units) and anchor (Minimap units) for the original size w x h.
+local function geometry(w, h, d, k)
+  local _, uiH = uiSize()
+  local side = Lens.side(w, h, Lens.get(d, "size"), uiH and uiH / k)
+  local p = Lens.position(d.pos, uiH)
+  return side, { point = p.point, x = p.x / k, y = p.y / k }
+end
+
+------------------------------------------------------------------------------
+-- Gathering tracking (F5): Find Herbs / Find Minerals off while the lens is on.
+------------------------------------------------------------------------------
+local function trackingRows()
+  local rows = {}
+  local M = C_Minimap
+  if not (M and M.GetNumTrackingTypes and M.GetTrackingInfo) then return rows end
+  local ok, n = pcall(M.GetNumTrackingTypes)
+  if not ok or issecretvalue(n) or type(n) ~= "number" then return rows end
+  for i = 1, math.min(n, 60) do
+    local okI, info = pcall(M.GetTrackingInfo, i)
+    if okI and type(info) == "table" and not ns.issecrettable(info) then
+      local id, active = info.spellID, info.active
+      if not issecretvalue(id) and not issecretvalue(active) then
+        rows[#rows + 1] = { index = i, spellID = id, active = active == true }
+      end
+    end
+  end
+  return rows
+end
+
+-- Turns the tracking of these spellIDs on or off (by spell, the indexes may move).
+local function setTracking(ids, on)
+  if type(ids) ~= "table" or #ids == 0 or not (C_Minimap and C_Minimap.SetTracking) then return end
+  local want = {}
+  for _, id in ipairs(ids) do want[id] = true end
+  for _, r in ipairs(trackingRows()) do
+    if want[r.spellID] and r.active ~= on then pcall(C_Minimap.SetTracking, r.index, on) end
+  end
+end
+
+------------------------------------------------------------------------------
+-- Dragging the lens itself (F5, «Lock position» off). Only when the move held (EUI with the
+-- minimap pinned would undo it). The engine moves the frame; the drop is written as ours.
+------------------------------------------------------------------------------
+local drag          -- { movable } while the Minimap is draggable; nil otherwise
+local dragging = false
+local dragHooked = false
+
+local function dropAt()
+  local s = snap
+  if not s then return end
+  local _, cx, cy = call(Minimap, "GetCenter")
+  local k = relScale()
+  local uiW, uiH = uiSize()
+  cx, cy = num(cx), num(cy)
+  local pos = cx and cy and Lens.centerOffset(cx * k, cy * k, uiW, uiH)
+  if not pos then return end
+  db().pos = pos
+  s.pos = { point = pos.point, x = pos.x / k, y = pos.y / k }
+  local p = s.pos
+  mine(function()
+    Minimap:ClearAllPoints()
+    Minimap:SetPoint(p.point, UIParent, p.point, p.x, p.y)
+  end)
+end
+
+local function hookDrag()
+  if dragHooked then return end
+  dragHooked = true
+  Minimap:HookScript("OnDragStart", function()
+    if not drag or dragging or not snap or leaving then return end
+    dragging = true
+    mine(Minimap.StartMoving, Minimap)
+  end)
+  Minimap:HookScript("OnDragStop", function()
+    if not dragging then return end
+    dragging = false
+    mine(Minimap.StopMovingOrSizing, Minimap)
+    -- Never into layout-local.txt: the lens spot is ours (db.pos), the minimap's is not.
+    if drag then call(Minimap, "SetUserPlaced", drag.userPlaced) end
+    dropAt()
+  end)
+end
+
+local function setDrag(on)
+  if on and not drag then
+    local okM, movable = call(Minimap, "IsMovable")
+    local okU, placed = call(Minimap, "IsUserPlaced")
+    drag = { movable = okM and not issecretvalue(movable) and movable == true,
+      userPlaced = okU and not issecretvalue(placed) and placed == true }
+    hookDrag()
+    call(Minimap, "SetMovable", true)
+    call(Minimap, "RegisterForDrag", "LeftButton")
+  elseif not on and drag then
+    if dragging then
+      dragging = false
+      mine(Minimap.StopMovingOrSizing, Minimap)
+    end
+    call(Minimap, "RegisterForDrag")          -- no button: Blizzard's minimap has no drag
+    call(Minimap, "SetUserPlaced", drag.userPlaced)
+    call(Minimap, "SetMovable", drag.movable)
+    drag = nil
+  end
+end
+
+local function refreshDrag()
+  setDrag(snap ~= nil and not leaving and settled and UI.moveHeld == true and not Lens.get(db(), "locked"))
+end
+
 local function apply(s, d)
-  local _, uiH = call(UIParent, "GetHeight")
-  if issecretvalue(uiH) then uiH = nil end
-  local side = Lens.side(s.w, s.h, d.size, uiH)
+  local k = relScale()
+  local side
+  side, s.pos = geometry(s.w, s.h, d, k)
   s.side = side
-  s.pos = Lens.position(d.pos, uiH)
-  s.lensZoom = Lens.zoomIn(s.zoom, maxZoomLevels())
+  s.lensZoom = Lens.get(d, "zoomStep") and Lens.zoomIn(s.zoom, maxZoomLevels()) or s.zoom
   local p = s.pos
   return mine(function()
     Minimap:SetSize(side, side)
@@ -442,6 +571,9 @@ end
 
 local function restore(s)
   settled = false
+  setDrag(false)
+  setTracking(s.tracking, true)
+  s.tracking = nil
   local ok, e = mine(function()
     Minimap:SetScale(s.scale)
     Minimap:SetSize(s.w, s.h)
@@ -466,6 +598,10 @@ function UI:IsOn() return snap ~= nil and not leaving end
 
 function UI:On()
   if snap and not leaving then return true end
+  if not Lens.isOn(db()) then
+    ns.say(L.LENS_MODULE_OFF)
+    return false
+  end
   if leaving then   -- reopened while fading out: just fade back in
     leaving = false
     token = token + 1
@@ -494,9 +630,16 @@ function UI:On()
   end
   setOutline(true)
   refreshIcons(s.plan)
+  if Lens.get(d, "hideGathering") then
+    local rows = trackingRows()
+    s.tracking = Lens.gatherToHide(rows)
+    Lens.markTracking(d, s.tracking)
+    setTracking(s.tracking, false)
+  end
   dump("on", { owner = s.owner, w = s.w, h = s.h, side = s.side, zoom = s.zoom, lensZoom = s.lensZoom,
     point = s.pos.point, x = s.pos.x, y = s.pos.y, mask = s.plan.mask, icons = s.plan.icons,
-    ring = s.backdropShown,
+    ring = s.backdropShown, size = Lens.percent(Lens.get(d, "size")), gather = s.tracking and #s.tracking or 0,
+    k = relScale(),
     shape = type(GetMinimapShape) == "function" and select(2, pcall(GetMinimapShape)) or "nil" })
   newEntry(s.owner)
   fadeTo(Lens.clamp(d.opacity, Lens.OPACITY))
@@ -553,6 +696,67 @@ function UI:SetOpacity(v)
   if self:IsOn() then fadeTo(d.opacity) end
 end
 
+-- Notice action (F5): the toast's «Lens settings» button opens the module page.
+local function settingsAction()
+  local MW = ns.MainWindow
+  if not MW then return nil end
+  return { text = L.LENS_SETTINGS, onClick = function() MW:Open("lens") end }
+end
+UI.settingsAction = settingsAction
+
+-- Size slider (F5): live while on (a new square, icons re-laid; never tweened, doc 22).
+function UI:SetSize(v)
+  local d = db()
+  d.size = Lens.clamp(v, Lens.SIZE)
+  local s = snap
+  if not s or leaving then return end
+  local side = geometry(s.w, s.h, d, relScale())
+  if side == s.side then return end
+  s.side = side
+  mine(Minimap.SetSize, Minimap, side, side)
+  refreshIcons(s.plan)
+end
+
+-- Where the lens goes (UIParent units, CENTER offset; nil = the artboard default). Live while on,
+-- unless another UI holds the minimap (the move did not hold).
+function UI:SetPosition(pos)
+  local d = db()
+  d.pos = pos
+  local s = snap
+  if not s or leaving or UI.moveHeld ~= true then return end
+  local _, p = geometry(s.w, s.h, d, relScale())
+  s.pos = p
+  mine(function()
+    Minimap:ClearAllPoints()
+    Minimap:SetPoint(p.point, UIParent, p.point, p.x, p.y)
+  end)
+end
+
+-- The lens square in UIParent units: { side, x, y } (CENTER offset), on or off. For the mover.
+function UI:Geometry()
+  local k = relScale()
+  local w, h
+  if snap then
+    w, h = snap.w, snap.h
+  else
+    local _, mw, mh = call(Minimap, "GetSize")
+    w, h = num(mw), num(mh)
+  end
+  if not w or not h then return nil end
+  local side, p = geometry(w, h, db(), k)
+  return { side = side * k, x = p.x * k, y = p.y * k }
+end
+
+-- «Lock position» changed, or the lens settled: the Minimap is draggable only while it may move.
+function UI:RefreshDrag() refreshDrag() end
+
+-- Module switch (F5, live): off closes the lens; the magnifier hides through OnChange.
+function UI:SetModuleOn(on)
+  db().enabled = on and true or false
+  if not on then self:Off() end
+  notify()
+end
+
 -- Previews of the coexistence toast (/qdt lens notice <soft | pinned>): ignore the once rule.
 function UI:PreviewNotice(kind)
   if kind ~= "soft" and kind ~= "pinned" then return false end
@@ -573,7 +777,9 @@ events:SetScript("OnEvent", function(_, event)
 end)
 
 function UI:Init()
-  -- A crash or a disconnect with the lens on: put the original zoom back (gotcha 16).
+  -- A crash or a disconnect with the lens on: put the original zoom back (gotcha 16), and the
+  -- gathering tracking it had turned off (F5).
+  setTracking(Lens.takePendingTracking(db()), true)
   local z = Lens.takePendingZoom(db())
   if z then pcall(Minimap.SetZoom, Minimap, z) end
   hookSetters()

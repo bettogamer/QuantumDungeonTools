@@ -96,7 +96,7 @@ files = {
             "Minimap", "MinimapCluster", "GetMinimapShape", "hooksecurefunc", "debugstack",
             "GetBuildInfo", "GetCVar", "SetCVar", "GetBindingKey", "EventRegistry",
             "issecrettable", "LibStub", "_G", "QuantumDungeonToolsDB",
-            "GetBindingText", "IsInInstance",
+            "GetBindingText", "IsInInstance", "UISpecialFrames", "tinsert", "Settings",
             "BINDING_HEADER_QDT", "BINDING_NAME_QDT_LENS",
         },
     },

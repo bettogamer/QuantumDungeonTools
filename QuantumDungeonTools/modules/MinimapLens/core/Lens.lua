@@ -51,6 +51,80 @@ function Lens.applyDefaults(db)
   if db.opacity == nil then db.opacity = Lens.OPACITY.default end
 end
 
+------------------------------------------------------------------------------
+-- Page settings (plan M2 F5, artboard AppLens). Sliders hold whole percents; the switches are
+-- nil until changed (nil = default), so a reset is just clearing them.
+------------------------------------------------------------------------------
+Lens.SWITCHES = {
+  { key = "zoomStep",      default = true },    -- one zoom step closer while on (decision 3)
+  { key = "hideGathering", default = false },   -- herbs and minerals off while on (decision 6)
+  { key = "locked",        default = false },   -- the lens cannot be dragged
+}
+local SWITCH = {}
+for _, s in ipairs(Lens.SWITCHES) do SWITCH[s.key] = s end
+
+-- Module switch (live: off closes the lens and hides the magnifier). nil = on.
+function Lens.isOn(db) return type(db) ~= "table" or db.enabled ~= false end
+
+function Lens.get(db, key)
+  db = type(db) == "table" and db or {}
+  if key == "size" then return Lens.clamp(db.size, Lens.SIZE) end
+  if key == "opacity" then return Lens.clamp(db.opacity, Lens.OPACITY) end
+  local s = SWITCH[key]
+  if not s then return nil end
+  if db[key] == nil then return s.default end
+  return db[key] and true or false
+end
+
+function Lens.isChanged(db, key)
+  if key == "size" then return math.abs(Lens.get(db, key) - Lens.SIZE.default) > 1e-6 end
+  if key == "opacity" then return math.abs(Lens.get(db, key) - Lens.OPACITY.default) > 1e-6 end
+  local s = SWITCH[key]
+  return s ~= nil and Lens.get(db, key) ~= s.default
+end
+
+function Lens.changedCount(db)
+  local n = 0
+  if Lens.isChanged(db, "size") then n = n + 1 end
+  if Lens.isChanged(db, "opacity") then n = n + 1 end
+  for _, s in ipairs(Lens.SWITCHES) do
+    if Lens.isChanged(db, s.key) then n = n + 1 end
+  end
+  return n
+end
+
+-- «Reset the lens»: settings only. The position has its own reset (move mode) and the module
+-- switch is not a lens setting.
+function Lens.reset(db)
+  if type(db) ~= "table" then return end
+  db.size, db.opacity = Lens.SIZE.default, Lens.OPACITY.default
+  for _, s in ipairs(Lens.SWITCHES) do db[s.key] = nil end
+end
+
+-- Whole percent for the sliders and the summary line (2.6 -> 260).
+function Lens.percent(v) return round((tonumber(v) or 0) * 100) end
+
+-- Gathering tracking (Find Herbs, Find Minerals). rows = { { spellID, active } } read from
+-- C_Minimap.GetTrackingInfo; returns the spellIDs to turn off now (and to turn back on later).
+Lens.GATHER = { [2383] = true, [2580] = true }
+function Lens.gatherToHide(rows)
+  local out = {}
+  if type(rows) ~= "table" then return out end
+  for _, r in ipairs(rows) do
+    if type(r) == "table" and Lens.GATHER[r.spellID] and r.active == true then out[#out + 1] = r.spellID end
+  end
+  return out
+end
+
+-- Where a dragged frame ended, as the CENTER offset from UIParent's centre (UIParent units).
+-- cx, cy = the frame's centre in UIParent units.
+function Lens.centerOffset(cx, cy, uiW, uiH)
+  if type(cx) ~= "number" or type(cy) ~= "number" or type(uiW) ~= "number" or type(uiH) ~= "number" then
+    return nil
+  end
+  return { point = "CENTER", x = round(cx - uiW / 2), y = round(cy - uiH / 2) }
+end
+
 -- Side of the square lens: the original's larger side times the factor, capped to the screen
 -- and never smaller than the original. Whole UI units.
 function Lens.side(w, h, factor, screenH)
@@ -173,6 +247,21 @@ end
 
 function Lens.markRestored(db)
   if type(db) == "table" then db.saved = nil end
+end
+
+-- The gathering tracking the lens turned off (F5), kept next to the zoom for the same reason.
+function Lens.markTracking(db, ids)
+  if type(db) == "table" and type(db.saved) == "table" then
+    db.saved.tracking = (type(ids) == "table" and #ids > 0) and ids or nil
+  end
+end
+
+-- spellIDs to turn back on at login (nil = none). Leaves the zoom mark alone: call it first.
+function Lens.takePendingTracking(db)
+  if type(db) ~= "table" or type(db.saved) ~= "table" then return nil end
+  local t = db.saved.tracking
+  db.saved.tracking = nil
+  return (type(t) == "table" and #t > 0) and t or nil
 end
 
 -- Zoom to put back at login (nil = nothing pending). Clears the mark.

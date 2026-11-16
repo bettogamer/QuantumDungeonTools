@@ -48,7 +48,7 @@ sonda falla, se vuelve al artboard afectado antes de seguir. Después vienen el 
 | **F2** | Núcleo de la lente | ✅ cerrada (2026-11-15): OK del owner en las tres configuraciones (§F2) | `modules/MinimapLens/core/Lens.lua` (estado, límites de tamaño, snapshot y restauración) + `wow/Lens.lua` (aplicar/restaurar con `pcall`, contorno QDT, ocultar aro, `Refresh` de LibDBIcon) |
 | **F3** | Convivencia con otros UI | ✅ cerrada (2026-11-15): pruebas A y B ok con EUI; C sin aviso porque el minimapa estaba despegado (correcto) | dueño `other`, vigilante de setters, reaplicar solo lo que derivó, ceder a las 4 correcciones en 10 s, toast LensAviso una vez por sesión |
 | **F4** | Disparadores y ciclo de vida | ✅ cerrada fuera de mazmorra (2026-11-15); pasos 5-6 a la run agrupada (§F4) | atajo (`Bindings.xml`, sin tecla por defecto), botón lupa (solo en instancia), `/qdt lens`, cierre al salir de la instancia, al abrir el Modo edición y al cerrar sesión |
-| **F5** | Página del módulo + ajustes | ⬜ PENDIENTE | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
+| **F5** | Página del módulo + ajustes | 🟨 en código (2026-11-15), pendiente la prueba in-game (§F5) | tamaño, opacidad, rastreo de recursos, «Mover marcos», aviso del atajo; quitar el «PRONTO» |
 
 > Fuera de este hito por decisión previa: **flecha o posición del jugador** (no hay datos en
 > instancia); **activación automática al entrar** (owner: solo manual); **clic en el icono de
@@ -499,6 +499,72 @@ Al terminar, `/reload` y «listo» con el sí/no. El agente lee `triggers` (espe
     **F4 cerrada fuera de mazmorra.** Pendiente para la run agrupada: pasos 5-6 (la lupa sale sola
     al entrar; al salir por la puerta no quedan ni lente ni lupa).
 
+## F5 — Página del módulo + ajustes (2026-11-15)
+
+Código: `modules/MinimapLens/wow/Page.lua` (`ns.MinimapLensPage`, artboard AppLens),
+`wow/Mover.lua` (`ns.MinimapLensMover`, artboard LensMover), `core/Lens.lua` (`SWITCHES`, `get`,
+`isChanged`, `changedCount`, `reset`, `isOn`, `percent`, `gatherToHide`, `centerOffset`,
+`markTracking`/`takePendingTracking`; tests en `Lens_spec.lua`), `wow/Lens.lua` (`SetSize`,
+`SetPosition`, `Geometry`, `RefreshDrag`, `SetModuleOn`), `wow/MainWindow.lua` (fila y tarjeta de
+Inicio sin «PRONTO», con interruptor y «Configurar»). DB aditiva: `enabled`, `zoomStep`,
+`hideGathering`, `locked` (nil = por defecto).
+
+Decisiones del agente:
+- **Módulo encendido/apagado al momento**, no tras recargar (a diferencia del Instance Tracker:
+  aquí no hay eventos que desmontar). Apagado: la lente se cierra, la lupa desaparece y atajo,
+  lupa y `/qdt lens` dicen «está apagada».
+- **Tamaño 150-350 %** (el artboard llegaba a 400 %; el límite de F2 es 3,5×) en pasos de 10;
+  **opacidad 40-100 %** en pasos de 5; por defecto 260 % / 100 % (no el 85 % de ejemplo del artboard).
+  Los dos cambian la lente en vivo si está puesta. Los interruptores se aplican al abrirla, salvo
+  «Bloquear posición», que es inmediato.
+- **Restablecer la lente** vuelve los 5 ajustes; no la posición («Restablecer posición» del
+  modo mover) ni el interruptor del módulo.
+- **Bloquear posición apagado = la lente se arrastra con el botón izquierdo** (lo que dice el
+  artboard: «La lente no se arrastra»). Solo si mover aguantó (no con EUI pegado).
+  `RegisterForDrag` + `HookScript` en el Minimap; al cerrar se repone `IsMovable` e
+  `IsUserPlaced` y se quita el arrastre. Al soltar puede salir un ping donde se suelta (es el
+  clic del Minimap; aceptado).
+- **`db.pos` en unidades de UIParent**; al Minimap se le aplica dividido por su escala relativa
+  (Blizzard = 1; EUI/ElvUI pueden escalarlo). Así el cuadrado de «Mover la lente» coincide con la
+  lente real.
+- **Hierbas y minas** = hechizos 2383 (Find Herbs) y 2580 (Find Minerals). Al abrir se apagan los
+  que estaban activos y se guardan en `saved.tracking`; al cerrar (o en el siguiente login si el
+  cliente cae) se encienden otra vez.
+- **Mover la lente:** la línea interior es continua (no hay textura discontinua nativa). Se cierra
+  con «Hecho» o con Esc; con la lente puesta, soltarlo la mueve al momento.
+- **Convivencia sin otro UI:** etiqueta «BLIZZARD» en gris y «Nadie más mueve el minimapa…» (el
+  artboard solo dibujaba el caso detectado).
+- Los tokens de tamaño de la página (`pageRowH`…) se toman del Style del Instance Tracker, igual
+  que su página.
+
+Autoprueba: `_checkLens.on` añade `size` (%), `gather` (cuántos rastreos apagó) y `k` (escala
+relativa); `triggers.opens/closes` registra el origen `page`.
+
+### Guion de prueba (owner, fuera de mazmorra, ~5 min)
+
+`/reload`, `/qdt` (ventana principal).
+1. Inicio: ❓ ¿la tarjeta «Minimap Lens» ya no dice PRONTO y tiene interruptor y «Configurar»? En el
+   sidebar, ❓ ¿la fila «Minimap Lens» se puede pulsar y abre su página?
+2. Página: ❓ ¿se parece al artboard AppLens (MÓDULO, LENTE «Cómo se ve», ATAJO con tu tecla `,`,
+   CONVIVENCIA con «Minimapa de EllesmereUI detectado»)?
+3. «Probar la lente»: se abre y el botón pasa a «Cerrar la lente». Mueve el deslizador de
+   **Tamaño** y el de **Opacidad**: ❓ ¿la lente cambia al momento?
+4. Con la lente abierta, **arrástrala** con el botón izquierdo: ❓ ¿se mueve y se queda donde la
+   sueltas? Activa «Bloquear posición»: ❓ ¿ya no se arrastra? Ciérrala y ábrela: ❓ ¿sale donde la
+   dejaste?
+5. «Mover la lente» (con la lente cerrada): ❓ ¿sale el cuadrado dorado con «Arrastra para
+   colocarla · N%»? Arrástralo, «Hecho», «Probar la lente»: ❓ ¿la lente sale en ese sitio?
+   «Restablecer posición» la devuelve al centro-derecha.
+6. Activa «Ocultar hierbas y minas», abre la lente: ❓ ¿se apaga «Find Minerals» en el menú de
+   rastreo? Ciérrala: ❓ ¿vuelve a estar activo?
+7. Apaga el interruptor del módulo y pulsa tu tecla: ❓ ¿sale «Minimap Lens está apagada» en el
+   chat? Vuelve a encenderlo.
+8. `/qdt lens notice soft`: ❓ ¿el toast trae el botón «Ajustes de la lente» y abre esta página?
+9. «Abrir Atajos»: ❓ ¿se abre Opciones en la sección de Atajos?
+
+Al terminar, `/reload` y «listo» con el sí/no. El agente lee `_checkLens` (esperado: `on.gather = 1`
+en la apertura del paso 6, `off.diffs = 0` en todas, `opens` con `page`).
+
 ## Puntos abiertos
 
 | # | Punto | Quién decide | Recomendación | Estado |
@@ -521,5 +587,5 @@ Igual que la plantilla (`docs/PLAN-HITO_TEMPLATE.md`): CI con tests, demo + `dep
 la prueba, conformidad, poda de AGENTS.md (estado → M2), `ui-critic`, entrada en CHANGELOG +
 NewsData y `Siguiente:` escrito aquí.
 
-**Siguiente:** F5 (página del módulo + ajustes) en sesión nueva. Recargar AGENTS.md +
-este plan (§F0 artboard AppLens, §F2 límites, §F4).
+**Siguiente:** prueba in-game de F5 (§F5, guion) y, con su OK, cierre del hito (checklist de
+arriba; pasos 5-6 de F4 y el bloque B de F1 siguen para la run agrupada).

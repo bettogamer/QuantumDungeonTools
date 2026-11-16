@@ -18,6 +18,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
   Quantum Dungeon Tools (sin tecla por defecto) y botón lupa pegado al minimapa, que solo aparece
   dentro de una instancia (o con la lente puesta) y enseña en su tooltip el atajo asignado. La
   lente se cierra sola al salir de la instancia y al abrir el Modo edición.
+- **Minimap Lens, página del módulo (M2 F5):** la fila «Minimap Lens» de la ventana principal ya
+  no lleva «PRONTO». Interruptor del módulo (al momento, sin recargar), «Probar la lente» y
+  «Mover la lente» (un cuadrado dorado que se arrastra a donde irá la lente); deslizadores de
+  tamaño y opacidad que cambian la lente en vivo; interruptores de zoom extra, ocultar hierbas y
+  minas mientras está activa y bloquear la posición (sin bloquear, la lente se arrastra con el
+  ratón); el atajo asignado con un botón para abrir Atajos, y quién manda en el minimapa. El aviso
+  de convivencia trae el botón «Ajustes de la lente».
 
 ## [0.1.0-beta.1] - 2026-11-15
 
