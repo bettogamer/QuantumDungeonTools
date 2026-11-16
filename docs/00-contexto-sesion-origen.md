@@ -107,7 +107,7 @@ desde `/qdt`; separar en addons LoadOnDemand solo si crece mucho).
 
 - **Minimap Lens**: minimapa grande en mazmorras (al entrar o con un botón), vuelve a su sitio
   al salir.
-- Lo que pida la guild.
+- Lo que pida la guild. Candidatos para M3 y la petición de la guild (2026-11-16): `docs/26-siguiente-modulo.md`.
 
 ## 5. Avisos para el desarrollo
 
