@@ -473,7 +473,7 @@ function A:ShowNotice(n)
   kit.setText(board.title, n.title or "")
   kit.setText(board.body, n.body or "")
   local y = S.alertPadY + math.max(S.alertIcon, board.title:GetStringHeight()) + S.alertGap
-    + board.body:GetStringHeight() + S.alertGap
+    + board.body:GetStringHeight() + S.toastBlockGap
   local close, action = board.close:GetFrame(), board.action:GetFrame()
   action:ClearAllPoints()
   close:ClearAllPoints()

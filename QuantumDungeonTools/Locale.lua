@@ -141,6 +141,7 @@ L.CHECK_M2_USAGE      = "check m2 [ab | on | off | alpha | combat | reset]"
 L.LENS_FAIL           = "Minimap Lens: could not change the minimap (%s)."
 -- Coexistence toast (plan M2 F3, artboard LensAviso A)
 L.LENS_SOFT_TITLE     = "Minimap Lens in soft mode"
+L.LENS_PINNED_TITLE   = "Minimap Lens grows in place"
 L.LENS_SOFT_BODY      = "%s keeps putting the minimap back. The lens stays on,"
   .. " but stops correcting it so they do not fight."
 L.LENS_PINNED_EUI     = "The minimap is pinned in EllesmereUI, so the lens grows in place."
@@ -437,6 +438,7 @@ if locale == "esES" or locale == "esMX" then
 
   L.LENS_FAIL           = "Minimap Lens: no se pudo cambiar el minimapa (%s)."
   L.LENS_SOFT_TITLE     = "Minimap Lens en modo suave"
+  L.LENS_PINNED_TITLE   = "Minimap Lens crece en su sitio"
   L.LENS_SOFT_BODY      = "%s ha vuelto a colocar el minimapa. La lente sigue activa,"
     .. " pero deja de corregirlo para no pelear con él."
   L.LENS_PINNED_EUI     = "El minimapa está pegado en EllesmereUI, así que la lente crece en su sitio."

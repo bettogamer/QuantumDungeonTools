@@ -277,8 +277,9 @@ function UI:Warn(kind, owner)
   if warned[kind] then return end
   warned[kind] = true
   if snap and current then current.warned = current.warned .. kind .. " " end
-  local body
+  local body, title = nil, L.LENS_SOFT_TITLE
   if kind == "pinned" then
+    title = L.LENS_PINNED_TITLE
     body = owner == "eui" and L.LENS_PINNED_EUI or L.LENS_PINNED:format(ownerLabel(owner))
   else
     body = L.LENS_SOFT_BODY:format(ownerLabel(owner))
@@ -286,7 +287,7 @@ function UI:Warn(kind, owner)
   local alerts = ns.InstanceAlertsUI
   local ok, shown = false, false
   if alerts and alerts.ShowNotice then
-    ok, shown = pcall(alerts.ShowNotice, alerts, { icon = "search", title = L.LENS_SOFT_TITLE, body = body,
+    ok, shown = pcall(alerts.ShowNotice, alerts, { icon = "search", title = title, body = body,
       seconds = NOTICE_SECONDS, action = UI.settingsAction and UI.settingsAction() or nil })
   end
   if not ok or not shown then ns.say(body) end
