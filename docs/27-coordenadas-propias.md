@@ -105,9 +105,16 @@ Lectura: `/reload` y luego `lua scripts/read-check-pos.lua`.
   → la tanda 2 encadena con `(px·ancho, py·alto)`.
 - El rumbo se puede **deducir del movimiento** (dos lecturas seguidas), sin `GetPlayerFacing`.
 
-### Pendiente (tanda 2)
-1. **Dentro de una mazmorra** (lo decisivo): ¿`GetPingPosition` sigue público y moviéndose?
-   ¿`viewRadius` en interior?
-2. `/qdt check pos 180` (sin encadenar): ¿cuánto vive el ping?
-3. Encadenado en píxeles: ¿conserva el origen (lectura igual antes y después)?
-4. Con un compañero en grupo: ¿su ping mueve tu `GetPingPosition`? Rangos e ítems contra `party1`.
+### Tanda 2 — dentro, Ruins of Lordaeron (party, Normal, 2999), solo, desde la entrada (2026-11-16)
+- **`GetPingPosition()` = 0,0 fijo** en las 120 lecturas (30 s corriendo: `GetUnitSpeed` = 8,05).
+  No es secreto ni `nil`: es **0 público**, igual que la restricción de posición de `UnitPosition`.
+  ⇒ **Vía A muerta dentro.** El encadenado tampoco se pudo probar (pidió ping en 0,0).
+- `PingLocation` no lanza error; `viewRadius` = 233,3 yd e `IsIndoors` = false también dentro.
+- `GetUnitSpeed("player")` es **público** dentro y fuera de combate: da la distancia recorrida, pero
+  sin rumbo no da posición.
+
+### Lo que queda
+- **Solo:** ninguna señal da posición ni rumbo → **no viable** un sistema de coordenadas propio.
+- **En grupo (vía B, sin medir):** malla de rangos entre clientes con QDT → radar relativo tosco
+  (tramos de unas 5 yd, sin orientación), no posiciones sobre la M. Requiere `/qdt check pos` con
+  `party1` cerca para saber si `CheckInteractDistance` e `IsItemInRange` responden dentro.
