@@ -23,7 +23,8 @@ jobs:
         uses: nebularg/actions-luacheck@v1
         with:
           files: QuantumDungeonTools/          # ← carpeta del addon
-          config: .luacheckrc
+          # SIN `config:`: en esta action es una URL que descarga con curl (con una ruta local
+          # falla «Could not resolve host»). luacheck ya lee el .luacheckrc de la raíz solo.
 
   # ── Todos los niveles: compilar con el Lua de destino. ───────────────────────────────
   # Lua 5.1 aborta la compilación de una función con >60 upvalues ("function at line N has
