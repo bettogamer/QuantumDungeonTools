@@ -383,9 +383,18 @@ local WATCHED = { "SetSize", "SetWidth", "SetHeight", "SetPoint", "ClearAllPoint
   "SetScale", "SetAlpha", "SetMaskTexture" }
 local hooked = false
 
+-- Any Lua SetZoom (ours or foreign) fires MINIMAP_UPDATE_ZOOM a frame later; only the engine's
+-- own switch (Undercity gate) does not go through Lua. Without this the flash's zoom step re-fired
+-- the event and looped (owner 2026-11-17: zoom 4 <-> 5 every frame).
+local luaZoomAt = -1
+local ZOOM_ECHO = 0.5
+
 local function hookSetters()
   if hooked then return end
   hooked = true
+  if type(Minimap.SetZoom) == "function" then
+    hooksecurefunc(Minimap, "SetZoom", function() luaZoomAt = GetTime() end)
+  end
   for _, m in ipairs(WATCHED) do
     if type(Minimap[m]) == "function" then
       hooksecurefunc(Minimap, m, function()
@@ -877,7 +886,8 @@ events:SetScript("OnEvent", function(_, event)
     -- a level reached while see-through, so it needs the zoom step, not just the opaque flash.
     -- One flash only: the zoom is already switched when the event comes (owner: «parpadea mucho»).
     if snap and settled and not leaving then
-      if event == "MINIMAP_UPDATE_ZOOM" then flash(event, true) else flashTwice(event) end
+      if event ~= "MINIMAP_UPDATE_ZOOM" then flashTwice(event)
+      elseif GetTime() - luaZoomAt > ZOOM_ECHO then flash(event, true) end
     end
   end
 end)
