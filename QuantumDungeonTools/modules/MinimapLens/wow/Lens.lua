@@ -428,6 +428,13 @@ local function nudgeZoom(why)
   nudgeToken = nudgeToken + 1
   local my = nudgeToken
   local e = { why = why, z = z, to = z + 1 < levels and z + 1 or z - 1, levels = levels }
+  -- Below 100 % opacity the engine skips the underground terrain (owner, 2026-11-16: at 100 %
+  -- it always painted, at 55 % never): paint it fully opaque, then go back to the opacity.
+  local alpha = Lens.clamp(db().opacity, Lens.OPACITY)
+  if alpha < 1 then
+    e.alpha = alpha
+    mine(Minimap.SetAlpha, Minimap, 1)
+  end
   nudgeNote(e)
   mine(Minimap.SetZoom, Minimap, e.to)
   C_Timer.After(NUDGE_BACK, function()
@@ -435,6 +442,42 @@ local function nudgeZoom(why)
     mine(Minimap.SetZoom, Minimap, z)
     local okB, zb = call(Minimap, "GetZoom")
     e.back = okB and not issecretvalue(zb) and zb or "?"
+    if alpha < 1 then
+      C_Timer.After(NUDGE_BACK, function()
+        if my ~= nudgeToken or not snap or leaving then return end
+        mine(Minimap.SetAlpha, Minimap, Lens.clamp(db().opacity, Lens.OPACITY))
+      end)
+    end
+  end)
+end
+
+-- On a zone change the event can come before the engine switches to the underground terrain:
+-- step now and once more a moment later. Below 100 % this is not enough (the way back in from
+-- Undercity's door raises no event nor changes any zone read: only reopening paints it), so the
+-- opacity slider warns about it (docs/LECCIONES.md).
+local NUDGE_AGAIN = 1.2
+local function nudgeTwice(why)
+  nudgeZoom(why)
+  local my = token
+  C_Timer.After(NUDGE_AGAIN, function()
+    if my == token and snap and settled and not leaving then nudgeZoom(why .. "+") end
+  end)
+end
+
+-- The normal minimap after the lens: restore writes size, alpha and zoom in one frame, which
+-- leaves the underground terrain blank too (owner: fixed by a hand zoom). Same step, on it.
+local function nudgeRestored()
+  local my = token
+  C_Timer.After(NUDGE_BACK, function()
+    if my ~= token or snap then return end
+    local ok, z = call(Minimap, "GetZoom")
+    local levels = maxZoomLevels()
+    if not ok or type(z) ~= "number" or issecretvalue(z) or not levels then return end
+    pcall(Minimap.SetZoom, Minimap, z + 1 < levels and z + 1 or z - 1)
+    C_Timer.After(NUDGE_BACK, function()
+      if my ~= token or snap then return end
+      pcall(Minimap.SetZoom, Minimap, z)
+    end)
   end)
 end
 
@@ -706,6 +749,7 @@ function UI:Off(instant)
     end
     local ok, e = restore(s)
     if not ok then ns.say(L.LENS_FAIL:format(tostring(e))) end
+    if not instant then nudgeRestored() end
     local diff = restoreDiff(s)
     dump("off", { ok = ok, err = not ok and tostring(e) or nil, instant = instant and true or false,
       diffs = #diff, diff = table.concat(diff, " | ") })
@@ -832,7 +876,7 @@ events:SetScript("OnEvent", function(_, event)
     -- after its post-combat pass. Only what drifted is put back, as with the hooks.
     if snap and settled and not leaving then schedule("combat", AFTER_COMBAT) end
   elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_NEW_AREA" then
-    if snap and settled and not leaving then nudgeZoom(event) end   -- walked into a cave / city
+    if snap and settled and not leaving then nudgeTwice(event) end   -- walked into a cave / city
   end
 end)
 

@@ -181,7 +181,7 @@ L.LENS_P_GATHER_KEEP  = "tracking untouched"
 L.LENS_P_RESET        = "Reset the lens ›"
 L.LENS_SET = {   -- { label, hint } per lens setting
   size          = { "Size", "Vs. the normal minimap" },
-  opacity       = { "Opacity", "Map and the icons around it" },
+  opacity       = { "Opacity", "Under 100%, caves may show blank: reopen the lens" },
   zoomStep      = { "Extra zoom when it opens", "One step closer; closing it brings yours back" },
   hideGathering = { "Hide herbs and ores", "Only while it is on; restored afterwards" },
   locked        = { "Lock position", "The lens cannot be dragged" },
@@ -478,7 +478,7 @@ if locale == "esES" or locale == "esMX" then
   L.LENS_P_RESET        = "Restablecer la lente ›"
   L.LENS_SET = {
     size          = { "Tamaño", "Vs. el minimapa normal" },
-    opacity       = { "Opacidad", "Mapa e iconos de alrededor" },
+    opacity       = { "Opacidad", "Bajo 100 %, en cuevas puede no verse: reábrela" },
     zoomStep      = { "Zoom extra al activarla", "Un paso más cerca; al apagarla vuelve el tuyo" },
     hideGathering = { "Ocultar hierbas y minas", "Solo mientras está activa; luego se restaura" },
     locked        = { "Bloquear posición", "La lente no se arrastra" },

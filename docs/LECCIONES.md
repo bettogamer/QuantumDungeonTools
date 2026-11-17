@@ -75,28 +75,23 @@
 
 ## minimapa-grande-sin-terreno-bajo-tierra
 
-- **Síntoma:** con el lens maximizado, en cuevas y en Undercity solo se ven las marcas del
-  minimapa (grupo, pings); el terreno no se pinta. Minimizado se ve bien.
-- **Causa:** el motor no repinta el terreno de esas zonas (WMO; `IsIndoors()` da false en
-  Undercity) cuando tamaño, posición, máscara y zoom cambian a la vez. Se descartaron uno a uno:
-  tamaño (también 255), máscara, posición, alfa, rastreo y nuestros marcos hijos. Aplicar los
-  mismos pasos a mano, en fotogramas separados, sí lo pinta.
-- **Patrón correcto:** cuando el lens se asienta, y en cada `ZONE_CHANGED*` con el lens abierto,
-  cambiar el zoom un nivel y volver al cabo de 0,2 s (`nudgeZoom`). Una vez pintado, el terreno
-  aguanta los cambios de zoom.
-- **Cómo se comprueba:** en Undercity, maximizar el lens: tras el salto de zoom se ve el mapa.
-  Entrar en una cueva con el lens ya abierto: también se ve (verificado por el owner).
-- **Origen:** M2, prueba del owner (2026-11-16).
-- **⚠ REABIERTO (2026-11-16, noche): el patrón NO es fiable.** Misma tarde, el terreno volvió a
-  faltar en Undercity con el lens abierto. Registro `_checkLens.nudge` (SavedVariables): el salto
-  se lanza (`settled` y cada `ZONE_CHANGED_INDOORS`, zoom 1→2→1, `back = 1`) y aun así no pinta.
-  Desplegada la versión verificada (`c8d9878`, sin los cambios de la lupa de ese día): **igual o
-  peor** — tampoco se ve con el lens cerrado; el minimapa normal se arregla cambiando el zoom a
-  mano, el lens **no** se arregla ni con la rueda. Descarta los commits de la lupa (`92ee2eb`,
-  `5ae247c`, `10db497`) como causa. Hipótesis abiertas: estado del motor que se rompe una vez por
-  sesión de juego (probar reiniciando el cliente, no `/reload`), tamaño del lens (el `on` medido
-  tenía `size = 200`, lado 510), o la primera verificación fue suerte de tiempos.
-  **Descartado:** reiniciar el cliente y entrar directo a Undercity tampoco lo pinta (owner, misma noche).
+- **Síntoma:** con el lens abierto, en cuevas y en Undercity solo se ven las marcas del minimapa
+  (grupo, pings); el terreno no se pinta.
+- **Causa:** la **opacidad**. Con el `Minimap` por debajo de alfa 1 el motor no pinta el terreno
+  bajo tierra (WMO; `IsIndoors()` da false en Undercity). Al 100 % siempre funcionó; al 55 % o
+  40 % nunca (owner, 2026-11-16). Una primera teoría (cambios de tamaño, zoom y máscara en el
+  mismo fotograma) se «verificó» con la opacidad al 100 % y era falsa.
+- **Patrón correcto:** al asentarse el lens, pintarlo a alfa 1 + un salto de zoom y volver a la
+  opacidad (`nudgeZoom`); el terreno pintado aguanta luego la opacidad baja. Al cerrar, el
+  minimapa normal da el mismo salto (`nudgeRestored`).
+- **Límite conocido:** entrar bajo tierra **con el lens ya abierto** y opacidad < 100 % lo deja
+  en blanco, y **no hay señal para detectarlo**: en la puerta de Undercity no llega ningún
+  `ZONE_CHANGED*` ni cambian `IsIndoors`/`IsOutdoors`, `GetSubZoneText`, `GetZoneText`,
+  `GetRealZoneText`, `GetMinimapZoneText`, `C_Map.GetBestMapForUnit` ni la instancia de
+  `UnitPosition` (sonda a 2 Hz, medido). Repetir el salto con alfa 1 en `ZONE_CHANGED_INDOORS`
+  tampoco pinta; solo reabrir el lens. Decisión del owner: la pista del slider de opacidad avisa
+  («reábrela»). No reintentar sondas de zona para esto.
+- **Origen:** M2, pruebas del owner (2026-11-16).
 
 ## ellesmere-recoge-botones-del-minimapa
 
