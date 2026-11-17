@@ -56,7 +56,8 @@ end
 -- nil until changed (nil = default), so a reset is just clearing them.
 ------------------------------------------------------------------------------
 Lens.SWITCHES = {
-  { key = "zoomStep",      default = true },    -- one zoom step closer while on (decision 3)
+  -- «extra zoom when it opens» was removed (owner, 2026-11-17): a zoom level reached while the
+  -- lens is see-through never loads the underground terrain, and the fix flickered.
   { key = "hideGathering", default = false },   -- herbs and minerals off while on (decision 6)
   { key = "locked",        default = false },   -- the lens cannot be dragged
   { key = "hoverOnly",     default = true },    -- magnifier only on minimap hover (owner, 2026-11-16)

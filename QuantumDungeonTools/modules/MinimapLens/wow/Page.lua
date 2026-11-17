@@ -90,7 +90,6 @@ local function summaryText()
     L.LENS_P_SQUARE,
     Lens.percent(Lens.get(d, "size")) .. "%",
     L.LENS_P_OPACITY_N:format(Lens.percent(Lens.get(d, "opacity"))),
-    Lens.get(d, "zoomStep") and L.LENS_P_ZOOM1 or L.LENS_P_ZOOM0,
     Lens.get(d, "hideGathering") and L.LENS_P_GATHER_OFF or L.LENS_P_GATHER_KEEP,
   }, " · ")
 end
@@ -273,7 +272,7 @@ local function buildCell(parent, key, kind)
   return cell
 end
 
-local CELLS = { { "size", "slider" }, { "opacity", "slider" }, { "zoomStep", "switch" },
+local CELLS = { { "size", "slider" }, { "opacity", "slider" },
   { "hideGathering", "switch" }, { "locked", "switch" }, { "corner", "select" }, { "hoverOnly", "switch" } }
 
 -- «How it looks»: header (chevron, title, summary) over a body that folds with a Weave tween.

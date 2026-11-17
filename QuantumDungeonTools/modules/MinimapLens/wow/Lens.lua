@@ -417,7 +417,7 @@ local function flashNote(e)
 end
 
 local FLASH_STEP = 0.2
-local function flash(why)
+local function flash(why, withStep)
   if not snap or leaving then return flashNote({ why = why, skip = "off" }) end
   local alpha = Lens.clamp(db().opacity, Lens.OPACITY)
   local e = { why = why, alpha = alpha }
@@ -427,7 +427,7 @@ local function flash(why)
   -- owner 2026-11-17): opaque first, then step the zoom away and back, then the opacity.
   local ok, z = call(Minimap, "GetZoom")
   local levels = maxZoomLevels()
-  local step = ok and type(z) == "number" and not issecretvalue(z) and levels
+  local step = withStep and ok and type(z) == "number" and not issecretvalue(z) and levels
   flashToken = flashToken + 1
   local my = flashToken
   mine(Minimap.SetAlpha, Minimap, 1)
@@ -435,7 +435,9 @@ local function flash(why)
     e.z = z
     mine(Minimap.SetZoom, Minimap, z + 1 < levels and z + 1 or z - 1)
   end
-  C_Timer.After(FLASH_STEP, function()
+  -- Back on the next frame: one frame on the other level is enough to load it and the zoom
+  -- jump does not show (owner: at 0.2 s it flickered).
+  C_Timer.After(0, function()
     if my ~= flashToken or not snap or leaving then return end
     if step then mine(Minimap.SetZoom, Minimap, z) end
     C_Timer.After(FLASH_STEP, function()
@@ -633,7 +635,7 @@ local function apply(s, d)
   local side
   side, s.pos = geometry(s.w, s.h, d, k)
   s.side = side
-  s.lensZoom = Lens.get(d, "zoomStep") and Lens.zoomIn(s.zoom, maxZoomLevels()) or s.zoom
+  s.lensZoom = s.zoom   -- no extra zoom any more (core/Lens.lua SWITCHES)
   local p = s.pos
   return mine(function()
     Minimap:SetSize(side, side)
@@ -885,7 +887,7 @@ function UI:Init()
   -- «extra zoom» on it stayed blank; the zoom moved after the settle flash). Flash after each.
   hooksecurefunc(Minimap, "SetZoom", function()
     if writing or not snap or not settled or leaving then return end   -- not our own steps
-    flashTwice("SetZoom")
+    flash("SetZoom", true)   -- the zoom moved see-through: load the new level
   end)
   events:RegisterEvent("PLAYER_LEAVING_WORLD")
   events:RegisterEvent("PLAYER_LOGOUT")

@@ -190,12 +190,11 @@ describe("MinimapLens core", function()
   it("ajustes de la página: valores por defecto, cambiados y restablecer", function()
     local db = {}
     Lens.applyDefaults(db)
-    assert_eq(Lens.get(db, "zoomStep"), true)
     assert_eq(Lens.get(db, "hideGathering"), false)
     assert_eq(Lens.get(db, "locked"), false)
     assert_eq(Lens.get(db, "hoverOnly"), true)
     assert_eq(Lens.changedCount(db), 0)
-    db.size, db.opacity, db.hideGathering, db.zoomStep = 3.0, 0.85, true, false
+    db.size, db.opacity, db.hideGathering, db.hoverOnly = 3.0, 0.85, true, false
     assert_eq(Lens.changedCount(db), 4)
     assert_true(Lens.isChanged(db, "size"))
     assert_eq(Lens.isChanged(db, "locked"), false)

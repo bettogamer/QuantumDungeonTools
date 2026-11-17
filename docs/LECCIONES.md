@@ -81,9 +81,15 @@
   bajo tierra (WMO; `IsIndoors()` da false en Undercity). Al 100 % siempre funcionó; al 55 % o
   40 % nunca (owner, 2026-11-16). Una primera teoría (cambios de tamaño, zoom y máscara en el
   mismo fotograma) se «verificó» con la opacidad al 100 % y era falsa.
-- **Patrón correcto:** al asentarse el lens, pintarlo a alfa 1 + un salto de zoom y volver a la
-  opacidad (`nudgeZoom`); el terreno pintado aguanta luego la opacidad baja. Al cerrar, el
-  minimapa normal da el mismo salto (`nudgeRestored`).
+- **Patrón correcto:** el terreno de un nivel de zoom solo se carga si ese nivel se alcanza con
+  el `Minimap` OPACO. Repintado (`flash` en `wow/Lens.lua`): alfa 1, salto de zoom a un nivel
+  vecino y vuelta, y de nuevo la opacidad elegida. Un destello sin salto de zoom basta solo si el
+  nivel ya se cargó antes al 100 % (sin «zoom extra»); con «zoom extra» no (owner, 2026-11-17).
+  Se lanza al asentarse el lens, en `ZONE_CHANGED*`/`MINIMAP_UPDATE_ZOOM` y tras cada `SetZoom`
+  ajeno (rueda, EllesmereUI; los propios se ignoran con `writing`). Al cerrar, el minimapa
+  normal da el mismo salto (`nudgeRestored`). El salto de zoom se nota (parpadea aun volviendo
+  en el siguiente fotograma), así que solo se usa tras un `SetZoom` ajeno; al abrir y en cambios
+  de zona basta el destello, porque el owner QUITÓ «zoom extra al activarla» (2026-11-17).
 - **Límite conocido:** entrar bajo tierra **con el lens ya abierto** y opacidad < 100 % lo deja
   en blanco, y **no hay señal para detectarlo**: en la puerta de Undercity no llega ningún
   `ZONE_CHANGED*` ni cambian `IsIndoors`/`IsOutdoors`, `GetSubZoneText`, `GetZoneText`,
