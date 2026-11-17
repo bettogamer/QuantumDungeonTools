@@ -456,6 +456,21 @@ local function flash(why, withStep)
   end)
 end
 
+-- The minimap switched map (Undercity gate: MINIMAP_UPDATE_ZOOM, then NEW_WMO_CHUNK ~0.1 s later;
+-- a level down inside: NEW_WMO_CHUNK alone, /qdt check door 2026-11-17). The new map was reached
+-- see-through, so it needs the zoom step. One flash per burst; echoes of a Lua SetZoom skipped.
+local MAP_SETTLE = 0.2
+local mapPending = false
+local function mapChanged(why)
+  if mapPending or GetTime() - luaZoomAt <= ZOOM_ECHO then return end
+  mapPending = true
+  local my = token
+  C_Timer.After(MAP_SETTLE, function()
+    mapPending = false
+    if my == token and snap and settled and not leaving then flash(why, true) end
+  end)
+end
+
 -- On a zone change the event can come before the engine switches terrain: flash now and once
 -- more a moment later.
 local FLASH_AGAIN = 1.2
@@ -880,14 +895,12 @@ events:SetScript("OnEvent", function(_, event)
     -- after its post-combat pass. Only what drifted is put back, as with the hooks.
     if snap and settled and not leaving then schedule("combat", AFTER_COMBAT) end
   elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_NEW_AREA"
-      or event == "MINIMAP_UPDATE_ZOOM" then   -- the minimap switching indoor / outdoor zoom
-    -- At the Undercity gate MINIMAP_UPDATE_ZOOM is the ONLY signal (/qdt check door, 2026-11-17):
-    -- the engine moves the zoom itself (2 -> 0, view radius 166.7 -> 150) in that same frame, to
-    -- a level reached while see-through, so it needs the zoom step, not just the opaque flash.
-    -- One flash only: the zoom is already switched when the event comes (owner: «parpadea mucho»).
+      or event == "MINIMAP_UPDATE_ZOOM" or event == "NEW_WMO_CHUNK" then   -- minimap changed map
+    -- No ZONE_CHANGED* at the Undercity gate nor a level down: the map switch is seen only by
+    -- MINIMAP_UPDATE_ZOOM / NEW_WMO_CHUNK (the engine moves the zoom itself, 2 -> 0): mapChanged.
     if snap and settled and not leaving then
-      if event ~= "MINIMAP_UPDATE_ZOOM" then flashTwice(event)
-      elseif GetTime() - luaZoomAt > ZOOM_ECHO then flash(event, true) end
+      if event == "MINIMAP_UPDATE_ZOOM" or event == "NEW_WMO_CHUNK" then mapChanged(event)
+      else flashTwice(event) end
     end
   end
 end)
@@ -913,4 +926,5 @@ function UI:Init()
   events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   -- Not every client has it (MINIMAP_PING did not exist in Forever): an unknown event throws.
   pcall(events.RegisterEvent, events, "MINIMAP_UPDATE_ZOOM")
+  pcall(events.RegisterEvent, events, "NEW_WMO_CHUNK")
 end
