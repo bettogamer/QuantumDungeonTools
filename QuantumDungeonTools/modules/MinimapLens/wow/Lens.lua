@@ -399,11 +399,33 @@ local function hookSetters()
   end
 end
 
+-- Underground / WMO areas (caves, Undercity): the engine paints only the blips on the grown
+-- minimap until a LATER zoom change lands back on the level (measured 2026-11-16: size, mask,
+-- position, alpha, tracking and our child frames ruled out one by one; a zoom +1 then -1 after
+-- the lens settled brought the ground back). So once settled, and on every subzone change while
+-- on, step the zoom out of the level and back a moment later.
+local NUDGE_BACK = 0.2
+local nudgeToken = 0
+local function nudgeZoom()
+  if not snap or leaving then return end
+  local ok, z = call(Minimap, "GetZoom")
+  local levels = maxZoomLevels()
+  if not ok or type(z) ~= "number" or issecretvalue(z) or not levels then return end
+  nudgeToken = nudgeToken + 1
+  local my = nudgeToken
+  mine(Minimap.SetZoom, Minimap, z + 1 < levels and z + 1 or z - 1)
+  C_Timer.After(NUDGE_BACK, function()
+    if my ~= nudgeToken or not snap then return end
+    mine(Minimap.SetZoom, Minimap, z)
+  end)
+end
+
 local function checkMove(my)
   local want = snap.pos
   local function done(held, retried)
     UI.moveHeld = held
     settled = true
+    nudgeZoom()
     dump("move", { held = held, retried = retried })
     coexist({ held = held })
     UI:RefreshDrag()
@@ -791,6 +813,8 @@ events:SetScript("OnEvent", function(_, event)
     -- Safety net for a UI that writes through a cached setter (no hook sees it): look once
     -- after its post-combat pass. Only what drifted is put back, as with the hooks.
     if snap and settled and not leaving then schedule("combat", AFTER_COMBAT) end
+  elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_NEW_AREA" then
+    if snap and settled and not leaving then nudgeZoom() end   -- walked into a cave / city
   end
 end)
 
@@ -804,4 +828,7 @@ function UI:Init()
   events:RegisterEvent("PLAYER_LEAVING_WORLD")
   events:RegisterEvent("PLAYER_LOGOUT")
   events:RegisterEvent("PLAYER_REGEN_ENABLED")
+  events:RegisterEvent("ZONE_CHANGED_INDOORS")
+  events:RegisterEvent("ZONE_CHANGED")
+  events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 end

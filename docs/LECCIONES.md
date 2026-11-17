@@ -72,5 +72,19 @@
 - **Cómo se comprueba:** entrar, matar un jefe, `/reload`: la kill y el reloj siguen.
 - **Origen:** M1, run del owner en Deadmines (2026-11-13).
 
+## minimapa-grande-sin-terreno-bajo-tierra
+
+- **Síntoma:** con el lens maximizado, en cuevas y en Undercity solo se ven las marcas del
+  minimapa (grupo, pings); el terreno no se pinta. Minimizado se ve bien.
+- **Causa:** el motor no repinta el terreno de esas zonas (WMO; `IsIndoors()` da false en
+  Undercity) cuando tamaño, posición, máscara y zoom cambian a la vez. Se descartaron uno a uno:
+  tamaño (también 255), máscara, posición, alfa, rastreo y nuestros marcos hijos. Aplicar los
+  mismos pasos a mano, en fotogramas separados, sí lo pinta.
+- **Patrón correcto:** cuando el lens se asienta, y en cada `ZONE_CHANGED*` con el lens abierto,
+  cambiar el zoom un nivel y volver al cabo de 0,2 s (`nudgeZoom`). Una vez pintado, el terreno
+  aguanta los cambios de zoom.
+- **Cómo se comprueba:** en Undercity, maximizar el lens: tras el salto de zoom se ve el mapa.
+- **Origen:** M2, prueba del owner (2026-11-16).
+
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)
      también viven aquí, con motivo y con lo que se hace en su lugar. -->
