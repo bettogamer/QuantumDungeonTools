@@ -9,8 +9,9 @@
 -- Magnifier (artboards LensReposo / LensActiva): a 34 px round button, navy with a 2 px ring,
 -- glued to the minimap's ring bottom right (to the square's corner when the minimap is square or
 -- the lens is on). Off = ring tickIdle + zoom-in in muted; on = gold ring, gold halo, zoom-out.
--- It exists only inside an instance (owner, point 1), or while the lens is on so it can be
--- closed. Child of the Minimap: it moves, fades and hides with it. Shown and hidden with a fade.
+-- Always there while the module is on, inside an instance or not (owner, 2026-11-16: appearing
+-- only inside was awkward under EllesmereUI). Child of the Minimap: it moves, fades and hides
+-- with it. Shown and hidden with a fade (module switch).
 local _, ns = ...
 local L = ns.L
 local Lens = ns.MinimapLens
@@ -32,7 +33,6 @@ local button, fade
 local target = 0          -- alpha the button is heading to
 local inside            -- last IsInInstance() read (nil = unknown)
 local openedInside      -- the lens that is on was opened inside an instance
-local preview = false   -- /qdt lens button: shown outside an instance too (until /reload)
 
 local function UI() return ns.MinimapLensUI end
 
@@ -152,10 +152,10 @@ local function fadeTo(to)
   fade.tween:snap(from)
 end
 
--- In an instance, or while the lens is on (so the button can close it).
+-- Whenever the module is on (inside an instance or not).
 local function update()
   if not button then return end
-  local want = Lens.isOn(ns.db and ns.db.minimapLens) and (inside == true or preview or UI():IsOn())
+  local want = Lens.isOn(ns.db and ns.db.minimapLens)
   if want then place() end
   paint()
   if want and target ~= 1 then fadeTo(1) elseif not want and target ~= 0 then fadeTo(0) end
@@ -218,13 +218,6 @@ events:SetScript("OnEvent", function(_, event)
     update()
   end
 end)
-
--- Preview of the magnifier outside an instance (/qdt lens button): toggles, gone on /reload.
-function T:Preview()
-  preview = not preview
-  update()
-  return preview
-end
 
 function T:Init()
   build()
