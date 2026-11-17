@@ -17,6 +17,7 @@
 | [wow-tamano-fuente-caja-de-linea](#wow-tamano-fuente-caja-de-linea) | el texto sale ~7 % más grande que en el diseño | 2026-11-13 |
 | [craft-tooltip-lines-posicionales](#craft-tooltip-lines-posicionales) | tooltip de Craft vacío (cuadro diminuto) | 2026-11-13 |
 | [forever-dificultad-vacia-al-entrar](#forever-dificultad-vacia-al-entrar) | /reload dentro de la mazmorra pierde las kills | 2026-11-13 |
+| [ellesmere-recoge-botones-del-minimapa](#ellesmere-recoge-botones-del-minimapa) | botón propio sobre el minimapa desaparece con EllesmereUI | 2026-11-16 |
 
 ---
 
@@ -85,6 +86,18 @@
   aguanta los cambios de zoom.
 - **Cómo se comprueba:** en Undercity, maximizar el lens: tras el salto de zoom se ve el mapa.
   Entrar en una cueva con el lens ya abierto: también se ve (verificado por el owner).
+- **Origen:** M2, prueba del owner (2026-11-16).
+
+## ellesmere-recoge-botones-del-minimapa
+
+- **Síntoma:** la lupa del lens (un `Button` hijo del `Minimap`) desaparece bajo EllesmereUI.
+- **Causa:** `EUI_Minimap_Buttons.lua` `GatherMinimapButtons` recoge todo hijo directo del
+  `Minimap` que sea `Button`, con nombre que no acabe en dígitos y ancho ≥ 20, y lo esconde
+  (`Hide` + `SetAlpha(0)` + hook a `Show`). Re-escanea en cada `ADDON_LOADED`. No hay lista de
+  exclusión pública.
+- **Patrón correcto:** un botón propio sobre el minimapa NO es hijo del `Minimap`: padre
+  `UIParent`, anclado con `SetPoint` al `Minimap`, su strata y nivel + 10, y ocultarlo/mostrarlo
+  con hooks `OnHide`/`OnShow` del `Minimap` (`MinimapLens/wow/Triggers.lua`).
 - **Origen:** M2, prueba del owner (2026-11-16).
 
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)

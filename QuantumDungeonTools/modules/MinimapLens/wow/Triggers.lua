@@ -10,8 +10,10 @@
 -- glued to the minimap's ring bottom right (to the square's corner when the minimap is square or
 -- the lens is on). Off = ring tickIdle + zoom-in in muted; on = gold ring, gold halo, zoom-out.
 -- Always there while the module is on, inside an instance or not (owner, 2026-11-16: appearing
--- only inside was awkward under EllesmereUI). Child of the Minimap: it moves, fades and hides
--- with it. Shown and hidden with a fade (module switch).
+-- only inside was awkward under EllesmereUI). Parented to UIParent and ANCHORED to the Minimap,
+-- not its child: EllesmereUI gathers every named Button child of the Minimap into its button
+-- flyout and hides it (Hide + SetAlpha(0) + a Show hook, re-scanned on every ADDON_LOADED).
+-- It hides and shows with the Minimap through hooks. Shown and hidden with a fade (module switch).
 local _, ns = ...
 local L = ns.L
 local Lens = ns.MinimapLens
@@ -115,6 +117,9 @@ local function place()
   local okS, w, h = pcall(Minimap.GetSize, Minimap)
   if not okS or issecretvalue(w) or issecretvalue(h) then return end
   local x, y = Lens.buttonOffset(w, h, UI():IsOn() or squareMinimap())
+  -- Not a child of the Minimap: follow its strata (the lens may raise it) and stay above it.
+  button:SetFrameStrata(Minimap:GetFrameStrata() or "LOW")
+  button:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 10)
   button:ClearAllPoints()
   button:SetPoint("CENTER", Minimap, "CENTER", x, y)
 end
@@ -164,8 +169,10 @@ end
 local function build()
   if button or not Minimap then return end
   local C = ns.Style.C
-  local b = CreateFrame("Button", "QDT_LensButton", Minimap)
+  -- UIParent, not Minimap: see the header (EllesmereUI's button flyout).
+  local b = CreateFrame("Button", "QDT_LensButton", UIParent)
   b:SetSize(SIZE, SIZE)
+  b:SetFrameStrata(Minimap:GetFrameStrata() or "LOW")
   b:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 10)
   b:RegisterForClicks("LeftButtonUp")
   b.halo = circle(b, "BACKGROUND", HALO, 0)
@@ -188,6 +195,14 @@ local function build()
   paint()
   -- The minimap changes size (the lens, EUI's own resize): stay glued to the ring.
   Minimap:HookScript("OnSizeChanged", function() if button:IsShown() then place() end end)
+  -- Not its child any more: hide and come back with the Minimap by hand.
+  Minimap:HookScript("OnHide", function() button:Hide() end)
+  Minimap:HookScript("OnShow", function()
+    if target > 0 then
+      place()
+      button:Show()
+    end
+  end)
 end
 
 ------------------------------------------------------------------------------
