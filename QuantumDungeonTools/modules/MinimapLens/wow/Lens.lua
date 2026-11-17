@@ -406,17 +406,35 @@ end
 -- on, step the zoom out of the level and back a moment later.
 local NUDGE_BACK = 0.2
 local nudgeToken = 0
-local function nudgeZoom()
-  if not snap or leaving then return end
+local nudgeLog = {}   -- self-check: _checkLens.nudge = last 8 { why, z, to, back }
+local function nudgeNote(e)
+  e.t = GetTime()
+  nudgeLog[#nudgeLog + 1] = e
+  while #nudgeLog > 8 do table.remove(nudgeLog, 1) end
+  local root = QuantumDungeonToolsDB
+  if type(root) == "table" then
+    root._checkLens = root._checkLens or {}
+    root._checkLens.nudge = nudgeLog
+  end
+end
+
+local function nudgeZoom(why)
+  if not snap or leaving then return nudgeNote({ why = why, skip = "off" }) end
   local ok, z = call(Minimap, "GetZoom")
   local levels = maxZoomLevels()
-  if not ok or type(z) ~= "number" or issecretvalue(z) or not levels then return end
+  if not ok or type(z) ~= "number" or issecretvalue(z) or not levels then
+    return nudgeNote({ why = why, skip = "zoom" })
+  end
   nudgeToken = nudgeToken + 1
   local my = nudgeToken
-  mine(Minimap.SetZoom, Minimap, z + 1 < levels and z + 1 or z - 1)
+  local e = { why = why, z = z, to = z + 1 < levels and z + 1 or z - 1, levels = levels }
+  nudgeNote(e)
+  mine(Minimap.SetZoom, Minimap, e.to)
   C_Timer.After(NUDGE_BACK, function()
-    if my ~= nudgeToken or not snap then return end
+    if my ~= nudgeToken or not snap then e.back = "cancelled" return end
     mine(Minimap.SetZoom, Minimap, z)
+    local okB, zb = call(Minimap, "GetZoom")
+    e.back = okB and not issecretvalue(zb) and zb or "?"
   end)
 end
 
@@ -425,7 +443,7 @@ local function checkMove(my)
   local function done(held, retried)
     UI.moveHeld = held
     settled = true
-    nudgeZoom()
+    nudgeZoom("settled")
     dump("move", { held = held, retried = retried })
     coexist({ held = held })
     UI:RefreshDrag()
@@ -814,7 +832,7 @@ events:SetScript("OnEvent", function(_, event)
     -- after its post-combat pass. Only what drifted is put back, as with the hooks.
     if snap and settled and not leaving then schedule("combat", AFTER_COMBAT) end
   elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_NEW_AREA" then
-    if snap and settled and not leaving then nudgeZoom() end   -- walked into a cave / city
+    if snap and settled and not leaving then nudgeZoom(event) end   -- walked into a cave / city
   end
 end)
 

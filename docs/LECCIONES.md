@@ -87,6 +87,15 @@
 - **Cómo se comprueba:** en Undercity, maximizar el lens: tras el salto de zoom se ve el mapa.
   Entrar en una cueva con el lens ya abierto: también se ve (verificado por el owner).
 - **Origen:** M2, prueba del owner (2026-11-16).
+- **⚠ REABIERTO (2026-11-16, noche): el patrón NO es fiable.** Misma tarde, el terreno volvió a
+  faltar en Undercity con el lens abierto. Registro `_checkLens.nudge` (SavedVariables): el salto
+  se lanza (`settled` y cada `ZONE_CHANGED_INDOORS`, zoom 1→2→1, `back = 1`) y aun así no pinta.
+  Desplegada la versión verificada (`c8d9878`, sin los cambios de la lupa de ese día): **igual o
+  peor** — tampoco se ve con el lens cerrado; el minimapa normal se arregla cambiando el zoom a
+  mano, el lens **no** se arregla ni con la rueda. Descarta los commits de la lupa (`92ee2eb`,
+  `5ae247c`, `10db497`) como causa. Hipótesis abiertas: estado del motor que se rompe una vez por
+  sesión de juego (probar reiniciando el cliente, no `/reload`), tamaño del lens (el `on` medido
+  tenía `size = 200`, lado 510), o la primera verificación fue suerte de tiempos.
 
 ## ellesmere-recoge-botones-del-minimapa
 
