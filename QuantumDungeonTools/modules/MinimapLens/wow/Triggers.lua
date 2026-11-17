@@ -169,14 +169,15 @@ local function hovering()
   return false
 end
 
--- Whenever the module is on (inside an instance or not); with «only on hover», while the mouse
--- is over the minimap or the lens is on (so the gold magnifier that closes it stays in sight).
+-- Whenever the module is on (inside an instance or not); with «only on hover», only while the
+-- mouse is over the minimap, the lens open or not (owner 2026-11-17: the gold magnifier stayed
+-- in sight over the open lens).
 local watcher = CreateFrame("Frame")
 local function update()
   if not button then return end
   local d = ns.db and ns.db.minimapLens
   local on = Lens.isOn(d)
-  local hoverOnly = on and Lens.get(d, "hoverOnly") and not UI():IsOn()
+  local hoverOnly = on and Lens.get(d, "hoverOnly")
   watcher:SetShown(hoverOnly and true or false)
   local want = on and (not hoverOnly or hovering())
   if want then place() end
