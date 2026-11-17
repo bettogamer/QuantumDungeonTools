@@ -186,6 +186,8 @@ L.LENS_SET = {   -- { label, hint } per lens setting
   hideGathering = { "Hide herbs and ores", "Only while it is on; restored afterwards" },
   locked        = { "Lock position", "The lens cannot be dragged" },
   corner        = { "Magnifier corner", "Where the button sits on the minimap" },
+  hoverOnly     = { "Magnifier only on hover",
+    "Shows when the mouse is over the minimap; always while the lens is on" },
 }
 L.LENS_CORNER = { BL = "Bottom left", BR = "Bottom right", TL = "Top left", TR = "Top right" }
 L.LENS_P_SHORTCUT     = "SHORTCUT"
@@ -481,6 +483,8 @@ if locale == "esES" or locale == "esMX" then
     hideGathering = { "Ocultar hierbas y minas", "Solo mientras está activa; luego se restaura" },
     locked        = { "Bloquear posición", "La lente no se arrastra" },
     corner        = { "Esquina de la lupa", "Dónde va el botón en el minimapa" },
+    hoverOnly     = { "Lupa solo al pasar el ratón",
+      "Aparece al pasar por el minimapa; con la lente abierta, siempre" },
   }
   L.LENS_CORNER = { BL = "Abajo a la izquierda", BR = "Abajo a la derecha", TL = "Arriba a la izquierda",
     TR = "Arriba a la derecha" }

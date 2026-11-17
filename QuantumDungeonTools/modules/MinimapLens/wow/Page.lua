@@ -253,6 +253,7 @@ local function buildCell(parent, key, kind)
         db()[key] = v
         if key == "locked" then UI():RefreshDrag() end
         if key == "hideGathering" then UI():RefreshGathering() end
+        if key == "hoverOnly" and ns.MinimapLensTriggers then ns.MinimapLensTriggers:Refresh() end
         refreshSettings()
       end })
     ctrl = entry.control:GetFrame()
@@ -273,7 +274,7 @@ local function buildCell(parent, key, kind)
 end
 
 local CELLS = { { "size", "slider" }, { "opacity", "slider" }, { "zoomStep", "switch" },
-  { "hideGathering", "switch" }, { "locked", "switch" }, { "corner", "select" } }
+  { "hideGathering", "switch" }, { "locked", "switch" }, { "corner", "select" }, { "hoverOnly", "switch" } }
 
 -- «How it looks»: header (chevron, title, summary) over a body that folds with a Weave tween.
 local function buildFold(parent, anchor, onHeight)
@@ -333,7 +334,10 @@ local function buildFold(parent, anchor, onHeight)
       UI():SetOpacity(Lens.get(db(), "opacity"))
       UI():RefreshDrag()
       UI():RefreshGathering()
-      if ns.MinimapLensTriggers then ns.MinimapLensTriggers:Replace() end
+      if ns.MinimapLensTriggers then
+        ns.MinimapLensTriggers:Replace()
+        ns.MinimapLensTriggers:Refresh()
+      end
       if Mover() then Mover():Refresh() end
       refreshSettings()
     end })

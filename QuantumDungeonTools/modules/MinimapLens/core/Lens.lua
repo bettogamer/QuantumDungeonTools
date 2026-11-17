@@ -59,6 +59,7 @@ Lens.SWITCHES = {
   { key = "zoomStep",      default = true },    -- one zoom step closer while on (decision 3)
   { key = "hideGathering", default = false },   -- herbs and minerals off while on (decision 6)
   { key = "locked",        default = false },   -- the lens cannot be dragged
+  { key = "hoverOnly",     default = true },    -- magnifier only on minimap hover (owner, 2026-11-16)
 }
 local SWITCH = {}
 for _, s in ipairs(Lens.SWITCHES) do SWITCH[s.key] = s end

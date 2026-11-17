@@ -158,14 +158,47 @@ local function fadeTo(to)
   fade.tween:snap(from)
 end
 
--- Whenever the module is on (inside an instance or not).
+-- «Magnifier only on hover» (default on): the mouse over the minimap or over the button itself.
+local function hovering()
+  local ok, over = pcall(Minimap.IsMouseOver, Minimap)
+  if ok and over == true then return true end
+  if button:IsShown() then
+    local okB, overB = pcall(button.IsMouseOver, button)
+    return okB and overB == true
+  end
+  return false
+end
+
+-- Whenever the module is on (inside an instance or not); with «only on hover», while the mouse
+-- is over the minimap or the lens is on (so the gold magnifier that closes it stays in sight).
+local watcher = CreateFrame("Frame")
 local function update()
   if not button then return end
-  local want = Lens.isOn(ns.db and ns.db.minimapLens)
+  local d = ns.db and ns.db.minimapLens
+  local on = Lens.isOn(d)
+  local hoverOnly = on and Lens.get(d, "hoverOnly") and not UI():IsOn()
+  watcher:SetShown(hoverOnly and true or false)
+  local want = on and (not hoverOnly or hovering())
   if want then place() end
   paint()
   if want and target ~= 1 then fadeTo(1) elseif not want and target ~= 0 then fadeTo(0) end
 end
+
+-- Polls the hover (10 Hz) only while «only on hover» applies: OnEnter/OnLeave of the Minimap
+-- would flicker crossing to the button, which overhangs its edge.
+local POLL = 0.1
+local since, lastHover = 0, nil
+watcher:Hide()
+watcher:SetScript("OnUpdate", function(_, elapsed)
+  since = since + elapsed
+  if since < POLL then return end
+  since = 0
+  local h = hovering()
+  if h ~= lastHover then
+    lastHover = h
+    update()
+  end
+end)
 
 local function build()
   if button or not Minimap then return end
@@ -218,6 +251,12 @@ end
 
 -- The page changed the corner (or reset it): move the magnifier now.
 function T:Replace() place() end
+
+-- The page changed «only on hover» (or reset it).
+function T:Refresh()
+  lastHover = nil
+  update()
+end
 
 -- The key bound to the lens ("Shift-M"), or nil: the page's SHORTCUT card (F5).
 function T:BoundKey() return boundKey() end

@@ -96,6 +96,7 @@
   `5ae247c`, `10db497`) como causa. Hipótesis abiertas: estado del motor que se rompe una vez por
   sesión de juego (probar reiniciando el cliente, no `/reload`), tamaño del lens (el `on` medido
   tenía `size = 200`, lado 510), o la primera verificación fue suerte de tiempos.
+  **Descartado:** reiniciar el cliente y entrar directo a Undercity tampoco lo pinta (owner, misma noche).
 
 ## ellesmere-recoge-botones-del-minimapa
 
