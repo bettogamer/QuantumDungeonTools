@@ -448,13 +448,13 @@ local function flash(why, withStep)
 end
 
 -- On a zone change the event can come before the engine switches terrain: flash now and once
--- more a moment later. withStep: the engine itself switched the zoom level (see the event).
+-- more a moment later.
 local FLASH_AGAIN = 1.2
-local function flashTwice(why, withStep)
-  flash(why, withStep)
+local function flashTwice(why)
+  flash(why)
   local my = token
   C_Timer.After(FLASH_AGAIN, function()
-    if my == token and snap and settled and not leaving then flash(why .. "+", withStep) end
+    if my == token and snap and settled and not leaving then flash(why .. "+") end
   end)
 end
 
@@ -875,7 +875,10 @@ events:SetScript("OnEvent", function(_, event)
     -- At the Undercity gate MINIMAP_UPDATE_ZOOM is the ONLY signal (/qdt check door, 2026-11-17):
     -- the engine moves the zoom itself (2 -> 0, view radius 166.7 -> 150) in that same frame, to
     -- a level reached while see-through, so it needs the zoom step, not just the opaque flash.
-    if snap and settled and not leaving then flashTwice(event, event == "MINIMAP_UPDATE_ZOOM") end
+    -- One flash only: the zoom is already switched when the event comes (owner: «parpadea mucho»).
+    if snap and settled and not leaving then
+      if event == "MINIMAP_UPDATE_ZOOM" then flash(event, true) else flashTwice(event) end
+    end
   end
 end)
 
