@@ -116,7 +116,8 @@ local function place()
   if not button then return end
   local okS, w, h = pcall(Minimap.GetSize, Minimap)
   if not okS or issecretvalue(w) or issecretvalue(h) then return end
-  local x, y = Lens.buttonOffset(w, h, UI():IsOn() or squareMinimap())
+  local x, y = Lens.buttonOffset(w, h, UI():IsOn() or squareMinimap(),
+    Lens.get(ns.db and ns.db.minimapLens, "corner"))
   -- Not a child of the Minimap: follow its strata (the lens may raise it) and stay above it.
   button:SetFrameStrata(Minimap:GetFrameStrata() or "LOW")
   button:SetFrameLevel((Minimap:GetFrameLevel() or 1) + 10)
@@ -214,6 +215,9 @@ function T:Toggle(source)
   UI():Toggle()
   if UI():IsOn() ~= wasOn then log(wasOn and "closes" or "opens", source or "?") end
 end
+
+-- The page changed the corner (or reset it): move the magnifier now.
+function T:Replace() place() end
 
 -- The key bound to the lens ("Shift-M"), or nil: the page's SHORTCUT card (F5).
 function T:BoundKey() return boundKey() end

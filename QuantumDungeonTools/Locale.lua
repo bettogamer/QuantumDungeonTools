@@ -185,7 +185,9 @@ L.LENS_SET = {   -- { label, hint } per lens setting
   zoomStep      = { "Extra zoom when it opens", "One step closer; closing it brings yours back" },
   hideGathering = { "Hide herbs and ores", "Only while it is on; restored afterwards" },
   locked        = { "Lock position", "The lens cannot be dragged" },
+  corner        = { "Magnifier corner", "Where the button sits on the minimap" },
 }
+L.LENS_CORNER = { BL = "Bottom left", BR = "Bottom right", TL = "Top left", TR = "Top right" }
 L.LENS_P_SHORTCUT     = "SHORTCUT"
 L.LENS_P_TOGGLE       = "Toggle the lens"
 L.LENS_P_NO_KEY       = "NOT SET"
@@ -478,7 +480,10 @@ if locale == "esES" or locale == "esMX" then
     zoomStep      = { "Zoom extra al activarla", "Un paso más cerca; al apagarla vuelve el tuyo" },
     hideGathering = { "Ocultar hierbas y minas", "Solo mientras está activa; luego se restaura" },
     locked        = { "Bloquear posición", "La lente no se arrastra" },
+    corner        = { "Esquina de la lupa", "Dónde va el botón en el minimapa" },
   }
+  L.LENS_CORNER = { BL = "Abajo a la izquierda", BR = "Abajo a la derecha", TL = "Arriba a la izquierda",
+    TR = "Arriba a la derecha" }
   L.LENS_P_SHORTCUT     = "ATAJO"
   L.LENS_P_TOGGLE       = "Alternar la lente"
   L.LENS_P_NO_KEY       = "SIN ASIGNAR"

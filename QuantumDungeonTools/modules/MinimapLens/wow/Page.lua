@@ -102,6 +102,8 @@ local function refreshSettings()
     cell.dot:SetShown(Lens.isChanged(d, key))
     if cell.kind == "switch" then
       setSwitch(cell.control, Lens.get(d, key))
+    elseif cell.kind == "select" then
+      if cell.control:GetValue() ~= Lens.get(d, key) then cell.control:SetValue(Lens.get(d, key)) end
     else
       local pct = Lens.percent(Lens.get(d, key))
       silent = true
@@ -232,6 +234,18 @@ local function buildCell(parent, key, kind)
       end })
     ctrl = entry.control:GetFrame()
     ctrl:SetPoint("RIGHT", entry.value, "LEFT", -S.pageIconGap, 0)
+  elseif kind == "select" then
+    local options = {}
+    for i, c in ipairs(Lens.CORNERS) do options[i] = { value = c, label = L.LENS_CORNER[c] or c } end
+    entry.control = Craft.Select:Create(cell, { options = options, value = Lens.get(db(), key),
+      size = "sm", width = SLIDER_W, onSelect = function(v)
+        if v == Lens.get(db(), key) then return end
+        db()[key] = v ~= Lens.CORNER_DEFAULT and v or nil
+        if ns.MinimapLensTriggers then ns.MinimapLensTriggers:Replace() end
+        refreshSettings()
+      end })
+    ctrl = entry.control:GetFrame()
+    ctrl:SetPoint("RIGHT", cell, "RIGHT", -S.pagePadX, 0)
   else
     entry.control = Craft.Switch:Create(cell, { checked = Lens.get(db(), key),
       onChange = function(v)
@@ -259,7 +273,7 @@ local function buildCell(parent, key, kind)
 end
 
 local CELLS = { { "size", "slider" }, { "opacity", "slider" }, { "zoomStep", "switch" },
-  { "hideGathering", "switch" }, { "locked", "switch" } }
+  { "hideGathering", "switch" }, { "locked", "switch" }, { "corner", "select" } }
 
 -- «How it looks»: header (chevron, title, summary) over a body that folds with a Weave tween.
 local function buildFold(parent, anchor, onHeight)
@@ -319,6 +333,7 @@ local function buildFold(parent, anchor, onHeight)
       UI():SetOpacity(Lens.get(db(), "opacity"))
       UI():RefreshDrag()
       UI():RefreshGathering()
+      if ns.MinimapLensTriggers then ns.MinimapLensTriggers:Replace() end
       if Mover() then Mover():Refresh() end
       refreshSettings()
     end })

@@ -63,6 +63,12 @@ Lens.SWITCHES = {
 local SWITCH = {}
 for _, s in ipairs(Lens.SWITCHES) do SWITCH[s.key] = s end
 
+-- Magnifier corner (owner, 2026-11-16: bottom right hid EllesmereUI's + / -). nil = default.
+Lens.CORNERS = { "BL", "BR", "TL", "TR" }
+Lens.CORNER_DEFAULT = "BL"
+local CORNER = { BL = true, BR = true, TL = true, TR = true }
+local function corner(v) return CORNER[v] and v or Lens.CORNER_DEFAULT end
+
 -- Module switch (live: off closes the lens and hides the magnifier). nil = on.
 function Lens.isOn(db) return type(db) ~= "table" or db.enabled ~= false end
 
@@ -70,6 +76,7 @@ function Lens.get(db, key)
   db = type(db) == "table" and db or {}
   if key == "size" then return Lens.clamp(db.size, Lens.SIZE) end
   if key == "opacity" then return Lens.clamp(db.opacity, Lens.OPACITY) end
+  if key == "corner" then return corner(db.corner) end
   local s = SWITCH[key]
   if not s then return nil end
   if db[key] == nil then return s.default end
@@ -79,6 +86,7 @@ end
 function Lens.isChanged(db, key)
   if key == "size" then return math.abs(Lens.get(db, key) - Lens.SIZE.default) > 1e-6 end
   if key == "opacity" then return math.abs(Lens.get(db, key) - Lens.OPACITY.default) > 1e-6 end
+  if key == "corner" then return Lens.get(db, key) ~= Lens.CORNER_DEFAULT end
   local s = SWITCH[key]
   return s ~= nil and Lens.get(db, key) ~= s.default
 end
@@ -87,6 +95,7 @@ function Lens.changedCount(db)
   local n = 0
   if Lens.isChanged(db, "size") then n = n + 1 end
   if Lens.isChanged(db, "opacity") then n = n + 1 end
+  if Lens.isChanged(db, "corner") then n = n + 1 end
   for _, s in ipairs(Lens.SWITCHES) do
     if Lens.isChanged(db, s.key) then n = n + 1 end
   end
@@ -97,7 +106,7 @@ end
 -- switch is not a lens setting.
 function Lens.reset(db)
   if type(db) ~= "table" then return end
-  db.size, db.opacity = Lens.SIZE.default, Lens.OPACITY.default
+  db.size, db.opacity, db.corner = Lens.SIZE.default, Lens.OPACITY.default, nil
   for _, s in ipairs(Lens.SWITCHES) do db[s.key] = nil end
 end
 
@@ -276,14 +285,17 @@ end
 -- Triggers (plan M2 F4)
 ------------------------------------------------------------------------------
 -- Magnifier button spot, as the offset of its centre from the Minimap's CENTER (artboards
--- LensReposo / LensActiva). Round minimap: on the ring, bottom right (the artboard's 34 px
--- button on a 170 px map sits at +80/-54). Square minimap (the lens itself, ElvUI, EUI): on the
--- bottom-right corner. Whole UI units.
-Lens.BUTTON_ROUND = { x = 80 / 170, y = -54 / 170 }
-function Lens.buttonOffset(w, h, square)
+-- LensReposo / LensActiva), in the chosen corner (db.corner, default bottom left). Round
+-- minimap: on the ring (the artboard's 34 px button on a 170 px map sits 80/54 off the centre).
+-- Square minimap (the lens itself, ElvUI, EUI): on the corner. Whole UI units.
+Lens.BUTTON_ROUND = { x = 80 / 170, y = 54 / 170 }
+function Lens.buttonOffset(w, h, square, where)
   if type(w) ~= "number" or type(h) ~= "number" then return 0, 0 end
-  if square then return math.floor(w / 2 + 0.5), -math.floor(h / 2 + 0.5) end
-  return math.floor(w * Lens.BUTTON_ROUND.x + 0.5), math.floor(h * Lens.BUTTON_ROUND.y + 0.5)
+  where = corner(where)
+  local sx = where:sub(2, 2) == "R" and 1 or -1
+  local sy = where:sub(1, 1) == "T" and 1 or -1
+  if square then return sx * math.floor(w / 2 + 0.5), sy * math.floor(h / 2 + 0.5) end
+  return sx * math.floor(w * Lens.BUTTON_ROUND.x + 0.5), sy * math.floor(h * Lens.BUTTON_ROUND.y + 0.5)
 end
 
 -- Closing on leaving the instance: a loading screen already closes the lens
