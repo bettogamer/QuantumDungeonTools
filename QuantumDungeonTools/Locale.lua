@@ -199,7 +199,7 @@ L.LENS_P_DETECTED     = "%s minimap detected"
 L.LENS_P_BLIZZARD     = "Blizzard's minimap"
 L.LENS_P_HELP_NONE    = "Nobody else moves the minimap: the lens changes it and puts it back as it was."
 L.LENS_P_HELP_EUI     = "EllesmereUI resets the minimap: the lens re-applies after it and warns you once if it insists."
-L.LENS_P_HELP_ELVUI   = "With ElvUI's «Reset Zoom» on, the extra zoom step only lasts a few seconds."
+L.LENS_P_HELP_ELVUI   = "With ElvUI's «Reset Zoom» on, ElvUI puts the zoom back after a few seconds, lens on too."
 L.LENS_P_HELP_OTHER   = "Another addon shapes the minimap: the lens re-applies after it and warns you"
   .. " once if it insists."
 
@@ -495,7 +495,8 @@ if locale == "esES" or locale == "esMX" then
   L.LENS_P_HELP_NONE    = "Nadie más mueve el minimapa: la lente lo cambia y lo devuelve igual."
   L.LENS_P_HELP_EUI     = "EllesmereUI recoloca el minimapa: la lente se reaplica después y te avisa"
     .. " una vez si insiste."
-  L.LENS_P_HELP_ELVUI   = "Con «Reiniciar zoom» activado en ElvUI, el paso de zoom extra dura unos segundos."
+  L.LENS_P_HELP_ELVUI   = "Con «Reiniciar zoom» activado en ElvUI, ElvUI devuelve el zoom a los pocos "
+    .. "segundos, también con la lente."
   L.LENS_P_HELP_OTHER   = "Otro addon da forma al minimapa: la lente se reaplica después y te avisa una vez si insiste."
 
   L.CHECK_F1_SAVED  = "check f1: foto %d guardada (%s)."

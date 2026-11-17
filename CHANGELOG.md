@@ -4,6 +4,35 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ## [Unreleased]
 
+## [0.1.0-beta.3] - 2026-11-17
+
+### Añadido
+
+- **Esquina de la lupa configurable** en la página de Minimap Lens (por defecto abajo a la
+  izquierda, para no tapar el + / − de EllesmereUI).
+- **«Lupa solo al pasar el ratón»** (activada por defecto): la lupa se oculta y aparece al pasar el
+  ratón por el minimapa, con la lente abierta o cerrada.
+
+### Cambiado
+
+- **La lupa se ve con el módulo activo**, también fuera de las instancias, y cuelga de UIParent
+  para que EllesmereUI no la recoja entre sus botones.
+- **Quitado «Zoom extra al activarla»**: la lente mantiene el zoom que tenías (el ajuste guardado
+  se ignora).
+
+### Corregido
+
+- **Terreno bajo tierra** (cuevas, Entrañas): con opacidad por debajo del 100 % la lente solo
+  pintaba los puntos, no el mapa. Ahora lo pinta al abrirse, al cruzar una puerta, al bajar de
+  nivel y tras cada cambio de zoom, sin bucles de zoom ni parpadeo continuo.
+- **Tras un `/reload` la lente no crecía** y, al reabrirla, pintaba un solo cuadrante hasta
+  refrescarse: ahora repone el tamaño si otro addon lo deshace y se pinta entera a la primera.
+
+### Interno
+
+- Sondas `/qdt check pos` y `/qdt check door` (investigación de coordenadas propias en mazmorra y
+  del cambio de mapa del minimapa; `docs/27-coordenadas-propias.md`).
+
 ## [0.1.0-beta.2] - 2026-11-15
 
 ### Añadido

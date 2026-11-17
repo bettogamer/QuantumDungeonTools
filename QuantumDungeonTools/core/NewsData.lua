@@ -8,6 +8,25 @@ local _, ns = ...
 
 ns.NewsData = {
   {
+    version = "0.1.0-beta.3", date = "2026-11-17",
+    es = {
+      "Lupa de la lente: elige su esquina en los ajustes; por defecto solo aparece al pasar el "
+        .. "ratón por el minimapa.",
+      "Bajo tierra: con poca opacidad la lente ya pinta el mapa de cuevas y Entrañas, también al "
+        .. "cruzar puertas y bajar de nivel.",
+      "Tras un /reload: la lente crece y se pinta entera a la primera.",
+      "Zoom extra: se quita; la lente mantiene tu zoom.",
+    },
+    en = {
+      "Lens magnifier: pick its corner in the settings; by default it only shows when the mouse "
+        .. "is over the minimap.",
+      "Underground: at low opacity the lens now paints caves and the Undercity, also through "
+        .. "doors and down levels.",
+      "After a /reload: the lens grows and paints in full the first time.",
+      "Extra zoom: removed; the lens keeps your zoom.",
+    },
+  },
+  {
     version = "0.1.0-beta.2", date = "2026-11-15",
     es = {
       "Minimap Lens: agranda el minimapa a demanda con un atajo, el botón lupa (dentro de una "
