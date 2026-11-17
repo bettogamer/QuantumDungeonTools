@@ -84,6 +84,7 @@
   cambiar el zoom un nivel y volver al cabo de 0,2 s (`nudgeZoom`). Una vez pintado, el terreno
   aguanta los cambios de zoom.
 - **Cómo se comprueba:** en Undercity, maximizar el lens: tras el salto de zoom se ve el mapa.
+  Entrar en una cueva con el lens ya abierto: también se ve (verificado por el owner).
 - **Origen:** M2, prueba del owner (2026-11-16).
 
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)
