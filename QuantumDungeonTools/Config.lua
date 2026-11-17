@@ -67,6 +67,8 @@ SlashCmdList.QDT = function(msg)
     ns.CheckM2:Run((msg:gsub("^check m2%s*", "")))
   elseif msg == "check pos" or msg:find("^check pos ") then
     ns.CheckPos:Run((msg:gsub("^check pos%s*", "")))
+  elseif msg == "check door" or msg:find("^check door ") then
+    ns.CheckDoor:Run((msg:gsub("^check door%s*", "")))
   elseif msg == "lens" or msg == "lens bind" then
     -- "lens bind" is what Bindings.xml runs (the self-check tells the two apart).
     ns.MinimapLensTriggers:Toggle(msg == "lens bind" and "bind" or "slash")

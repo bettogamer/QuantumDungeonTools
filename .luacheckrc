@@ -67,6 +67,14 @@ files = {
         },
     },
 
+    -- Research probe for the minimap map switch at the Undercity gate (CheckDoor.lua, LECCIONES).
+    ["QuantumDungeonTools/wow/CheckDoor.lua"] = {
+        globals = {
+            "Minimap", "C_Minimap", "C_CVar", "GetCVar", "IsIndoors", "IsOutdoors",
+            "GetMinimapZoneText", "GetRealZoneText", "GetSubZoneText", "date",
+        },
+    },
+
     -- Modules: same split. modules/<Name>/core/ is pure (inherits nothing); modules/<Name>/wow/
     -- gets the game globals that module uses (added by: Instance Tracker, v0.1).
     ["QuantumDungeonTools/modules/InstanceTracker/core/"] = {

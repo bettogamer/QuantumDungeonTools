@@ -104,7 +104,10 @@
   `ZONE_CHANGED*`. Enganchado sin datos aún: `MINIMAP_UPDATE_ZOOM` (registro `_checkLens.nudge`,
   campo `why`; requiere `/reload` tras la prueba). Ideas por probar: frame con `RegisterAllEvents`
   durante el cruce (volcar nombres a SavedVariables con un reductor, no leer a mano), y
-  `Minimap:GetZoom()` (el minimapa guarda zoom interior/exterior aparte).
+  `Minimap:GetZoom()` (el minimapa guarda zoom interior/exterior aparte). **Sonda lista
+  (2026-11-17):** `/qdt check door` (`wow/CheckDoor.lua`) graba todos los eventos y, por
+  fotograma, zoom/niveles/radio de vista/CVars de zoom/ping; reductor
+  `scripts/read-check-door.lua` (eventos que solo salen cerca de un cambio o de un `mark`).
 - **Origen:** M2, pruebas del owner (2026-11-16).
 
 ## ellesmere-recoge-botones-del-minimapa
