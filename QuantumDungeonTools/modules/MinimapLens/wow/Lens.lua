@@ -399,71 +399,50 @@ local function hookSetters()
   end
 end
 
--- Underground / WMO areas (caves, Undercity): the engine paints only the blips on the grown
--- minimap until a LATER zoom change lands back on the level (measured 2026-11-16: size, mask,
--- position, alpha, tracking and our child frames ruled out one by one; a zoom +1 then -1 after
--- the lens settled brought the ground back). So once settled, and on every subzone change while
--- on, step the zoom out of the level and back a moment later.
-local NUDGE_BACK = 0.2
-local nudgeToken = 0
-local nudgeLog = {}   -- self-check: _checkLens.nudge = last 8 { why, z, to, back }
-local function nudgeNote(e)
+-- Underground / WMO areas (caves, Undercity): below 100 % opacity the engine paints only the
+-- blips, not the terrain (owner, 2026-11-16: at 100 % it always painted, at 55 % never). Painted
+-- once fully opaque, the terrain then holds the lower opacity, and no zoom step is needed
+-- (measured). So: a short fully opaque flash once settled, and on every hint of a terrain change.
+local FLASH = 0.4
+local flashToken = 0
+local flashLog = {}   -- self-check: _checkLens.nudge = last 8 { why, alpha }
+local function flashNote(e)
   e.t = GetTime()
-  nudgeLog[#nudgeLog + 1] = e
-  while #nudgeLog > 8 do table.remove(nudgeLog, 1) end
+  flashLog[#flashLog + 1] = e
+  while #flashLog > 8 do table.remove(flashLog, 1) end
   local root = QuantumDungeonToolsDB
   if type(root) == "table" then
     root._checkLens = root._checkLens or {}
-    root._checkLens.nudge = nudgeLog
+    root._checkLens.nudge = flashLog
   end
 end
 
-local function nudgeZoom(why)
-  if not snap or leaving then return nudgeNote({ why = why, skip = "off" }) end
-  local ok, z = call(Minimap, "GetZoom")
-  local levels = maxZoomLevels()
-  if not ok or type(z) ~= "number" or issecretvalue(z) or not levels then
-    return nudgeNote({ why = why, skip = "zoom" })
-  end
-  nudgeToken = nudgeToken + 1
-  local my = nudgeToken
-  local e = { why = why, z = z, to = z + 1 < levels and z + 1 or z - 1, levels = levels }
-  -- Below 100 % opacity the engine skips the underground terrain (owner, 2026-11-16: at 100 %
-  -- it always painted, at 55 % never): paint it fully opaque, then go back to the opacity.
+local function flash(why)
+  if not snap or leaving then return flashNote({ why = why, skip = "off" }) end
   local alpha = Lens.clamp(db().opacity, Lens.OPACITY)
-  if alpha < 1 then
-    e.alpha = alpha
-    mine(Minimap.SetAlpha, Minimap, 1)
-  end
-  nudgeNote(e)
-  mine(Minimap.SetZoom, Minimap, e.to)
-  C_Timer.After(NUDGE_BACK, function()
-    if my ~= nudgeToken or not snap then e.back = "cancelled" return end
-    mine(Minimap.SetZoom, Minimap, z)
-    local okB, zb = call(Minimap, "GetZoom")
-    e.back = okB and not issecretvalue(zb) and zb or "?"
-    if alpha < 1 then
-      C_Timer.After(NUDGE_BACK, function()
-        if my ~= nudgeToken or not snap or leaving then return end
-        mine(Minimap.SetAlpha, Minimap, Lens.clamp(db().opacity, Lens.OPACITY))
-      end)
-    end
+  flashNote({ why = why, alpha = alpha })
+  if alpha >= 1 then return end
+  flashToken = flashToken + 1
+  local my = flashToken
+  mine(Minimap.SetAlpha, Minimap, 1)
+  C_Timer.After(FLASH, function()
+    if my ~= flashToken or not snap or leaving then return end
+    mine(Minimap.SetAlpha, Minimap, Lens.clamp(db().opacity, Lens.OPACITY))
   end)
 end
 
--- On a zone change the event can come before the engine switches to the underground terrain:
--- step now and once more a moment later. Below 100 % this is not enough (the way back in from
--- Undercity's door raises no event nor changes any zone read: only reopening paints it), so the
--- opacity slider warns about it (docs/LECCIONES.md).
-local NUDGE_AGAIN = 1.2
-local function nudgeTwice(why)
-  nudgeZoom(why)
+-- On a zone change the event can come before the engine switches terrain: flash now and once
+-- more a moment later.
+local FLASH_AGAIN = 1.2
+local function flashTwice(why)
+  flash(why)
   local my = token
-  C_Timer.After(NUDGE_AGAIN, function()
-    if my == token and snap and settled and not leaving then nudgeZoom(why .. "+") end
+  C_Timer.After(FLASH_AGAIN, function()
+    if my == token and snap and settled and not leaving then flash(why .. "+") end
   end)
 end
 
+local NUDGE_BACK = 0.2
 -- The normal minimap after the lens: restore writes size, alpha and zoom in one frame, which
 -- leaves the underground terrain blank too (owner: fixed by a hand zoom). Same step, on it.
 local function nudgeRestored()
@@ -486,7 +465,7 @@ local function checkMove(my)
   local function done(held, retried)
     UI.moveHeld = held
     settled = true
-    nudgeZoom("settled")
+    flash("settled")
     dump("move", { held = held, retried = retried })
     coexist({ held = held })
     UI:RefreshDrag()
@@ -875,8 +854,9 @@ events:SetScript("OnEvent", function(_, event)
     -- Safety net for a UI that writes through a cached setter (no hook sees it): look once
     -- after its post-combat pass. Only what drifted is put back, as with the hooks.
     if snap and settled and not leaving then schedule("combat", AFTER_COMBAT) end
-  elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_NEW_AREA" then
-    if snap and settled and not leaving then nudgeTwice(event) end   -- walked into a cave / city
+  elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_NEW_AREA"
+      or event == "MINIMAP_UPDATE_ZOOM" then   -- the minimap switching indoor / outdoor zoom
+    if snap and settled and not leaving then flashTwice(event) end   -- walked into a cave / city
   end
 end)
 
@@ -893,4 +873,6 @@ function UI:Init()
   events:RegisterEvent("ZONE_CHANGED_INDOORS")
   events:RegisterEvent("ZONE_CHANGED")
   events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+  -- Not every client has it (MINIMAP_PING did not exist in Forever): an unknown event throws.
+  pcall(events.RegisterEvent, events, "MINIMAP_UPDATE_ZOOM")
 end
