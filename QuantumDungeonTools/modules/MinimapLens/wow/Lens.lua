@@ -401,9 +401,8 @@ end
 
 -- Underground / WMO areas (caves, Undercity): below 100 % opacity the engine paints only the
 -- blips, not the terrain (owner, 2026-11-16: at 100 % it always painted, at 55 % never). Painted
--- once fully opaque, the terrain then holds the lower opacity, and no zoom step is needed
--- (measured). So: a short fully opaque flash once settled, and on every hint of a terrain change.
-local FLASH = 0.4
+-- once fully opaque (with the zoom level reached while opaque), the terrain then holds the lower
+-- opacity. So: a short opaque flash with a zoom step once settled, and on every hint of a change.
 local flashToken = 0
 local flashLog = {}   -- self-check: _checkLens.nudge = last 8 { why, alpha }
 local function flashNote(e)
@@ -417,17 +416,32 @@ local function flashNote(e)
   end
 end
 
+local FLASH_STEP = 0.2
 local function flash(why)
   if not snap or leaving then return flashNote({ why = why, skip = "off" }) end
   local alpha = Lens.clamp(db().opacity, Lens.OPACITY)
-  flashNote({ why = why, alpha = alpha })
+  local e = { why = why, alpha = alpha }
+  flashNote(e)
   if alpha >= 1 then return end
+  -- A zoom level reached while see-through never loads its underground terrain («extra zoom»,
+  -- owner 2026-11-17): opaque first, then step the zoom away and back, then the opacity.
+  local ok, z = call(Minimap, "GetZoom")
+  local levels = maxZoomLevels()
+  local step = ok and type(z) == "number" and not issecretvalue(z) and levels
   flashToken = flashToken + 1
   local my = flashToken
   mine(Minimap.SetAlpha, Minimap, 1)
-  C_Timer.After(FLASH, function()
+  if step then
+    e.z = z
+    mine(Minimap.SetZoom, Minimap, z + 1 < levels and z + 1 or z - 1)
+  end
+  C_Timer.After(FLASH_STEP, function()
     if my ~= flashToken or not snap or leaving then return end
-    mine(Minimap.SetAlpha, Minimap, Lens.clamp(db().opacity, Lens.OPACITY))
+    if step then mine(Minimap.SetZoom, Minimap, z) end
+    C_Timer.After(FLASH_STEP, function()
+      if my ~= flashToken or not snap or leaving then return end
+      mine(Minimap.SetAlpha, Minimap, Lens.clamp(db().opacity, Lens.OPACITY))
+    end)
   end)
 end
 
@@ -867,6 +881,12 @@ function UI:Init()
   local z = Lens.takePendingZoom(db())
   if z then pcall(Minimap.SetZoom, Minimap, z) end
   hookSetters()
+  -- Any zoom change below 100 % drops the underground terrain again (owner, 2026-11-17: with
+  -- «extra zoom» on it stayed blank; the zoom moved after the settle flash). Flash after each.
+  hooksecurefunc(Minimap, "SetZoom", function()
+    if writing or not snap or not settled or leaving then return end   -- not our own steps
+    flashTwice("SetZoom")
+  end)
   events:RegisterEvent("PLAYER_LEAVING_WORLD")
   events:RegisterEvent("PLAYER_LOGOUT")
   events:RegisterEvent("PLAYER_REGEN_ENABLED")
