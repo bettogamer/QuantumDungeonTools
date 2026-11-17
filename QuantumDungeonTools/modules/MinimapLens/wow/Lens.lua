@@ -431,15 +431,18 @@ local function flash(why, withStep)
   local alpha = Lens.clamp(db().opacity, Lens.OPACITY)
   local e = { why = why, alpha = alpha }
   flashNote(e)
-  if alpha >= 1 then return end
+  -- Fully opaque: no flash needed, but a zoom step still repaints a just-resized minimap (owner
+  -- 2026-11-17: right after a /reload it painted one quadrant until it refreshed on its own).
+  if alpha >= 1 and not withStep then return end
   -- A zoom level reached while see-through never loads its underground terrain («extra zoom»,
   -- owner 2026-11-17): opaque first, then step the zoom away and back, then the opacity.
   local ok, z = call(Minimap, "GetZoom")
   local levels = maxZoomLevels()
   local step = withStep and ok and type(z) == "number" and not issecretvalue(z) and levels
+  if alpha >= 1 and not step then return end
   flashToken = flashToken + 1
   local my = flashToken
-  mine(Minimap.SetAlpha, Minimap, 1)
+  if alpha < 1 then mine(Minimap.SetAlpha, Minimap, 1) end
   if step then
     e.z = z
     mine(Minimap.SetZoom, Minimap, z + 1 < levels and z + 1 or z - 1)
@@ -449,6 +452,7 @@ local function flash(why, withStep)
   C_Timer.After(0, function()
     if my ~= flashToken or not snap or leaving then return end
     if step then mine(Minimap.SetZoom, Minimap, z) end
+    if alpha >= 1 then return end
     C_Timer.After(FLASH_STEP, function()
       if my ~= flashToken or not snap or leaving then return end
       mine(Minimap.SetAlpha, Minimap, Lens.clamp(db().opacity, Lens.OPACITY))
@@ -500,29 +504,42 @@ local function nudgeRestored()
   end)
 end
 
+-- The side as written, within half a pixel (EUI may hand back 254.9997 for 255).
+local function sizeHeld(side)
+  local b = readBack()
+  return b.w ~= nil and b.h ~= nil and math.abs(b.w - side) < 0.5 and math.abs(b.h - side) < 0.5, b
+end
+
 local function checkMove(my)
-  local want = snap.pos
-  local function done(held, retried)
+  local want, side = snap.pos, snap.side
+  local function done(held, retried, grown)
     UI.moveHeld = held
     settled = true
-    flash("settled")
-    dump("move", { held = held, retried = retried })
-    coexist({ held = held })
+    -- With the step: the minimap only repaints the grown area on a zoom change (owner
+    -- 2026-11-17: one quadrant painted after a /reload until it refreshed by itself).
+    flash("settled", true)
+    local _, b = sizeHeld(side)
+    dump("move", { held = held, retried = retried, grown = grown, side = side, w = b.w, h = b.h })
+    coexist({ held = held, grown = grown })
     UI:RefreshDrag()
     if not held then UI:Warn("pinned", snap.owner) end
   end
   C_Timer.After(MOVE_CHECK, function()
     if my ~= token or not snap then return end
-    if Lens.held(want, anchor()) then return done(true, false) end
-    -- Undone (EUI reanchors on resize): one more try past its window, then a frame to look.
+    local posOk, sizeOk = Lens.held(want, anchor()), sizeHeld(side)
+    if posOk and sizeOk then return done(true, false, true) end
+    -- Undone (EUI reanchors on resize; after a /reload the size came back too, owner
+    -- 2026-11-17: the lens did not grow): one more try past its window, then a frame to look.
     local p = want
     mine(function()
+      if not sizeOk then Minimap:SetSize(side, side) end
       Minimap:ClearAllPoints()
       Minimap:SetPoint(p.point, UIParent, p.point, p.x, p.y)
     end)
+    if not sizeOk then refreshIcons(snap.plan) end
     C_Timer.After(0, function()
       if my ~= token or not snap then return end
-      done(Lens.held(want, anchor()), true)
+      done(Lens.held(want, anchor()), true, (sizeHeld(side)))
     end)
   end)
 end
