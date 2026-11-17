@@ -97,17 +97,12 @@
   `UnitPosition` (sonda a 2 Hz, medido). Repetir el salto con alfa 1 en `ZONE_CHANGED_INDOORS`
   tampoco pinta; solo reabrir el lens. Decisión del owner: la pista del slider de opacidad avisa
   («reábrela»). No reintentar sondas de zona para esto.
-- **Siguiente paso (pendiente, sesión nueva):** encontrar QUÉ señal marca el cambio de mapa
-  del minimapa (exterior ↔ bajo tierra) en la puerta de Undercity, para lanzar `flash` ahí y
-  quitar el aviso del slider. Ya descartado (sonda a 2 Hz): `IsIndoors`/`IsOutdoors`, textos de
-  zona/subzona/minimapa, `C_Map.GetBestMapForUnit`, instancia de `UnitPosition`; no llega
-  `ZONE_CHANGED*`. Enganchado sin datos aún: `MINIMAP_UPDATE_ZOOM` (registro `_checkLens.nudge`,
-  campo `why`; requiere `/reload` tras la prueba). Ideas por probar: frame con `RegisterAllEvents`
-  durante el cruce (volcar nombres a SavedVariables con un reductor, no leer a mano), y
-  `Minimap:GetZoom()` (el minimapa guarda zoom interior/exterior aparte). **Sonda lista
-  (2026-11-17):** `/qdt check door` (`wow/CheckDoor.lua`) graba todos los eventos y, por
-  fotograma, zoom/niveles/radio de vista/CVars de zoom/ping; reductor
-  `scripts/read-check-door.lua` (eventos que solo salen cerca de un cambio o de un `mark`).
+- **Señal encontrada (`/qdt check door`, 2026-11-17):** en la puerta de Undercity la ÚNICA señal
+  es `MINIMAP_UPDATE_ZOOM`, y en ese mismo fotograma el MOTOR cambia el zoom solo (2 → 0, el
+  zoom interior; radio de vista 166,7 → 150 yd) aunque `IsIndoors` siga en false. El lens ya
+  destellaba ahí, pero sin salto de zoom: el nivel nuevo se alcanzó translúcido y no carga. Ahora
+  ese evento lanza `flash` CON salto. **Pendiente:** confirmarlo in-game (lens abierto al 40 %,
+  cruzar la puerta) y, si pinta, quitar el aviso «reábrela» del slider.
 - **Origen:** M2, pruebas del owner (2026-11-16).
 
 ## ellesmere-recoge-botones-del-minimapa
