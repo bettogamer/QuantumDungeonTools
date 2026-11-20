@@ -24,7 +24,14 @@ local issecretvalue = ns.issecretvalue
 -- copyPending: we re-entered the instance of an existing run and do not know yet whether it
 -- is the same copy; the lockout is not merged until the first cast tells us (it may belong
 -- to the leader's copy, not to this run).
-local T = { listeners = {}, hourListeners = {}, finishListeners = {}, inInstance = false, copyPending = false }
+-- copyCheck: a loading screen just put us in an instance. Only the first usable cast after it
+-- may say "another copy": the copy cannot change without a loading screen, so a different
+-- zoneUID later in the same stay means this dungeon's castGUID does not carry the copy
+-- (Excavation Site, CurseForge report 2026-11-20: 481/10 entries, the run reset on every cast).
+local T = {
+  listeners = {}, hourListeners = {}, finishListeners = {},
+  inInstance = false, copyPending = false, copyCheck = false,
+}
 ns.InstanceTracker = T
 
 local HISTORY_MAX = ns.InstanceHistory.MAX
@@ -60,6 +67,19 @@ local function safeStr(v)
 end
 
 local function db() return ns.db.instanceTracker end
+
+-- Dungeons whose castGUID zoneUID changed inside one stay: there it cannot tell copies apart,
+-- so it is ignored (the resume window and the reset message decide alone). Account-wide.
+local function unstableCopy(instanceID)
+  local u = db().unstableCopy
+  return type(u) == "table" and u[instanceID] == true
+end
+
+local function markUnstableCopy(instanceID)
+  local d = db()
+  d.unstableCopy = type(d.unstableCopy) == "table" and d.unstableCopy or {}
+  d.unstableCopy[instanceID] = true
+end
 
 -- { instanceID, name, difficulty } when inside a 5-man or raid instance, else nil.
 local function currentInstance()
@@ -283,25 +303,37 @@ function T:HourSnapshot()
   return Hourly.snapshot(db().hourly, time())
 end
 
-function T:CheckZone()
+-- fromLoading: called on PLAYER_ENTERING_WORLD (a loading screen). Only then can we be in
+-- another instance or copy, so only then a run starts or an entry counts; ZONE_CHANGED_NEW_AREA
+-- inside an instance just pauses/resumes (a sub-zone that changes what GetInstanceInfo says
+-- must not reset the run nor count one entry per border crossed).
+function T:CheckZone(fromLoading)
   local inst = currentInstance()
   self.inInstance = inst ~= nil
   local run = self.run
   if inst then
+    local trustCopy = not unstableCopy(inst.instanceID)
     if not run or not run:canResume(inst, RESUME_WINDOW, RESUME_WINDOW_FINISHED) then
-      self:StartRun(inst)
-      self:_noteEntry(inst)
+      if fromLoading then
+        self:StartRun(inst)
+        self:_noteEntry(inst)
+        self.copyCheck = trustCopy
+      end
     else
       fillDifficulty(run)
       -- Same dungeon again: resume the clock; same copy or not is confirmed by the first
       -- cast (_onCast), which starts a new run if it is another copy.
       run:resume()
-      self.copyPending = run.copy ~= nil
+      if fromLoading then
+        self.copyPending = trustCopy and run.copy ~= nil
+        self.copyCheck = trustCopy
+      end
       self:Refresh()
     end
     requestLockout()   -- the answer (UPDATE_INSTANCE_INFO) refreshes again
-  elseif run then
-    run:pause()        -- outside: the clock stops until we come back
+  else
+    self.copyCheck = false
+    if run then run:pause() end   -- outside: the clock stops until we come back
   end
   self:_notify("zone")
 end
@@ -327,10 +359,30 @@ function T:_onCast(castGUID)
   if not run or not self.inInstance then return end
   local g = Guid.parse(castGUID)
   if not g or g.type ~= "Cast" or g.instanceID ~= run.instanceID then return end
+  if unstableCopy(run.instanceID) then
+    if self.copyPending then
+      self.copyPending = false
+      self:Refresh()
+    end
+    return
+  end
   local seen = run:observeCopy(g.zoneUID)
+  if seen == nil then return end   -- unusable zoneUID: the check stays open for the next cast
+  local checking = self.copyCheck
+  self.copyCheck = false
+  if seen == "other" and not checking then
+    -- Same stay, other zoneUID: impossible for a real copy change (no loading screen). This
+    -- dungeon's castGUID does not carry the copy: stop trusting it, keep the run.
+    markUnstableCopy(run.instanceID)
+    if self.copyPending then
+      self.copyPending = false
+      self:Refresh()
+    end
+    return
+  end
   if seen == "other" then
-    -- Another copy of this dungeon (the group leader's, or a reset): new run. The old one
-    -- goes to the history only if it had kills (_close).
+    -- First cast after a loading screen, another copy of this dungeon (the group leader's, or
+    -- a reset): new run. The old one goes to the history only if it had kills (_close).
     local inst = { instanceID = run.instanceID, name = run.name, difficulty = run.difficulty }
     self:StartRun(inst, g.zoneUID)
     self:_noteEntry(inst, g.zoneUID)
@@ -353,14 +405,14 @@ end
 ------------------------------------------------------------------------------
 -- Events
 ------------------------------------------------------------------------------
-function T:PLAYER_ENTERING_WORLD() self:CheckZone() end
+function T:PLAYER_ENTERING_WORLD() self:CheckZone(true) end
 
 -- Deaths only count inside the instance, while the run is live (Run:addDeath guards the rest).
 function T:GROUP_ROSTER_UPDATE() self:SampleGroup() end
 function T:PLAYER_DEAD()
   if self.run and self.inInstance and self.run:addDeath() then self:_notify("data") end
 end
-function T:ZONE_CHANGED_NEW_AREA() self:CheckZone() end
+function T:ZONE_CHANGED_NEW_AREA() self:CheckZone(false) end
 function T:UPDATE_INSTANCE_INFO() self:Refresh() end
 
 -- Logging out (or /reload) inside the instance: pause, so the time offline never counts.

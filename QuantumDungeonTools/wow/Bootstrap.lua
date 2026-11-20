@@ -45,6 +45,7 @@ function ns.InitDB()
   it.records = it.records or {}     -- F3: PB per dungeon + difficulty (additive, no migration)
   it.trash = it.trash or {}         -- F4c: trash per dungeon (instanceID), learned from clean runs
   it.hourly = it.hourly or {}       -- F5: instances entered in the last hour, account-wide (additive)
+  it.unstableCopy = it.unstableCopy or {}   -- instanceID -> true: castGUID zoneUID not the copy (additive)
   -- Module: Minimap Lens (plan M2 F2): size, opacity (+ pos, saved zoom); additive.
   db.minimapLens = db.minimapLens or {}
   ns.MinimapLens.applyDefaults(db.minimapLens)

@@ -18,6 +18,7 @@
 | [craft-tooltip-lines-posicionales](#craft-tooltip-lines-posicionales) | tooltip de Craft vacío (cuadro diminuto) | 2026-11-13 |
 | [forever-dificultad-vacia-al-entrar](#forever-dificultad-vacia-al-entrar) | /reload dentro de la mazmorra pierde las kills | 2026-11-13 |
 | [ellesmere-recoge-botones-del-minimapa](#ellesmere-recoge-botones-del-minimapa) | botón propio sobre el minimapa desaparece con EllesmereUI | 2026-11-16 |
+| [copia-solo-cambia-tras-pantalla-de-carga](#copia-solo-cambia-tras-pantalla-de-carga) | la run se reinicia sin parar y marca 481/10 instancias | 2026-11-20 |
 
 ---
 
@@ -116,6 +117,23 @@
   `UIParent`, anclado con `SetPoint` al `Minimap`, su strata y nivel + 10, y ocultarlo/mostrarlo
   con hooks `OnHide`/`OnShow` del `Minimap` (`MinimapLens/wow/Triggers.lua`).
 - **Origen:** M2, prueba del owner (2026-11-16).
+
+## copia-solo-cambia-tras-pantalla-de-carga
+
+- **Síntoma:** en Excavation Site: Wetlands (2998) la run «se reinicia sin parar» y el contador
+  por hora marca 481/10 con aviso continuo (reporte de un usuario en CurseForge).
+- **Causa:** `_onCast` trataba CUALQUIER castGUID con otro zoneUID como «otra copia»: cerraba
+  la run, abría otra y anotaba una entrada. Si en esa mazmorra el zoneUID del castGUID cambia
+  dentro de la misma estancia, cada hechizo es un reset más una entrada (`Hourly` solo
+  deduplica copias ya vistas). Además `ZONE_CHANGED_NEW_AREA` podía abrir runs y anotar
+  entradas sin `copy`, que nunca se deduplican. Sin medir in-game cuál de las dos causas era.
+- **Patrón correcto:** la copia solo puede cambiar tras una pantalla de carga. Solo el primer
+  cast útil después de `PLAYER_ENTERING_WORLD` decide la copia (`copyCheck`). Otro zoneUID más
+  tarde en la misma estancia marca la mazmorra en `db.unstableCopy` y desde entonces su castGUID
+  se ignora. `ZONE_CHANGED_NEW_AREA` solo pausa o reanuda la run; nunca la crea ni cuenta.
+- **Cómo se comprueba:** `tests/wow/Tracker_spec.lua`. In-game: run en Excavation Site con
+  `/qdt check f1`, mirando si el zoneUID de los castGUIDs cambia y si el contador queda en 1.
+- **Origen:** reporte en CurseForge sobre 0.1.0-beta.3 (2026-11-20).
 
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)
      también viven aquí, con motivo y con lo que se hace en su lugar. -->
