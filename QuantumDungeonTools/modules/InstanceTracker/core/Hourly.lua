@@ -72,6 +72,22 @@ function Hourly.bindCopy(list, now, instanceID, copy)
   return "bound"
 end
 
+-- The castGUID zoneUID of the SAME copy changed (it did across a /reload, Forever 2026-11-20):
+-- the entries of `instanceID` with copy `old` now carry `new`, so a later re-entry still
+-- dedups. Returns how many entries changed.
+function Hourly.rebindCopy(list, now, instanceID, old, new)
+  if type(list) ~= "table" or not num(now) or old == nil or new == nil then return 0 end
+  Hourly.prune(list, now)
+  local n = 0
+  for _, e in ipairs(list) do
+    if e.instanceID == instanceID and e.copy == old then
+      e.copy = new
+      n = n + 1
+    end
+  end
+  return n
+end
+
 -- { count, limit, slots = { seconds until each slot frees, soonest first }, freeIn = slots[1] }
 -- The shape Detail.build takes as opts.instances.
 function Hourly.snapshot(list, now, limit)

@@ -37,6 +37,7 @@ local function setup()
 
   function env.enter(id, name) env.inst = { id = id, name = name }; frame:_fire("PLAYER_ENTERING_WORLD") end
   function env.leave() env.inst = nil; frame:_fire("PLAYER_ENTERING_WORLD") end
+  function env.reload() frame:_fire("PLAYER_ENTERING_WORLD", false, true) end
   function env.cast(zoneUID)
     local guid = "Cast-3-6831-" .. env.inst.id .. "-" .. zoneUID .. "-1026-F53E335783"
     frame:_fire("UNIT_SPELLCAST_SENT", "player", nil, guid)
@@ -98,6 +99,40 @@ describe("Tracker: copia por castGUID (wow/)", function()
     env.enter(2999, "Ruins of Lordaeron")
     env.cast("5")
     assert_true(env.T.run == run)
+    assert_eq(env.hourCount(), 1)
+  end)
+
+  -- Measured 2026-11-20 in Ruins of Lordaeron: zoneUID 5045554 before /reload, 2556610 after.
+  it("un /reload dentro cambia el zoneUID: se adopta, sin run nueva ni entrada", function()
+    local env = setup()
+    env.enter(2999, "Ruins of Lordaeron")
+    env.cast("5045554")
+    local run = env.T.run
+    env.reload()
+    env.cast("2556610")
+    env.cast("2556610")
+    assert_true(env.T.run == run, "la run sigue tras el reload")
+    assert_eq(env.T.run.copy, "2556610", "la copia adopta el zoneUID nuevo")
+    assert_eq(env.hourCount(), 1)
+    assert_eq(env.ns.db.instanceTracker.hourly[1].copy, "2556610", "la entrada también")
+    assert_eq(env.ns.db.instanceTracker.unstableCopy[2999], nil)
+    -- out and back into the same copy (new zoneUID kept): still one entry
+    env.leave()
+    env.clock = env.clock + 60
+    env.enter(2999, "Ruins of Lordaeron")
+    env.cast("2556610")
+    assert_true(env.T.run == run)
+    assert_eq(env.hourCount(), 1)
+  end)
+
+  it("tras el reload, otro zoneUID a mitad de estancia sí marca la mazmorra", function()
+    local env = setup()
+    env.enter(2998, "Excavation Site: Wetlands")
+    env.cast("1")
+    env.reload()
+    env.cast("2")
+    env.cast("3")
+    assert_eq(env.ns.db.instanceTracker.unstableCopy[2998], true)
     assert_eq(env.hourCount(), 1)
   end)
 

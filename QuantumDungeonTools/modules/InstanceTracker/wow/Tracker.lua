@@ -28,9 +28,12 @@ local issecretvalue = ns.issecretvalue
 -- may say "another copy": the copy cannot change without a loading screen, so a different
 -- zoneUID later in the same stay means this dungeon's castGUID does not carry the copy
 -- (Excavation Site, CurseForge report 2026-11-20: 481/10 entries, the run reset on every cast).
+-- copyRebase: a /reload or a login inside the instance. The copy is the same for sure, but the
+-- castGUID zoneUID may not be (it changed across a /reload in Ruins of Lordaeron, 2026-11-20):
+-- the first usable cast REPLACES the run's copy instead of comparing it.
 local T = {
   listeners = {}, hourListeners = {}, finishListeners = {},
-  inInstance = false, copyPending = false, copyCheck = false,
+  inInstance = false, copyPending = false, copyCheck = false, copyRebase = false,
 }
 ns.InstanceTracker = T
 
@@ -307,7 +310,9 @@ end
 -- another instance or copy, so only then a run starts or an entry counts; ZONE_CHANGED_NEW_AREA
 -- inside an instance just pauses/resumes (a sub-zone that changes what GetInstanceInfo says
 -- must not reset the run nor count one entry per border crossed).
-function T:CheckZone(fromLoading)
+-- sameCopy: a /reload or a login (PLAYER_ENTERING_WORLD isReloadingUi/isInitialLogin): it
+-- never moves us to another copy, so a resumed run keeps it and only rebases its zoneUID.
+function T:CheckZone(fromLoading, sameCopy)
   local inst = currentInstance()
   self.inInstance = inst ~= nil
   local run = self.run
@@ -318,21 +323,28 @@ function T:CheckZone(fromLoading)
         self:StartRun(inst)
         self:_noteEntry(inst)
         self.copyCheck = trustCopy
+        self.copyRebase = false
       end
     else
       fillDifficulty(run)
       -- Same dungeon again: resume the clock; same copy or not is confirmed by the first
       -- cast (_onCast), which starts a new run if it is another copy.
       run:resume()
-      if fromLoading then
+      if fromLoading and sameCopy then
+        self.copyPending = false
+        self.copyCheck = false
+        self.copyRebase = trustCopy and run.copy ~= nil
+      elseif fromLoading then
         self.copyPending = trustCopy and run.copy ~= nil
         self.copyCheck = trustCopy
+        self.copyRebase = false
       end
       self:Refresh()
     end
     requestLockout()   -- the answer (UPDATE_INSTANCE_INFO) refreshes again
   else
     self.copyCheck = false
+    self.copyRebase = false
     if run then run:pause() end   -- outside: the clock stops until we come back
   end
   self:_notify("zone")
@@ -363,6 +375,17 @@ function T:_onCast(castGUID)
     if self.copyPending then
       self.copyPending = false
       self:Refresh()
+    end
+    return
+  end
+  if self.copyRebase and type(g.zoneUID) == "string" and not issecretvalue(g.zoneUID) then
+    -- After a /reload or login: same copy, possibly a new zoneUID. Adopt it (run + hour list).
+    self.copyRebase = false
+    local old = run.copy
+    if old ~= g.zoneUID then
+      run.copy = g.zoneUID
+      Hourly.rebindCopy(db().hourly, time(), run.instanceID, old, g.zoneUID)
+      self:_notify("data")
     end
     return
   end
@@ -405,7 +428,12 @@ end
 ------------------------------------------------------------------------------
 -- Events
 ------------------------------------------------------------------------------
-function T:PLAYER_ENTERING_WORLD() self:CheckZone(true) end
+-- PLAYER_ENTERING_WORLD: isInitialLogin, isReloadingUi
+function T:PLAYER_ENTERING_WORLD(isInitialLogin, isReloadingUi)
+  local login = not issecretvalue(isInitialLogin) and isInitialLogin == true
+  local reload = not issecretvalue(isReloadingUi) and isReloadingUi == true
+  self:CheckZone(true, login or reload)
+end
 
 -- Deaths only count inside the instance, while the run is live (Run:addDeath guards the rest).
 function T:GROUP_ROSTER_UPDATE() self:SampleGroup() end
