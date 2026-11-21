@@ -3,7 +3,7 @@
 > README ejecutable para agentes de IA. Fuente de verdad única del proyecto: si cambia una
 > decisión, este archivo (y el ADR, si nivel M+) se actualizan en el mismo commit.
 >
-> **Estado (2026-11-20):** hito M1 en código y verificado (F1-F6f); release `0.1.0-beta.1` preparada para CurseForge (beta para la guild); pendiente la run de pruebas en mazmorra → `docs/plan-m1-instance-tracker.md`. M2 «Minimap Lens» **cerrado** (F0-F5), releases `0.1.0-beta.2` y `0.1.0-beta.3` publicadas; `0.1.0-beta.4` (2026-11-20, fixes del tracker) con tag local, pendiente de subir; restos a la run en mazmorra → `docs/plan-m2-minimap-lens.md`.
+> **Estado (2026-11-20):** hito M1 en código y verificado (F1-F6f); release `0.1.0-beta.1` preparada para CurseForge (beta para la guild); pendiente la run de pruebas en mazmorra → `docs/plan-m1-instance-tracker.md`. M2 «Minimap Lens» **cerrado** (F0-F5), releases `0.1.0-beta.2`, `0.1.0-beta.3` y `0.1.0-beta.4` (2026-11-20, fixes del tracker) publicadas; restos a la run en mazmorra → `docs/plan-m2-minimap-lens.md`.
 > **Nivel de proceso:** M (ver AddonTemplate/docs/04-proceso.md).
 >
 > **TECHO: este archivo ≤ 150 líneas (nivel L: 250).** Se poda al cerrar cada hito y en cada
