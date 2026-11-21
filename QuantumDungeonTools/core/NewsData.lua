@@ -8,6 +8,23 @@ local _, ns = ...
 
 ns.NewsData = {
   {
+    version = "0.1.0-beta.4", date = "2026-11-20",
+    es = {
+      "Reloj de la run: arranca con el primer combate dentro, no al entrar; esperar al grupo ya "
+        .. "no cuenta (los récords viejos se midieron desde la entrada).",
+      "Excavation Site: Wetlands: la run ya no se reinicia sin parar ni dispara el contador por hora.",
+      "Tras un /reload dentro de la mazmorra: sigue la misma run y no cuenta otra entrada.",
+      "Ping al jefe: ya funciona con el juego en español.",
+    },
+    en = {
+      "Run timer: starts with the first fight inside, not at the door; waiting for the group no "
+        .. "longer counts (old records were timed from the entrance).",
+      "Excavation Site: Wetlands: the run no longer keeps restarting or flooding the hourly count.",
+      "After a /reload inside the dungeon: same run, no extra entry counted.",
+      "Boss ping: now works with a Spanish game client.",
+    },
+  },
+  {
     version = "0.1.0-beta.3", date = "2026-11-17",
     es = {
       "Lupa de la lente: elige su esquina en los ajustes; por defecto solo aparece al pasar el "

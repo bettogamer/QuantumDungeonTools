@@ -4,6 +4,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ## [Unreleased]
 
+## [0.1.0-beta.4] - 2026-11-20
+
 ### Cambiado
 
 - **El reloj de la run arranca con el primer combate dentro de la mazmorra**, no al cruzar la
