@@ -359,6 +359,13 @@ la columna Grupo pinta los nombres (sin reino) porque no hay forma fiable de dis
 Las mazmorras de Forever son largas: no se prueba cambio a cambio (owner, 2026-11-13). Cada
 cambio de lógica de run añade aquí su caso; se tachan en la run de prueba.
 
+- [ ] **Copia solo tras pantalla de carga (`51ffc18`)**: en Excavation Site: Wetlands, lanzar
+      hechizos un rato → la run NO se reinicia y el contador por hora no sube.
+- [ ] **`/reload` dentro (`7acc247`)**: `/reload` en la mazmorra → misma run, la hora no cuenta otra entrada.
+- [ ] **Reloj al primer combate (`64f2c54`)**: entrar y esperar sin pelear → el reloj quieto; arranca al
+      primer pull (o con la primera muerte).
+- [ ] **Ping en esES (`6ba5cf1`)**: con el cliente en español, clic en un jefe vivo a la vista → ping «Atacar».
+
 - [ ] **Marca del ajuste (F6c)**: con «Marca al clic derecho» en Estrella, clic derecho en un jefe vivo
   de la lista → le pone la estrella (y otro clic se la quita).
 - [ ] **Copia de la mazmorra (`3461ce9`)**: entrar solo y matar adds → salir → unirse a un grupo
