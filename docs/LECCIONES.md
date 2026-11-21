@@ -19,6 +19,7 @@
 | [forever-dificultad-vacia-al-entrar](#forever-dificultad-vacia-al-entrar) | /reload dentro de la mazmorra pierde las kills | 2026-11-13 |
 | [ellesmere-recoge-botones-del-minimapa](#ellesmere-recoge-botones-del-minimapa) | botón propio sobre el minimapa desaparece con EllesmereUI | 2026-11-16 |
 | [copia-solo-cambia-tras-pantalla-de-carga](#copia-solo-cambia-tras-pantalla-de-carga) | la run se reinicia sin parar y marca 481/10 instancias | 2026-11-20 |
+| [ping-localizado](#ping-localizado) | el ping al jefe no hace nada con el juego en español | 2026-11-20 |
 
 ---
 
@@ -134,6 +135,25 @@
 - **Cómo se comprueba:** `tests/wow/Tracker_spec.lua`. In-game: run en Excavation Site con
   `/qdt check f1`, mirando si el zoneUID de los castGUIDs cambia y si el contador queda en 1.
 - **Origen:** reporte en CurseForge sobre 0.1.0-beta.3 (2026-11-20).
+
+## ping-localizado
+
+- **Síntoma:** clic en un jefe del widget: en inglés hace ping, con el juego en español no pasa
+  nada (reporte de jugadores, 2026-11-20).
+- **Causa:** `/ping` y su tipo están localizados. En esES `SLASH_PING1` y `SLASH_PING2` son
+  `/aviso`, así que `/ping` es un comando desconocido. En esMX `/ping` existe, pero el handler
+  (`SLASH_COMMAND.PING`, `Blizzard_ChatFrameBase/Mainline/SlashCommandsOverrides.lua`, rama
+  live) compara el tipo con `PING_TYPE_ATTACK` = «Atacar», no con «attack». Los otros comandos
+  de la macro (`/cleartarget`, `/targetexact`, `/targetlasttarget`, `/tm`) tienen su nombre
+  inglés en las GlobalStrings de esES/esMX, pero eso depende de cada idioma: no está garantizado.
+- **Patrón correcto:** construir la macro con las globales del cliente (`SLASH_PING1`,
+  `PING_TYPE_ATTACK`), guardadas con `issecretvalue`, y usar las inglesas solo de fallback
+  (`View.pingMacro(name, command, attack)`). El tipo también admite el alias `"1"` (Attack),
+  sacado de un resumen del código de Blizzard y sin verificar in-game.
+- **Cómo se comprueba:** cliente esES o esMX, clic en un jefe vivo de la lista: hace ping.
+  Fuentes: GlobalStrings esES/esMX de `Ketho/BlizzardInterfaceResources` (retail; las de Forever
+  no se han comprobado).
+- **Origen:** reporte de jugadores con el cliente en español (2026-11-20).
 
 <!-- Divergencias CONSCIENTES del estándar (hallazgo de /check-conformance declarado deuda)
      también viven aquí, con motivo y con lo que se hace en su lugar. -->

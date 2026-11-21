@@ -502,6 +502,18 @@ local function placePing(b, row)
   return true
 end
 
+-- The client's own /ping command and "attack" type (both localized: esES "/aviso", "Atacar").
+-- nil when the global is missing or secret: View.pingMacro falls back to the English ones.
+local function pingCommand()
+  local v = _G.SLASH_PING1
+  if not issecretvalue(v) then return v end
+end
+
+local function pingAttack()
+  local v = _G.PING_TYPE_ATTACK
+  if not issecretvalue(v) then return v end
+end
+
 function UI:SyncPings()
   if InCombatLockdown() then
     pingDirty = true
@@ -512,7 +524,7 @@ function UI:SyncPings()
   local marker = db().pingMarker
   if root and root:IsShown() and W.frame and W.frame:IsShown() and not preview then
     for name, row in pairs(liveRows) do
-      local macro = not issecretvalue(name) and View.pingMacro(name)
+      local macro = not issecretvalue(name) and View.pingMacro(name, pingCommand(), pingAttack())
       if macro then
         local b = pingButton(n + 1)
         if placePing(b, row) then

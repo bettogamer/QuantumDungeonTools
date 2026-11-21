@@ -226,6 +226,17 @@ describe("InstanceTrackerView: ping al jefe (punto 7)", function()
     assert_eq(View.pingMacro("Rath'mael"):match("\n/targetexact (.-)\n"), "Rath'mael")
   end)
 
+  -- esES has no "/ping" (it is "/aviso") and the type is "Atacar" (player report, 2026-11-20).
+  it("macro: usa el comando y el tipo de ping localizados del cliente", function()
+    assert_eq(View.pingMacro("El Carnicero", "/aviso", "Atacar"),
+      "/cleartarget\n/targetexact El Carnicero\n/aviso [@target,exists,harm,nodead] Atacar\n/targetlasttarget")
+    local line = "\n(/ping .-)\n"
+    assert_eq(View.pingMacro("X", "/ping", "Atacar"):match(line), "/ping [@target,exists,harm,nodead] Atacar")
+    -- missing or unusable globals: English fallback
+    assert_eq(View.pingMacro("X", nil, ""):match(line), "/ping [@target,exists,harm,nodead] attack")
+    assert_eq(View.pingMacro("X", "/a\n/run x()", 5):match(line), "/ping [@target,exists,harm,nodead] attack")
+  end)
+
   it("clic derecho: marca configurada (calavera = 8) con el mismo baile de objetivo", function()
     assert_eq(View.markMacro("Sneed", 8),
       "/cleartarget\n/targetexact Sneed\n/tm [@target,exists,harm,nodead] 8\n/targetlasttarget")

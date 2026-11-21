@@ -21,6 +21,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 - **Un `/reload` dentro de la mazmorra podía abrir una run nueva** y contar otra instancia en la
   hora: el reload ya no se confunde con entrar en otra copia.
 - **Cruzar subzonas dentro de la mazmorra** ya no puede reiniciar la run ni contar entradas.
+- **El ping al jefe no funcionaba con el juego en español**: en esES el comando no es `/ping` sino
+  `/aviso`, y en esES/esMX el tipo es «Atacar», no «attack». Ahora la macro usa el comando y el
+  tipo del idioma del cliente.
 
 ## [0.1.0-beta.3] - 2026-11-17
 

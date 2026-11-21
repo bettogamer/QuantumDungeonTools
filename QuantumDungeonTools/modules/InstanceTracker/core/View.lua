@@ -221,8 +221,19 @@ local function onBoss(name, action)
   return "/cleartarget\n/targetexact " .. name .. "\n" .. action .. "\n/targetlasttarget"
 end
 
-function View.pingMacro(name)
-  return onBoss(name, "/ping [@target,exists,harm,nodead] attack")
+-- The /ping command AND its type token are localized (Blizzard SlashCommandsOverrides: the type
+-- is matched against PING_TYPE_ATTACK): esES has no "/ping" at all (SLASH_PING1 = "/aviso") and
+-- esMX wants "Atacar", not "attack". The wow/ layer passes the client's own strings; the English
+-- ones are only the fallback. A value with a line break would split the macro: fallback too.
+local function macroWord(v, fallback)
+  if type(v) ~= "string" or v == "" or v:find("[\r\n]") then return fallback end
+  return v
+end
+
+function View.pingMacro(name, command, attack)
+  command = macroWord(command, "/ping")
+  attack = macroWord(attack, "attack")
+  return onBoss(name, command .. " [@target,exists,harm,nodead] " .. attack)
 end
 
 -- Right click (owner, 2026-11-13): the configured raid marker (8 = skull) on the boss, same
