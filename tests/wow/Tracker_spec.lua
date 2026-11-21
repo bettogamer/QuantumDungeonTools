@@ -147,4 +147,21 @@ describe("Tracker: copia por castGUID (wow/)", function()
     assert_true(env.T.run == run, "la run no se reinicia al cruzar subzonas")
     assert_eq(env.hourCount(), 1)
   end)
+  it("el reloj de la run arranca con el primer combate dentro, no al entrar", function()
+    local env = setup()
+    env.enter(2999, "Ruins of Lordaeron")
+    env.clock = env.clock + 240            -- waiting for the group inside
+    assert_eq(env.T.run:elapsed(), 0)
+    env.frame:_fire("PLAYER_REGEN_DISABLED")
+    env.clock = env.clock + 30
+    assert_eq(env.T.run:elapsed(), 30)
+  end)
+
+  it("si se pierde el combate, la primera muerte arranca el reloj", function()
+    local env = setup()
+    env.enter(2999, "Ruins of Lordaeron")
+    env.clock = env.clock + 100
+    env.frame:_fire("PARTY_KILL")
+    assert_true(not env.T.run:isWaiting())
+  end)
 end)

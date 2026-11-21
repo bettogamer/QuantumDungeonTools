@@ -468,3 +468,69 @@ describe("InstanceRun con la tabla de mazmorras (resolver)", function()
     assert_eq(r:awayTime(), 120)
   end)
 end)
+
+-- The clock starts at the first combat, not at the door (owner 2026-11-20).
+describe("InstanceRun: reloj desde el primer combate", function()
+  local WAIT = { instanceID = 2999, name = "Ruins of Lordaeron", difficulty = "Normal", waitCombat = true }
+
+  it("en espera el reloj marca 0 y arranca con startClock", function()
+    local c = clock()
+    local r = Run.new(WAIT, { now = c.now })
+    c.t = c.t + 300                      -- waiting for the group
+    assert_true(r:isWaiting())
+    assert_eq(r:elapsed(), 0)
+    assert_eq(r:startClock(), true)
+    assert_eq(r:startClock(), false, "solo arranca una vez")
+    c.t = c.t + 90
+    assert_eq(r:elapsed(), 90)
+    assert_eq(r.startedAt, 1000, "la fecha de la run sigue siendo la entrada")
+  end)
+
+  it("las pausas antes del primer combate no cuentan ni como tiempo fuera", function()
+    local c = clock()
+    local r = Run.new(WAIT, { now = c.now })
+    r:pause(); c.t = c.t + 200; r:resume()
+    assert_eq(r:awayTime(), 0)
+    assert_eq(r:startClock(), true)
+    c.t = c.t + 60
+    assert_eq(r:elapsed(), 60)
+    assert_eq(r:awayTime(), 0)
+  end)
+
+  it("en pausa no arranca (el combate es dentro)", function()
+    local c = clock()
+    local r = Run.new(WAIT, { now = c.now })
+    r:pause()
+    assert_eq(r:startClock(), false)
+  end)
+
+  it("el split de un jefe cuenta desde el combate", function()
+    local c = clock()
+    local r = Run.new(WAIT, { now = c.now })
+    r:setBosses({ { name = "Witherfang", killed = false }, { name = "The Butcher", killed = false } })
+    c.t = c.t + 400
+    r:startClock()
+    c.t = c.t + 120
+    r:markKilled("Witherfang")
+    assert_eq(r.bosses[1].killedAt, 120)
+  end)
+
+  it("toTable/fromTable conserva la espera y el arranque", function()
+    local c = clock()
+    local r = Run.new(WAIT, { now = c.now })
+    local w = Run.fromTable(r:toTable(), { now = c.now })
+    assert_true(w:isWaiting(), "guardada en espera, carga en espera")
+    r:startClock(); c.t = c.t + 50
+    local s = Run.fromTable(r:toTable(), { now = c.now })
+    assert_true(not s:isWaiting())
+    assert_eq(s:elapsed(), 50)
+  end)
+
+  it("una run guardada antes del cambio (sin waiting ni clockAt) cuenta desde startedAt", function()
+    local c = clock(5000)
+    local r = Run.fromTable({ instanceID = 2999, name = "Ruins", startedAt = 4000, pausedTotal = 100, bosses = {} },
+      { now = c.now })
+    assert_true(not r:isWaiting())
+    assert_eq(r:elapsed(), 900)
+  end)
+end)

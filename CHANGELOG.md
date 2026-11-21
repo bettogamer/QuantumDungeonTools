@@ -4,6 +4,24 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ## [Unreleased]
 
+### Cambiado
+
+- **El reloj de la run arranca con el primer combate dentro de la mazmorra**, no al cruzar la
+  puerta: esperar al grupo ya no cuenta. Si se escapa el combate, arranca con la primera muerte.
+  **Ojo con los récords:** los guardados se midieron desde la entrada, así que las runs nuevas
+  saldrán algo más rápidas y pueden batirlos sin ir más deprisa. Las runs ya empezadas siguen
+  contando como antes.
+
+### Corregido
+
+- **Excavation Site: Wetlands se reiniciaba sin parar** y el contador por hora subía a cientos
+  (481/10) con aviso continuo: cada hechizo se tomaba como «otra copia de la mazmorra». Ahora la
+  copia solo se comprueba tras una pantalla de carga, y una mazmorra cuyo identificador de copia
+  no es fiable se detecta sola y deja de usarlo.
+- **Un `/reload` dentro de la mazmorra podía abrir una run nueva** y contar otra instancia en la
+  hora: el reload ya no se confunde con entrar en otra copia.
+- **Cruzar subzonas dentro de la mazmorra** ya no puede reiniciar la run ni contar entradas.
+
 ## [0.1.0-beta.3] - 2026-11-17
 
 ### Añadido

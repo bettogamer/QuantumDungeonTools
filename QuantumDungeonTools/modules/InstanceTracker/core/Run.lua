@@ -26,7 +26,7 @@ local FIELDS = {
   "instanceID", "name", "difficulty", "startedAt", "finishedAt",
   "listKnown", "xp", "degraded", "archived", "endedAt", "lockKilled", "copy",
   "pausedAt", "pausedTotal", "deaths", "pb", "newRecord", "copper", "group", "levels", "trash",
-  "char",
+  "char", "waiting", "clockAt",
 }
 
 -- A kill (PARTY_KILL) and a boss event this close are the same death (ForeverDungeonJournal
@@ -65,6 +65,12 @@ function Run.new(info, deps)
   self.group = nil        -- signature of the party (Detail.groupKey), last seen while live (F4b)
   self.trash = 0          -- non-boss kills of the group during the run (F4c, PARTY_KILL)
   self.char = info.char   -- "Name-Realm" of the player who ran it (F6; older runs: nil)
+  -- The clock starts at the first combat inside, not at the door (waiting for the group does
+  -- not count; owner 2026-11-20). info.waitCombat opts in (wow/Tracker always does): waiting =
+  -- true until then; clockAt = when it started. Runs saved before this have neither and keep
+  -- counting from startedAt.
+  self.waiting = info.waitCombat == true or nil
+  self.clockAt = nil
   return self
 end
 
@@ -90,13 +96,26 @@ end
 
 function Run:isFinished() return self.finishedAt ~= nil end
 
--- Seconds played: since the start minus the pauses; frozen once the run is finished, closed
--- unfinished or paused.
+-- Seconds played: since the clock started (first combat; startedAt for older runs) minus the
+-- pauses; 0 while waiting; frozen once the run is finished, closed unfinished or paused.
 function Run:elapsed()
+  if self.waiting then return 0 end
   local stop = self.finishedAt or self.endedAt or self.pausedAt or self._now()
-  local e = stop - (self.startedAt or 0) - (self.pausedTotal or 0)
+  local e = stop - (self.clockAt or self.startedAt or 0) - (self.pausedTotal or 0)
   if e < 0 then return 0 end
   return e
+end
+
+function Run:isWaiting() return self.waiting == true end
+
+-- startClock(): first combat (or first kill) inside. Pauses before it do not count either.
+-- Returns true when the clock started now.
+function Run:startClock()
+  if not self.waiting or self.endedAt or self.pausedAt then return false end
+  self.waiting = nil
+  self.clockAt = self._now()
+  self.pausedTotal = 0
+  return true
 end
 
 ------------------------------------------------------------------------------
@@ -357,6 +376,7 @@ end
 -- Seconds spent outside the instance during the run (corpse runs, a step outside, logged out):
 -- the closed pauses plus the open one, if the run is still running.
 function Run:awayTime()
+  if self.waiting then return 0 end   -- before the clock starts, being outside costs nothing
   local t = self.pausedTotal or 0
   if self.pausedAt and not self.finishedAt and not self.endedAt then
     t = t + math.max(0, self._now() - self.pausedAt)
@@ -490,7 +510,7 @@ end
 
 function Run.fromTable(t, deps)
   if type(t) ~= "table" then return nil end
-  local self = Run.new(nil, deps)
+  local self = Run.new(nil, deps)   -- not waiting: only a run SAVED waiting is (older ones count from startedAt)
   for _, k in ipairs(FIELDS) do
     if t[k] ~= nil then self[k] = t[k] end
   end

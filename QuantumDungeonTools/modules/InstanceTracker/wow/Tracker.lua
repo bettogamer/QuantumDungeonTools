@@ -244,10 +244,23 @@ end
 -- A new run races against the record of its dungeon + difficulty as it is NOW (a copy).
 -- It keeps who ran it: the history is account-wide and filters by character (F6).
 local function newRun(inst)
-  local run = Run.new(inst, deps)
+  local run = Run.new({ instanceID = inst.instanceID, name = inst.name, difficulty = inst.difficulty,
+    waitCombat = true }, deps)
   run.char = charName()
   run.pb = Records.get(db().records, run)
   return run
+end
+
+-- The run clock starts at the first combat inside (Run:startClock); kills are a safety net in
+-- case PLAYER_REGEN_DISABLED was missed (entered already in combat, /reload mid-pull).
+function T:_startClock()
+  local run = self.run
+  if run and self.inInstance and run:startClock() then self:_notify("data") end
+end
+
+local function inCombat()
+  local ok, v = pcall(UnitAffectingCombat, "player")
+  return ok and not issecretvalue(v) and v == true
 end
 
 function T:StartRun(inst, copy)
@@ -255,6 +268,7 @@ function T:StartRun(inst, copy)
   self.run = newRun(inst)
   self.copyPending = false
   if copy then self.run:observeCopy(copy) end
+  if inCombat() then self.run:startClock() end
   self:SampleGroup()
   self:Refresh()
 end
@@ -451,6 +465,7 @@ function T:PLAYER_LOGOUT()
 end
 
 local function bossDied(name)
+  T:_startClock()
   local run = T.run
   local changed = run and T.inInstance and run:noteBossDeath()   -- before markKilled: the last boss ends the run
   if run and T.inInstance and run:markKilled(safeStr(name)) then changed = true end
@@ -522,6 +537,7 @@ end
 -- §FDJ): the event is only "the group landed a killing blow". Neither arg is touched; the boss
 -- deaths are taken out by Run:noteBossDeath (F4c).
 function T:PARTY_KILL()
+  self:_startClock()
   if self.run and self.inInstance and not self.copyPending and self.run:addKill() then self:_notify("data") end
 end
 
@@ -552,12 +568,13 @@ end
 function T:CHAT_MSG_COMBAT_XP_GAIN() self:SampleXP() end
 function T:PLAYER_LEVEL_UP() C_Timer.After(1, function() T:SampleXP() end) end
 function T:PLAYER_REGEN_ENABLED() self:SampleXP() end
+function T:PLAYER_REGEN_DISABLED() self:_startClock() end
 function T:QUEST_TURNED_IN() C_Timer.After(1, function() T:SampleXP() end) end
 
 local EVENTS = {
   "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "UPDATE_INSTANCE_INFO",
   "ENCOUNTER_END", "BOSS_KILL", "PLAYER_XP_UPDATE", "CHAT_MSG_COMBAT_XP_GAIN",
-  "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
+  "PLAYER_LEVEL_UP", "PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED", "QUEST_TURNED_IN", "UNIT_SPELLCAST_SENT",
   "CHAT_MSG_SYSTEM", "PLAYER_LOGOUT", "PLAYER_DEAD",
   "CHAT_MSG_MONEY", "CHAT_MSG_COMBAT_FACTION_CHANGE", "GROUP_ROSTER_UPDATE", "PARTY_KILL",
 }
